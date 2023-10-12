@@ -31,20 +31,22 @@ Token Lexer::number() {
     bool hasDecimal = false;
 
     while (isDigit(inputStream.peek())) {
-        char c = inputStream.peek();  // Peek first to check for errors before consuming
+        char c = consume();
         if (c == '.') {
             if (hasDecimal) {
-                // If we've already seen a decimal point, this is an error.
-                return {TokenType::UNKNOWN, num + c, line, col};  // Use current col
+                return {TokenType::UNKNOWN, num + c, line, startCol};
             }
             hasDecimal = true;
+
+            if (!std::isdigit(inputStream.peek())) {
+                return {TokenType::UNKNOWN, num + c, line, col};  // Point to the character after the decimal
+            }
         }
-        num += consume();  // Consume after checking
+        num += c;
     }
 
-    // Check if the number starts or ends with a decimal point.
     if (num.front() == '.' || num.back() == '.') {
-        return {TokenType::UNKNOWN, num, line, col};  // Use current col
+        return {TokenType::UNKNOWN, num, line, startCol};
     }
 
     return {TokenType::NUMBER, num, line, startCol};
@@ -75,17 +77,23 @@ std::vector<Token> Lexer::tokenize() {
             tokens.push_back({TokenType::RIGHT_PAREN, ")", line, col});
             consume();
         } else if (isDigit(c)) {
-            tokens.push_back(number());
+            Token numToken = number();
+            if (numToken.type == TokenType::UNKNOWN) {
+                tokens.push_back(numToken);
+                return tokens;
+            }
+            tokens.push_back(numToken);
         } else if (isOperator(c)) {
             tokens.push_back(op());
         } else {
-            tokens.push_back({TokenType::UNKNOWN, std::string(1, consume()), line, col});
-            return tokens;  // Stop further tokenization
+            tokens.push_back({TokenType::UNKNOWN, std::string(1, c), line, col});
+            consume();
         }
     }
     tokens.push_back({TokenType::UNKNOWN, "END", line, col});
     return tokens;
 }
+
 
 int main() {
     // std::cout << "Enter your expression (Ctrl-D to end input):" << std::endl;
@@ -107,7 +115,7 @@ int main() {
     }
 
     for (const auto& token : tokens) {
-        std::cout << std::right << std::setw(4) << token.line << std::setw(5) << token.column << std::setw(2) << "  " << token.value << std::endl;
+        std::cout << std::right << std::setw(4) << token.line << std::setw(5) << token.column << std::setw(3) << "  " << token.value << std::endl;
     }
 
     return 0;
