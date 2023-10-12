@@ -115,7 +115,7 @@ int main() {
     }
 
     for (const auto& token : tokens) {
-        std::cout << std::right << std::setw(4) << token.line << std::setw(5) << token.column << std::setw(3) << "  " << token.value << std::endl;
+        std::cout << std::right << std::setw(4) << token.line << std::setw(5) << token.column << std::setw(2) << "  " << token.value << std::endl;
     }
 
     return 0;
