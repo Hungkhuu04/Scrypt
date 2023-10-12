@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <sstream>
 #include "Token.h"
 
 class Lexer {
@@ -10,16 +11,13 @@ public:
     std::vector<Token> tokenize();
 
 private:
-    char peek();
     char consume();
     bool isDigit(char c);
     bool isOperator(char c);
     Token number();
     Token op();
 
-    std::string input;
-    int length;
-    int pos;
+    std::istringstream inputStream;
     int line;
     int col;
 };
