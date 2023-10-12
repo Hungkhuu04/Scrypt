@@ -34,12 +34,12 @@ Token Lexer::number() {
         char c = consume();
         if (c == '.') {
             if (hasDecimal) {
-                return {TokenType::UNKNOWN, num + c, line, startCol};
+                return {TokenType::UNKNOWN, num + c, line, col - 1};
             }
             hasDecimal = true;
 
             if (!std::isdigit(inputStream.peek())) {
-                return {TokenType::UNKNOWN, num + c, line, col};  // Point to the character after the decimal
+                return {TokenType::UNKNOWN, num + c, line, col};
             }
         }
         num += c;
