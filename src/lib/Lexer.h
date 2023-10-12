@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
 #pragma once
 
 #include <string>
@@ -25,4 +23,3 @@ private:
     int line;
     int col;
 };
->>>>>>> Stashed changes
