@@ -8,14 +8,16 @@ Lexer::Lexer(const std::string& input) : inputStream(input), line(1), col(1) {}
 
 char Lexer::consume() {
     char current = inputStream.get();
-    if (current == '\n') {
+    if (current == '\n' && inputStream.peek() != EOF) { 
         line++;
         col = 1;
-    } else {
+    } else if (inputStream.peek() != EOF) {  
         col++;
     }
     return current;
 }
+
+
 
 bool Lexer::isDigit(char c) {
     return std::isdigit(c) || c == '.';
