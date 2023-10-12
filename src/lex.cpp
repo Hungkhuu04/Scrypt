@@ -31,27 +31,24 @@ Token Lexer::number() {
     bool hasDecimal = false;
 
     while (isDigit(inputStream.peek())) {
-        char c = consume();
+        char c = inputStream.peek();  // Peek first to check for errors before consuming
         if (c == '.') {
             if (hasDecimal) {
                 // If we've already seen a decimal point, this is an error.
-                return {TokenType::UNKNOWN, num + c, line, startCol};
+                return {TokenType::UNKNOWN, num + c, line, col};  // Use current col
             }
             hasDecimal = true;
         }
-        num += c;
+        num += consume();  // Consume after checking
     }
 
     // Check if the number starts or ends with a decimal point.
     if (num.front() == '.' || num.back() == '.') {
-        return {TokenType::UNKNOWN, num, line, startCol};
+        return {TokenType::UNKNOWN, num, line, col};  // Use current col
     }
 
     return {TokenType::NUMBER, num, line, startCol};
 }
-
-
-
 
 Token Lexer::op() {
     int startCol = col;
