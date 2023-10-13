@@ -1,3 +1,4 @@
+
 #include "lib/lex.h"
 #include <cctype>
 #include <iostream>
@@ -8,16 +9,14 @@ Lexer::Lexer(const std::string& input) : inputStream(input), line(1), col(1) {}
 
 char Lexer::consume() {
     char current = inputStream.get();
-    if (current == '\n' && inputStream.peek() != EOF) { 
+    if (current == '\n') {
         line++;
         col = 1;
-    } else if (inputStream.peek() != EOF) {  
+    } else {
         col++;
     }
     return current;
 }
-
-
 
 bool Lexer::isDigit(char c) {
     return std::isdigit(c) || c == '.';
@@ -97,15 +96,11 @@ std::vector<Token> Lexer::tokenize() {
 }
 
 
-
-
 int main() {
-    // std::cout << "Enter your expression (Ctrl-D to end input):" << std::endl;
-
     std::string input;
-    std::string line;
-    while (std::getline(std::cin, line)) {
-        input += line + "\n";
+    char ch;
+    while (std::cin.get(ch)) {
+        input += ch;
     }
 
     Lexer lexer(input);

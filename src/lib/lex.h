@@ -16,7 +16,6 @@ private:
     bool isOperator(char c);
     Token number();
     Token op();
-
     std::istringstream inputStream;
     int line;
     int col;
