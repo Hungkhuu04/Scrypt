@@ -167,11 +167,11 @@ string infixString(Node* node) {
             return result;
         }
         default:
-            return "";  // Shouldn't reach here
+            return "";
     }
 }
 
-int main() {
+/*int main() {
     string input;
     char ch;
     while (cin.get(ch)) {
@@ -190,4 +190,4 @@ int main() {
     cout << result << endl;
 
     return 0;
-}
+} */
