@@ -96,7 +96,7 @@ std::vector<Token> Lexer::tokenize() {
 }
 
 // Main function: reads input, tokenizes it, and prints tokens or error messages.
-/*int main() {
+int main() {
     std::string input;
     char ch;
     while (std::cin.get(ch)) {
@@ -118,4 +118,4 @@ std::vector<Token> Lexer::tokenize() {
     }
 
     return 0;
-} */
+}
