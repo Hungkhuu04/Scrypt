@@ -5,7 +5,7 @@
 #include <sstream>
 using namespace std;
 
-Lexer::Lexer(const string& input) : inputStream(input), line(1), col(1) {}
+Lexer::Lexer(const std::string& input) : inputStream(input), line(1), col(1) {}
 
 char Lexer::consume() {
     char current = inputStream.get();
@@ -19,7 +19,7 @@ char Lexer::consume() {
 }
 
 bool Lexer::isDigit(char c) {
-    return isdigit(c) || c == '.';
+    return std::isdigit(c) || c == '.';
 }
 
 bool Lexer::isOperator(char c) {
@@ -28,7 +28,7 @@ bool Lexer::isOperator(char c) {
 
 Token Lexer::number() {
     int startCol = col;
-    string num;
+    std::string num;
     bool hasDecimal = false;
 
     while (isDigit(inputStream.peek())) {
@@ -39,7 +39,7 @@ Token Lexer::number() {
             }
             hasDecimal = true;
 
-            if (!isdigit(inputStream.peek())) {
+            if (!std::isdigit(inputStream.peek())) {
                 return {TokenType::UNKNOWN, num + c, line, col};
             }
         }
@@ -61,15 +61,15 @@ Token Lexer::op() {
         case '-': return {TokenType::SUBTRACT, "-", line, startCol};
         case '*': return {TokenType::MULTIPLY, "*", line, startCol};
         case '/': return {TokenType::DIVIDE, "/", line, startCol};
-        default: return {TokenType::UNKNOWN, string(1, op), line, startCol};
+        default: return {TokenType::UNKNOWN, std::string(1, op), line, startCol};
     }
 }
 
-vector<Token> Lexer::tokenize() {
-    vector<Token> tokens;
+std::vector<Token> Lexer::tokenize() {
+    std::vector<Token> tokens;
     while (inputStream.peek() != EOF) {
         char c = inputStream.peek();
-        if (isspace(c)) {
+        if (std::isspace(c)) {
             consume();
         } else if (c == '(') {
             tokens.push_back({TokenType::LEFT_PAREN, "(", line, col});
@@ -87,7 +87,7 @@ vector<Token> Lexer::tokenize() {
         } else if (isOperator(c)) {
             tokens.push_back(op());
         } else {
-            tokens.push_back({TokenType::UNKNOWN, string(1, c), line, col});
+            tokens.push_back({TokenType::UNKNOWN, std::string(1, c), line, col});
             consume();
         }
     }
@@ -97,9 +97,9 @@ vector<Token> Lexer::tokenize() {
 
 // Main function: reads input, tokenizes it, and prints tokens or error messages.
 /*int main() {
-    string input;
+    std::string input;
     char ch;
-    while (cin.get(ch)) {
+    while (std::cin.get(ch)) {
         input += ch;
     }
 
@@ -108,13 +108,13 @@ vector<Token> Lexer::tokenize() {
 
     for (const auto& token : tokens) {
         if (token.type == TokenType::UNKNOWN && token.value != "END") {
-            cout << "Syntax error on line " << token.line << " column " << token.column << "." << endl;
+            std::cout << "Syntax error on line " << token.line << " column " << token.column << "." << std::endl;
             return 1;
         }
     }
 
     for (const auto& token : tokens) {
-        cout << right << setw(4) << token.line << setw(5) << token.column << setw(2) << "  " << token.value << endl;
+        std::cout << std::right << std::setw(4) << token.line << std::setw(5) << token.column << std::setw(2) << "  " << token.value << std::endl;
     }
 
     return 0;

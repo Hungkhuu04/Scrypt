@@ -1,9 +1,9 @@
 #include "lib/parse.h"
 #include <iostream>
 #include<string>
-using namespace std;
 
-Parser::Parser(const vector<Token>& tokens) : tokens(tokens), currentTokenIndex(0) {}
+
+Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens), currentTokenIndex(0) {}
 
 Token& Parser::currentToken() {
     return tokens[currentTokenIndex];
@@ -28,7 +28,7 @@ Node* Parser::expression() {
                 node = new Node(NodeType::DIVIDE);
                 break;
             default:
-                cerr << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << endl;
+                std::cerr << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
                 exit(2);
         }
 
@@ -47,11 +47,11 @@ Node* Parser::expression() {
 
 Node* Parser::number() {
     if (currentToken().type == TokenType::NUMBER) {
-        Node* node = new Node(NodeType::NUMBER, stod(currentToken().value));
+        Node* node = new Node(NodeType::NUMBER, std::stod(currentToken().value));
         currentTokenIndex++;
         return node;
     } else {
-        cerr << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << endl;
+        std::cerr << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
         exit(2);
     }
 }
@@ -59,7 +59,7 @@ Node* Parser::number() {
 Node* Parser::parse() {
     Node* root = expression();
     if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
-        cerr << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << endl;
+        std::cerr << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
         exit(2);
     }
     return root;
@@ -109,7 +109,7 @@ double evaluate(Node* node) {
             for (size_t i = 1; i < node->children.size(); ++i) {
                 double divisor = evaluate(node->children[i]);
                 if (divisor == 0) {
-                    cerr << "Runtime error: division by zero." << endl;
+                    std::cerr << "Runtime error: division by zero." << std::endl;
                     exit(3);
                 }
                 result /= divisor;
@@ -121,17 +121,17 @@ double evaluate(Node* node) {
     }
 }
 
-string formatDouble(double value) {
+std::string formatDouble(double value) {
     if (value == static_cast<int>(value)) {
-        return to_string(static_cast<int>(value));
+        return std::to_string(static_cast<int>(value));
     } else {
-        ostringstream ss;
+        std::ostringstream ss;
         ss << value;
         return ss.str();
     }
 }
 
-string infixString(Node* node) {
+std::string infixString(Node* node) {
     if (!node) return "";
 
     switch (node->type) {
@@ -141,7 +141,7 @@ string infixString(Node* node) {
         case NodeType::SUBTRACT:
         case NodeType::MULTIPLY:
         case NodeType::DIVIDE: {
-            string result = "(";
+            std::string result = "(";
             for (size_t i = 0; i < node->children.size(); ++i) {
                 result += infixString(node->children[i]);
                 if (i != node->children.size() - 1) {
@@ -172,9 +172,9 @@ string infixString(Node* node) {
 }
 
 /*int main() {
-    string input;
+    std::string input;
     char ch;
-    while (cin.get(ch)) {
+    while (std::cin.get(ch)) {
         input += ch;
     }
 
@@ -184,10 +184,12 @@ string infixString(Node* node) {
     Parser parser(tokens);
     Node* root = parser.parse();
 
-    cout << infixString(root) << endl;
+    std::cout << infixString(root) << std::endl;
 
     double result = evaluate(root);
-    cout << result << endl;
+    std::cout << result << std::endl;
 
     return 0;
 } */
+
+
