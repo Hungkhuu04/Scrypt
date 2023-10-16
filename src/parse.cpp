@@ -117,5 +117,5 @@ int main() {
     double result = evaluate(root, os);
     os << result << std::endl;
 
-    return 0;
+    return 2;
 }
