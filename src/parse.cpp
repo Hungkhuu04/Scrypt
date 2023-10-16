@@ -43,7 +43,7 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
             return result;
         }
         default:
-            return 2;
+            return 0;
     }
 }
 
@@ -117,5 +117,5 @@ int main() {
     double result = evaluate(root, os);
     os << result << std::endl;
 
-    return 2;
+    return 0;
 }
