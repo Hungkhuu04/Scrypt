@@ -1,6 +1,7 @@
 #include "lib/parse.h"
 #include <iostream>
 #include<string>
+#include<sstream>
 
 using namespace std;
 
@@ -98,6 +99,7 @@ string infixString(Node* node, std::ostream& os = std::cout) {
 }
 
 int main() {
+    std::ostream& os = std::cout;
     string input;
     char ch;
     while (cin.get(ch)) {
@@ -108,9 +110,8 @@ int main() {
     auto tokens = lexer.tokenize();
 
     Parser parser(tokens);
-    Node* root = parser.parse();
+    Node* root = parser.parse(os);
 
-    std::ostream& os = std::cout;
     os << infixString(root, os) << std::endl;
 
     double result = evaluate(root, os);
