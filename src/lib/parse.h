@@ -2,6 +2,7 @@
 #define PARSE_H
 #include "lex.h"
 #include <vector>
+#include<iostream>
 
 using namespace std;
 
@@ -24,8 +25,8 @@ private:
     Node* root;
 
     Token& currentToken();
-    Node* expression();
-    Node* number();
+    Node* expression(std::ostream& os = std::cerr);
+    Node* number(std::ostream& os = std::cerr);
 
     void clearTree(Node* node);
 
@@ -33,7 +34,7 @@ public:
     Parser(const vector<Token>& tokens);
     ~Parser();
 
-    Node* parse();
+    Node* parse(std::ostream& os = std::cerr);
 };
 
 #endif

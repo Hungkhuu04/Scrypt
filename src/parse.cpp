@@ -56,7 +56,7 @@ string formatDecimal(double value) {
     }
 }
 
-string infixString(Node* node) {
+string infixString(Node* node, std::ostream& os = std::cout) {
     if (!node) return "";
 
     switch (node->type) {
@@ -68,7 +68,7 @@ string infixString(Node* node) {
         case NodeType::DIVIDE: {
             string result = "(";
             for (size_t i = 0; i < node->children.size(); ++i) {
-                result += infixString(node->children[i]);
+                result += infixString(node->children[i], os);
                 if (i != node->children.size() - 1) {
                     switch (node->type) {
                         case NodeType::ADD:
@@ -109,12 +109,10 @@ int main() {
     Parser parser(tokens);
     Node* root = parser.parse();
 
-    cout << infixString(root) << endl;
+    cout << infixString(root, cout) << endl;
 
     double result = evaluate(root);
     cout << result << endl;
 
     return 0;
-} 
-
-
+}
