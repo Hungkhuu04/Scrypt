@@ -28,7 +28,7 @@ Node* Parser::expression() {
                 node = new Node(NodeType::DIVIDE);
                 break;
             default:
-                std::cerr << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
+                std::cerr << "Unexpected token at line " << currentToken().line << " column " << currentToken().column + 1<< ": " << currentToken().value << std::endl;
                 exit(2);
         }
 
@@ -51,7 +51,7 @@ Node* Parser::number() {
         currentTokenIndex++;
         return node;
     } else {
-        std::cerr << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
+        std::cerr << "Unexpected token at line " << currentToken().line << " column " << currentToken().column + 1 << ": " << currentToken().value << std::endl;
         exit(2);
         return 0;
     }
@@ -60,7 +60,7 @@ Node* Parser::number() {
 Node* Parser::parse() {
     root = expression();
     if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
-        std::cerr << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
+        std::cerr << "Unexpected token at line " << currentToken().line << " column " << currentToken().column + 1 << ": " << currentToken().value << std::endl;
         exit(2);
     }
     return root;
