@@ -17,23 +17,19 @@ Node* Parser::expression(std::ostream& os) {
         Node* node;
         switch (currentToken().type) {
             case TokenType::ADD:
-                node = new Node(NodeType::ADD);
-                break;
             case TokenType::SUBTRACT:
-                node = new Node(NodeType::SUBTRACT);
-                break;
             case TokenType::MULTIPLY:
-                node = new Node(NodeType::MULTIPLY);
-                break;
             case TokenType::DIVIDE:
-                node = new Node(NodeType::DIVIDE);
+                currentTokenIndex++;
+                if (currentToken().type != TokenType::NUMBER && currentToken().type != TokenType::LEFT_PAREN) {
+                    os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
+                    exit(2);
+                }
                 break;
             default:
                 os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
                 exit(2);
         }
-
-        currentTokenIndex++;
 
         while (currentToken().type != TokenType::RIGHT_PAREN) {
             node->children.push_back(expression(os));
@@ -45,6 +41,7 @@ Node* Parser::expression(std::ostream& os) {
         return number(os);
     }
 }
+
 
 
 Node* Parser::number(std::ostream& os) {
