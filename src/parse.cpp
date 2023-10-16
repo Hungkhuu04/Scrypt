@@ -43,7 +43,7 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
             return result;
         }
         default:
-            return 0;
+            return 2;
     }
 }
 
