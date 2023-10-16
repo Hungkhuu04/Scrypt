@@ -4,37 +4,37 @@
 
 using namespace std;
 
-double evaluate(Node* node) {
+double evaluate(Node* node, std::ostream& os = std::cerr) {
     switch (node->type) {
         case NodeType::NUMBER:
             return node->value;
         case NodeType::ADD: {
             double sum = 0;
             for (Node* child : node->children) {
-                sum += evaluate(child);
+                sum += evaluate(child, os);
             }
             return sum;
         }
         case NodeType::SUBTRACT: {
-            double result = evaluate(node->children[0]);
+            double result = evaluate(node->children[0], os);
             for (size_t i = 1; i < node->children.size(); ++i) {
-                result -= evaluate(node->children[i]);
+                result -= evaluate(node->children[i], os);
             }
             return result;
         }
         case NodeType::MULTIPLY: {
             double product = 1;
             for (Node* child : node->children) {
-                product *= evaluate(child);
+                product *= evaluate(child, os);
             }
             return product;
         }
         case NodeType::DIVIDE: {
-            double result = evaluate(node->children[0]);
+            double result = evaluate(node->children[0], os);
             for (size_t i = 1; i < node->children.size(); ++i) {
-                double divisor = evaluate(node->children[i]);
+                double divisor = evaluate(node->children[i], os);
                 if (divisor == 0) {
-                    cerr << "Runtime error: division by zero." << endl;
+                    os << "Runtime error: division by zero." << std::endl;
                     exit(3);
                 }
                 result /= divisor;
@@ -45,6 +45,7 @@ double evaluate(Node* node) {
             return 0;
     }
 }
+
 
 string formatDecimal(double value) {
     if (value == static_cast<int>(value)) {
@@ -109,10 +110,11 @@ int main() {
     Parser parser(tokens);
     Node* root = parser.parse();
 
-    cout << infixString(root, cout) << endl;
+    std::ostream& os = std::cout;
+    os << infixString(root, os) << std::endl;
 
-    double result = evaluate(root);
-    cout << result << endl;
+    double result = evaluate(root, os);
+    os << result << std::endl;
 
     return 0;
 }
