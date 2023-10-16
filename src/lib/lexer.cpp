@@ -5,7 +5,7 @@
 #include <sstream>
 using namespace std;
 
-Lexer::Lexer(const std::string& input) : inputStream(input), line(1), col(1) {}
+Lexer::Lexer(const string& input) : inputStream(input), line(1), col(1) {}
 
 char Lexer::consume() {
     char current = inputStream.get();
@@ -19,7 +19,7 @@ char Lexer::consume() {
 }
 
 bool Lexer::isDigit(char c) {
-    return std::isdigit(c) || c == '.';
+    return isdigit(c) || c == '.';
 }
 
 bool Lexer::isOperator(char c) {
@@ -28,7 +28,7 @@ bool Lexer::isOperator(char c) {
 
 Token Lexer::number() {
     int startCol = col;
-    std::string num;
+    string num;
     bool hasDecimal = false;
 
     while (isDigit(inputStream.peek())) {
@@ -39,7 +39,7 @@ Token Lexer::number() {
             }
             hasDecimal = true;
 
-            if (!std::isdigit(inputStream.peek())) {
+            if (!isdigit(inputStream.peek())) {
                 return {TokenType::UNKNOWN, num + c, line, col};
             }
         }
@@ -61,15 +61,15 @@ Token Lexer::op() {
         case '-': return {TokenType::SUBTRACT, "-", line, startCol};
         case '*': return {TokenType::MULTIPLY, "*", line, startCol};
         case '/': return {TokenType::DIVIDE, "/", line, startCol};
-        default: return {TokenType::UNKNOWN, std::string(1, op), line, startCol};
+        default: return {TokenType::UNKNOWN, string(1, op), line, startCol};
     }
 }
 
-std::vector<Token> Lexer::tokenize() {
-    std::vector<Token> tokens;
+vector<Token> Lexer::tokenize() {
+    vector<Token> tokens;
     while (inputStream.peek() != EOF) {
         char c = inputStream.peek();
-        if (std::isspace(c)) {
+        if (isspace(c)) {
             consume();
         } else if (c == '(') {
             tokens.push_back({TokenType::LEFT_PAREN, "(", line, col});
@@ -87,7 +87,7 @@ std::vector<Token> Lexer::tokenize() {
         } else if (isOperator(c)) {
             tokens.push_back(op());
         } else {
-            tokens.push_back({TokenType::UNKNOWN, std::string(1, c), line, col});
+            tokens.push_back({TokenType::UNKNOWN, string(1, c), line, col});
             consume();
         }
     }

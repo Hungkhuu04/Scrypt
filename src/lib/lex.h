@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LEX_H
+#define LEX_H
 
 #include <string>
 #include <vector>
@@ -20,3 +21,5 @@ private:
     int line;
     int col;
 };
+
+#endif
