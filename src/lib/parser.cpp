@@ -14,21 +14,31 @@ Node* Parser::expression(std::ostream& os) {
     if (currentToken().type == TokenType::LEFT_PAREN) {
         currentTokenIndex++;
 
-        Node* node;
+        Node* node = nullptr;
+
         switch (currentToken().type) {
             case TokenType::ADD:
+                node = new Node(NodeType::ADD);
+                break;
             case TokenType::SUBTRACT:
+                node = new Node(NodeType::SUBTRACT);
+                break;
             case TokenType::MULTIPLY:
+                node = new Node(NodeType::MULTIPLY);
+                break;
             case TokenType::DIVIDE:
-                currentTokenIndex++;
-                if (currentToken().type != TokenType::NUMBER && currentToken().type != TokenType::LEFT_PAREN) {
-                    os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
-                    exit(2);
-                }
+                node = new Node(NodeType::DIVIDE);
                 break;
             default:
                 os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
                 exit(2);
+        }
+
+        currentTokenIndex++;
+
+        if (currentToken().type != TokenType::NUMBER && currentToken().type != TokenType::LEFT_PAREN) {
+            os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
+            exit(2);
         }
 
         while (currentToken().type != TokenType::RIGHT_PAREN) {
