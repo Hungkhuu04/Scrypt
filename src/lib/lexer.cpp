@@ -7,6 +7,17 @@ using namespace std;
 
 Lexer::Lexer(const string& input) : inputStream(input), line(1), col(1) {}
 
+bool Lexer::isSyntaxError(std::vector<Token>& tokens) {
+    for (const auto& token : tokens) {
+        if (token.type == TokenType::UNKNOWN && token.value != "END") {
+            std::cout << "Syntax error on line " << token.line << " column " << token.column << "." << std::endl;
+            return true;
+        }
+    }
+    return false;
+}
+
+
 char Lexer::consume() {
     char current = inputStream.get();
     if (current == '\n') {
@@ -89,6 +100,9 @@ vector<Token> Lexer::tokenize() {
         } else {
             tokens.push_back({TokenType::UNKNOWN, string(1, c), line, col});
             consume();
+        }
+        if (isSyntaxError(tokens)) {
+            exit(1);
         }
     }
     tokens.push_back({TokenType::UNKNOWN, "END", line, col});

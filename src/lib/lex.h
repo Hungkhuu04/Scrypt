@@ -11,7 +11,9 @@ public:
     Lexer(const std::string& input);
     std::vector<Token> tokenize();
 
+
 private:
+    bool isSyntaxError(std::vector<Token>& tokens);
     char consume();
     bool isDigit(char c);
     bool isOperator(char c);
