@@ -51,7 +51,8 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
 
 
 
-//Takes in a value and converts the input into a usable string format. 
+//Takes in a value and converts the input into a usable string format.
+// It ensures that there is the right amount of decimal points
 string formatDecimal(double value) {
     if (value == static_cast<int>(value)) {
         return to_string(static_cast<int>(value));
@@ -104,7 +105,11 @@ string infixString(Node* node, std::ostream& os = std::cout) {
     }
 }
 
-
+/*
+Reads the cin and creates the expression ready to send it to the parser.
+The parser calls the tokensize function to create a token of each character. It adds the 
+tokens to the AST and the prints out the answer using the evaluator to get the answer.
+*/
 
 int main() {
     std::ostream& os = std::cout;

@@ -7,6 +7,8 @@ using namespace std;
 
 Lexer::Lexer(const string& input) : inputStream(input), line(1), col(1) {}
 
+// Outputs the Error Code when there is an incorrect S expression
+
 bool Lexer::isSyntaxError(std::vector<Token>& tokens) {
     for (const auto& token : tokens) {
         if (token.type == TokenType::UNKNOWN && token.value != "END") {
@@ -17,7 +19,7 @@ bool Lexer::isSyntaxError(std::vector<Token>& tokens) {
     return false;
 }
 
-//Reads characters from the stream and keeps track of the column and line.
+//Reads the current character from the stream and keeps track of the column and line.
 char Lexer::consume() {
     char current = inputStream.get();
     if (current == '\n') {
@@ -41,7 +43,8 @@ bool Lexer::isOperator(char c) {
 }
 
 /*Handles the tokenization of a numerical value. Specifically, if the number 
-follows the criteria for a valid number.*/
+follows the criteria for a valid number. It checks if the current character is a valid numeric value.
+It checks the decimals to see what kinda of number it is - Integer or Float*/
 Token Lexer::number() {
     int startCol = col;
     string num;
@@ -66,7 +69,7 @@ Token Lexer::number() {
 
 }
 
-//Responsible for tokenizing operators.
+//Responsible for creating and tokenizing operators.
 Token Lexer::op() {
     int startCol = col;
     char op = consume();

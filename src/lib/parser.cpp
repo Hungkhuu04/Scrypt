@@ -9,7 +9,11 @@ Token& Parser::currentToken() {
     return tokens[currentTokenIndex];
 }
 
-//Parses the expression and sets up the AST.
+/*Parses the expression and sets up the AST. 
+It is achieved by checking the current token type and adding that token to AST
+If the token type is invalid it wont add it and then throw the error.
+Everytime thers a new braket ( or ) it extends to the children nodes.
+*/
 Node* Parser::expression(std::ostream& os) {
     if (currentToken().type == TokenType::LEFT_PAREN) {
         currentTokenIndex++;

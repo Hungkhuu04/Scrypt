@@ -2,7 +2,9 @@
 #define TOKEN_H
 #include <string>
 
-// Enum to represent different types of tokens
+// Token Header File for Lexer
+
+// Enumerated Type to represent each type of tokens
 
 enum class TokenType {
     LEFT_PAREN, RIGHT_PAREN,

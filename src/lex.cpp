@@ -5,6 +5,12 @@
 #include <sstream>
 using namespace std;
 
+// lexer main used to test
+/* Reads the cin and creates the expression ready to send it to the lexer.
+The Lexer calls the tokensize function to create a token of each character.
+If there is a error then print that, else print the line using iomanip for formatting
+*/
+
 int main() {
     string input;
     char ch;

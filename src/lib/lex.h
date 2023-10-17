@@ -5,6 +5,8 @@
 #include <sstream>
 #include "Token.h"
 
+// Lexer Header Definition
+
 class Lexer {
 public:
     Lexer(const std::string& input);
