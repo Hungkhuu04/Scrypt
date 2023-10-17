@@ -1,9 +1,9 @@
 #ifndef TOKEN_H
 #define TOKEN_H
-
 #include <string>
 
 // Enum to represent different types of tokens
+
 enum class TokenType {
     LEFT_PAREN, RIGHT_PAREN,
     ADD, SUBTRACT, MULTIPLY, DIVIDE,

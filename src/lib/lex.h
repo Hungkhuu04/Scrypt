@@ -1,6 +1,5 @@
 #ifndef LEX_H
 #define LEX_H
-
 #include <string>
 #include <vector>
 #include <sstream>
@@ -10,7 +9,6 @@ class Lexer {
 public:
     Lexer(const std::string& input);
     std::vector<Token> tokenize();
-
 
 private:
     bool isSyntaxError(std::vector<Token>& tokens);
@@ -22,6 +20,7 @@ private:
     std::istringstream inputStream;
     int line;
     int col;
+
 };
 
 #endif

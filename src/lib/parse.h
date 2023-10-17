@@ -5,16 +5,15 @@
 #include<iostream>
 
 using namespace std;
-
 enum class NodeType {
     ADD, SUBTRACT, MULTIPLY, DIVIDE, NUMBER
+
 };
 
 struct Node {
     NodeType type;
     double value;
     vector<Node*> children;
-
     Node(NodeType t, double v = 0) : type(t), value(v) {}
 };
 
@@ -23,18 +22,18 @@ private:
     vector<Token> tokens;
     int currentTokenIndex;
     Node* root;
-
     Token& currentToken();
     Node* expression(std::ostream& os = std::cerr);
     Node* number(std::ostream& os = std::cerr);
-
     void clearTree(Node* node);
 
 public:
+
     Parser(const vector<Token>& tokens);
     ~Parser();
 
     Node* parse(std::ostream& os = std::cerr);
+
 };
 
 #endif

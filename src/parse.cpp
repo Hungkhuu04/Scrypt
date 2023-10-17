@@ -1,41 +1,42 @@
 #include "lib/parse.h"
 #include <iostream>
 #include<string>
-
+#include<sstream>
+using namespace std;
 
 /*Evaluates the expression stored in the AST through recursion and returns a value.
 Throws errors when appropiate. */
-double evaluate(Node* node) {
+double evaluate(Node* node, std::ostream& os = std::cerr) {
     switch (node->type) {
         case NodeType::NUMBER:
             return node->value;
         case NodeType::ADD: {
             double sum = 0;
             for (Node* child : node->children) {
-                sum += evaluate(child);
+                sum += evaluate(child, os);
             }
             return sum;
         }
         case NodeType::SUBTRACT: {
-            double result = evaluate(node->children[0]);
+            double result = evaluate(node->children[0], os);
             for (size_t i = 1; i < node->children.size(); ++i) {
-                result -= evaluate(node->children[i]);
+                result -= evaluate(node->children[i], os);
             }
             return result;
         }
         case NodeType::MULTIPLY: {
             double product = 1;
             for (Node* child : node->children) {
-                product *= evaluate(child);
+                product *= evaluate(child, os);
             }
             return product;
         }
         case NodeType::DIVIDE: {
-            double result = evaluate(node->children[0]);
+            double result = evaluate(node->children[0], os);
             for (size_t i = 1; i < node->children.size(); ++i) {
-                double divisor = evaluate(node->children[i]);
+                double divisor = evaluate(node->children[i], os);
                 if (divisor == 0) {
-                    std::cerr << "Runtime error: division by zero." << std::endl;
+                    os << "Runtime error: division by zero." << std::endl;
                     exit(3);
                 }
                 result /= divisor;
@@ -46,32 +47,36 @@ double evaluate(Node* node) {
             return 0;
     }
 }
+
+
+
+
 //Takes in a value and converts the input into a usable string format. 
-std::string formatDouble(double value) {
+string formatDecimal(double value) {
     if (value == static_cast<int>(value)) {
-        return std::to_string(static_cast<int>(value));
+        return to_string(static_cast<int>(value));
     } else {
-        std::ostringstream ss;
+        ostringstream ss;
         ss << value;
         return ss.str();
     }
 }
+
+
 /*Takes in a node object and then returns the an expression in infix form. Goes through the AST
 recursively and builds the string representation off the stored expression .*/
-
-std::string infixString(Node* node) {
+string infixString(Node* node, std::ostream& os = std::cout) {
     if (!node) return "";
-
     switch (node->type) {
         case NodeType::NUMBER:
-            return formatDouble(node->value);
+            return formatDecimal(node->value);
         case NodeType::ADD:
         case NodeType::SUBTRACT:
         case NodeType::MULTIPLY:
         case NodeType::DIVIDE: {
-            std::string result = "(";
+            string result = "(";
             for (size_t i = 0; i < node->children.size(); ++i) {
-                result += infixString(node->children[i]);
+                result += infixString(node->children[i], os);
                 if (i != node->children.size() - 1) {
                     switch (node->type) {
                         case NodeType::ADD:
@@ -99,25 +104,23 @@ std::string infixString(Node* node) {
     }
 }
 
+
+
 int main() {
-    std::string input;
+    std::ostream& os = std::cout;
+    string input;
     char ch;
-    while (std::cin.get(ch)) {
+    while (cin.get(ch)) {
         input += ch;
     }
-
     Lexer lexer(input);
     auto tokens = lexer.tokenize();
-
     Parser parser(tokens);
-    Node* root = parser.parse();
-
-    std::cout << infixString(root) << std::endl;
-
-    double result = evaluate(root);
-    std::cout << result << std::endl;
-
+    Node* root = parser.parse(os);
+    os << infixString(root, os) << std::endl;
+    double result = evaluate(root, os);
+    os << result << std::endl;
     return 0;
-}
 
+}
 
