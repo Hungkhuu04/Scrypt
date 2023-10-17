@@ -2,6 +2,9 @@
 #include <iostream>
 #include<string>
 
+
+/*Evaluates the expression stored in the AST through recursion and returns a value.
+Throws errors when appropiate. */
 double evaluate(Node* node) {
     switch (node->type) {
         case NodeType::NUMBER:
@@ -43,7 +46,7 @@ double evaluate(Node* node) {
             return 0;
     }
 }
-
+//Takes in a value and converts the input into a usable string format. 
 std::string formatDouble(double value) {
     if (value == static_cast<int>(value)) {
         return std::to_string(static_cast<int>(value));
@@ -53,6 +56,8 @@ std::string formatDouble(double value) {
         return ss.str();
     }
 }
+/*Takes in a node object and then returns the an expression in infix form. Goes through the AST
+recursively and builds the string representation off the stored expression .*/
 
 std::string infixString(Node* node) {
     if (!node) return "";

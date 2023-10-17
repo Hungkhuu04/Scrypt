@@ -6,7 +6,7 @@
 using namespace std;
 
 Lexer::Lexer(const std::string& input) : inputStream(input), line(1), col(1) {}
-
+//Reads characters from the stream and keeps track of the column and line.
 char Lexer::consume() {
     char current = inputStream.get();
     if (current == '\n') {
@@ -17,15 +17,17 @@ char Lexer::consume() {
     }
     return current;
 }
-
+//Checks if the character is a valid Digit.
 bool Lexer::isDigit(char c) {
     return std::isdigit(c) || c == '.';
 }
-
+//Checks if the character is a valid operator. 
 bool Lexer::isOperator(char c) {
     return c == '+' || c == '-' || c == '*' || c == '/';
 }
 
+/*Handles the tokenization of a numerical value. Specifically, if the number 
+follows the criteria for a valid number.*/
 Token Lexer::number() {
     int startCol = col;
     std::string num;
@@ -53,6 +55,7 @@ Token Lexer::number() {
     return {TokenType::NUMBER, num, line, startCol};
 }
 
+//Responsible for tokenizing operators.
 Token Lexer::op() {
     int startCol = col;
     char op = consume();
@@ -64,7 +67,8 @@ Token Lexer::op() {
         default: return {TokenType::UNKNOWN, std::string(1, op), line, startCol};
     }
 }
-
+/*Is responsible for tokenizing the input stream. Classifies the differnet tokens
+and puts them in a vector.*/
 std::vector<Token> Lexer::tokenize() {
     std::vector<Token> tokens;
     while (inputStream.peek() != EOF) {

@@ -5,10 +5,12 @@
 
 Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens), currentTokenIndex(0) {}
 
+//Used for accessing current token. 
 Token& Parser::currentToken() {
     return tokens[currentTokenIndex];
 }
 
+//Parses the expression and sets up the AST.
 Node* Parser::expression() {
     if (currentToken().type == TokenType::LEFT_PAREN) {
         currentTokenIndex++;
@@ -45,6 +47,7 @@ Node* Parser::expression() {
     }
 }
 
+//This function is responsible for parsing a number token into a Node object. 
 Node* Parser::number() {
     if (currentToken().type == TokenType::NUMBER) {
         Node* node = new Node(NodeType::NUMBER, std::stod(currentToken().value));
@@ -57,6 +60,7 @@ Node* Parser::number() {
     }
 }
 
+//Resposible for parsing the tokens and setting up the AST. 
 Node* Parser::parse() {
     Node* root = expression();
     if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
@@ -67,6 +71,7 @@ Node* Parser::parse() {
     return root;
 }
 
+//Recursively deallocates memory being used by Nodes in the AST. Makes sure of no memory leaks. 
 void Parser::clearTree(Node* node) {
     if (!node) return;
 
@@ -77,6 +82,7 @@ void Parser::clearTree(Node* node) {
     delete node;
 }
 
+//Desctructor 
 Parser::~Parser() {
     clearTree(parse());
 }
