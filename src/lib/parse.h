@@ -1,10 +1,10 @@
 #ifndef PARSE_H
 #define PARSE_H
-
 #include "lex.h"
 #include <vector>
+#include<iostream>
 
-
+using namespace std;
 
 enum class NodeType {
     ADD, SUBTRACT, MULTIPLY, DIVIDE, NUMBER
@@ -13,27 +13,28 @@ enum class NodeType {
 struct Node {
     NodeType type;
     double value;
-    std::vector<Node*> children;
+    vector<Node*> children;
 
     Node(NodeType t, double v = 0) : type(t), value(v) {}
 };
 
 class Parser {
 private:
-    std::vector<Token> tokens;
+    vector<Token> tokens;
     int currentTokenIndex;
+    Node* root;
 
     Token& currentToken();
-    Node* expression();
-    Node* number();
+    Node* expression(std::ostream& os = std::cerr);
+    Node* number(std::ostream& os = std::cerr);
 
     void clearTree(Node* node);
 
 public:
-    Parser(const std::vector<Token>& tokens);
+    Parser(const vector<Token>& tokens);
     ~Parser();
 
-    Node* parse();
+    Node* parse(std::ostream& os = std::cerr);
 };
 
 #endif

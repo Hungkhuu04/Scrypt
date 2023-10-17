@@ -19,7 +19,7 @@ char Lexer::consume() {
 }
 //Checks if the character is a valid Digit.
 bool Lexer::isDigit(char c) {
-    return std::isdigit(c) || c == '.';
+    return isdigit(c) || c == '.';
 }
 //Checks if the character is a valid operator. 
 bool Lexer::isOperator(char c) {
@@ -30,7 +30,7 @@ bool Lexer::isOperator(char c) {
 follows the criteria for a valid number.*/
 Token Lexer::number() {
     int startCol = col;
-    std::string num;
+    string num;
     bool hasDecimal = false;
 
     while (isDigit(inputStream.peek())) {
@@ -41,7 +41,7 @@ Token Lexer::number() {
             }
             hasDecimal = true;
 
-            if (!std::isdigit(inputStream.peek())) {
+            if (!isdigit(inputStream.peek())) {
                 return {TokenType::UNKNOWN, num + c, line, col};
             }
         }
@@ -64,7 +64,7 @@ Token Lexer::op() {
         case '-': return {TokenType::SUBTRACT, "-", line, startCol};
         case '*': return {TokenType::MULTIPLY, "*", line, startCol};
         case '/': return {TokenType::DIVIDE, "/", line, startCol};
-        default: return {TokenType::UNKNOWN, std::string(1, op), line, startCol};
+        default: return {TokenType::UNKNOWN, string(1, op), line, startCol};
     }
 }
 /*Is responsible for tokenizing the input stream. Classifies the differnet tokens
@@ -73,7 +73,7 @@ std::vector<Token> Lexer::tokenize() {
     std::vector<Token> tokens;
     while (inputStream.peek() != EOF) {
         char c = inputStream.peek();
-        if (std::isspace(c)) {
+        if (isspace(c)) {
             consume();
         } else if (c == '(') {
             tokens.push_back({TokenType::LEFT_PAREN, "(", line, col});
@@ -91,8 +91,11 @@ std::vector<Token> Lexer::tokenize() {
         } else if (isOperator(c)) {
             tokens.push_back(op());
         } else {
-            tokens.push_back({TokenType::UNKNOWN, std::string(1, c), line, col});
+            tokens.push_back({TokenType::UNKNOWN, string(1, c), line, col});
             consume();
+        }
+        if (isSyntaxError(tokens)) {
+            exit(1);
         }
     }
     tokens.push_back({TokenType::UNKNOWN, "END", line, col});

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LEX_H
+#define LEX_H
 
 #include <string>
 #include <vector>
@@ -10,7 +11,9 @@ public:
     Lexer(const std::string& input);
     std::vector<Token> tokenize();
 
+
 private:
+    bool isSyntaxError(std::vector<Token>& tokens);
     char consume();
     bool isDigit(char c);
     bool isOperator(char c);
@@ -20,3 +23,5 @@ private:
     int line;
     int col;
 };
+
+#endif
