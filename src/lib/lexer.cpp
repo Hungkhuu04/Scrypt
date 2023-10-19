@@ -84,8 +84,8 @@ Token Lexer::op() {
 
 /*Is responsible for tokenizing the input stream. Classifies the differnet tokens
 and puts them in a vector.*/
-vector<Token> Lexer::tokenize() {
-    vector<Token> tokens;
+std::vector<Token> Lexer::tokenize() {
+    std::vector<Token> tokens;
     while (inputStream.peek() != EOF) {
         char c = inputStream.peek();
         if (isspace(c)) {
@@ -105,8 +105,19 @@ vector<Token> Lexer::tokenize() {
             tokens.push_back(numToken);
         } else if (isOperator(c)) {
             tokens.push_back(op());
+        } else if (isalpha(c) || c == '_') {
+            // Recognize and tokenize identifiers (variables)
+            std::string identifier;
+            while (isalnum(inputStream.peek()) || inputStream.peek() == '_') {
+                identifier += consume();
+            }
+            tokens.push_back({TokenType::IDENTIFIER, identifier, line, col});
+        } else if (c == '=') {
+            // Recognize and tokenize the assignment operator (=)
+            tokens.push_back({TokenType::ASSIGN, "=", line, col});
+            consume();
         } else {
-            tokens.push_back({TokenType::UNKNOWN, string(1, c), line, col});
+            tokens.push_back({TokenType::UNKNOWN, std::string(1, c), line, col});
             consume();
         }
         if (isSyntaxError(tokens)) {
@@ -116,5 +127,6 @@ vector<Token> Lexer::tokenize() {
     tokens.push_back({TokenType::UNKNOWN, "END", line, col});
     return tokens;
 }
+
 
 
