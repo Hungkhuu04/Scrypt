@@ -108,10 +108,11 @@ std::vector<Token> Lexer::tokenize() {
         } else if (isalpha(c) || c == '_') {
             // Recognize and tokenize identifiers (variables)
             std::string identifier;
+            int identifierStartCol = col; // Store the starting column position
             while (isalnum(inputStream.peek()) || inputStream.peek() == '_') {
                 identifier += consume();
             }
-            tokens.push_back({TokenType::IDENTIFIER, identifier, line, col});
+            tokens.push_back({TokenType::IDENTIFIER, identifier, line, identifierStartCol});
         } else if (c == '=') {
             // Recognize and tokenize the assignment operator (=)
             tokens.push_back({TokenType::ASSIGN, "=", line, col});
@@ -127,6 +128,7 @@ std::vector<Token> Lexer::tokenize() {
     tokens.push_back({TokenType::UNKNOWN, "END", line, col});
     return tokens;
 }
+
 
 
 
