@@ -74,7 +74,7 @@ Node* InfixParser::factor(std::ostream& os) {
         //check if there's a right parenthesis
         if (currentToken().type != TokenType::RIGHT_PAREN){
             os << "Expected closing parenthesis at line " << token.line << " column " << token.column << std::endl;
-            // exit(2);
+            exit(2);
         }
         currentTokenIndex++; // Consume the right parenthesis.
         return node;
@@ -89,7 +89,7 @@ Node* InfixParser::factor(std::ostream& os) {
 
     else {
         os << "Unexpected token in factor at line " << token.line << " column " << token.column << std::endl;
-        //exit(2);
+        exit(2);
     }
     return nullptr;
 }
@@ -128,7 +128,7 @@ Node* InfixParser::parse(std::ostream& os) {
     root = expression(os);
     if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
         os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
-        //exit(2);
+        exit(2);
     }
     return root;
 }
