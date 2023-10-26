@@ -11,6 +11,10 @@ std::unordered_map<std::string, double> variables;
 /*Evaluates the expression stored in the AST through recursion and returns a value.
 Throws errors when appropriate. */
 double evaluate(Node* node, std::ostream& os = std::cerr) {
+    if (!node) {
+        os << "Error: Null node encountered while evaluating.\n";
+        exit(1);
+    }
 
     switch (node->type) {
         case NodeType::NUMBER:
@@ -29,7 +33,7 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
                 double divisor = evaluate(node->children[1], os);
                 if (divisor == 0) {
                     os << "Error: Division by zero.\n";
-                    throw;
+                    exit(1);
                 }
                 return evaluate(node->children[0], os) / divisor;
             }
@@ -40,14 +44,14 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
                 return it->second;
             } else {
                 os << "Error: Undefined variable " << node->identifier << "\n";
-                throw;
+                exit(1);
             }
         }
         case NodeType::ASSIGN:
         {
             if (node->children[0]->type != NodeType::IDENTIFIER) {
                 os << "Error: Assignment must be to an identifier.\n";
-                throw;
+                exit(1);
             }
             double value = evaluate(node->children[1], os);
             variables[node->children[0]->identifier] = value;
@@ -55,7 +59,7 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
         }
         default:
             os << "Error: Unknown node type encountered while evaluating.\n";
-            throw;
+            exit(1);
     }
     return 0.0;  // Should not reach here.
 }
@@ -106,7 +110,7 @@ string infixString(Node* node, std::ostream& os = std::cout) {
             break;
         default:
             os << "Error: Unknown node type encountered while constructing infix string.\n";
-            throw;
+            exit(1);
     }
     return result;
 }
@@ -122,15 +126,11 @@ int main() {
         Lexer lexer(inputLine);
         auto tokens = lexer.tokenize();
         InfixParser parser(tokens);
-        try {
-            Node* root = parser.parse(os);
-            os << infixString(root, os) << endl;
-            double result = evaluate(root, os);
-            os << result << endl;
-        }
-        catch (const std::exception& e) {
-            continue;
-        }
+        Node* root = parser.parse(os);
+        os << infixString(root, os) << endl;
+        double result = evaluate(root, os);
+        os << result << endl;
     }
     return 0;
 }
+
