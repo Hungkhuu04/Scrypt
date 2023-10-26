@@ -24,12 +24,13 @@ class Parser {
 private:
     vector<Token> tokens;
     int currentTokenIndex;
+    int currentLineNumber;
     Node* root;
     Token& currentToken();
     Node* expression(std::ostream& os = std::cerr);
     Node* number(std::ostream& os = std::cerr);
 public:
-    Parser(const vector<Token>& tokens);
+    Parser(const vector<Token>& tokens, int lineCount);
     ~Parser();
     Node* parse(std::ostream& os = std::cerr);
     void clearTree(Node* node);

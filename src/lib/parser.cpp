@@ -5,7 +5,8 @@
 
 //Used for accessing current token. 
 
-Parser::Parser(const std::vector<Token> &tokens) : tokens(tokens), currentTokenIndex(0) {}
+Parser::Parser(const std::vector<Token> &tokens, int lineCount) 
+    : tokens(tokens), currentTokenIndex(0), currentLineNumber(lineCount) {}
 
 Token &Parser::currentToken(){
     return tokens[currentTokenIndex];
@@ -22,25 +23,25 @@ Node *Parser::expression(std::ostream &os){
     if (currentToken().type == TokenType::LEFT_PAREN){
         currentTokenIndex++;
         Node *node = nullptr;
-        switch (currentToken().type){
-        case TokenType::ADD:
-            node = new Node(NodeType::ADD);
-            break;
-        case TokenType::SUBTRACT:
-            node = new Node(NodeType::SUBTRACT);
-            break;
-        case TokenType::MULTIPLY:
-            node = new Node(NodeType::MULTIPLY);
-            break;
-        case TokenType::DIVIDE:
-            node = new Node(NodeType::DIVIDE);
-            break;
-        case TokenType::ASSIGN:
-            node = new Node(NodeType::ASSIGN);
-            break;
-        default:
-            os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
-            exit(2);
+        switch (currentToken().type) {
+            case TokenType::ADD:
+                node = new Node(NodeType::ADD);
+                break;
+            case TokenType::SUBTRACT:
+                node = new Node(NodeType::SUBTRACT);
+                break;
+            case TokenType::MULTIPLY:
+                node = new Node(NodeType::MULTIPLY);
+                break;
+            case TokenType::DIVIDE:
+                node = new Node(NodeType::DIVIDE);
+                break;
+            case TokenType::ASSIGN:
+                node = new Node(NodeType::ASSIGN);
+                break;
+            default:
+                os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
+                exit(2);
         }
         currentTokenIndex++;
         if (currentToken().type != TokenType::NUMBER && currentToken().type != TokenType::LEFT_PAREN && currentToken().type != TokenType::IDENTIFIER){
@@ -52,12 +53,11 @@ Node *Parser::expression(std::ostream &os){
         }
         currentTokenIndex++;
         return node;
-    }
-    else if (currentToken().type == TokenType::IDENTIFIER){
+    } else if (currentToken().type == TokenType::IDENTIFIER){
         Node *node = new Node(NodeType::IDENTIFIER, 0, currentToken().value);
         currentTokenIndex++;
         return node;
-    }else{
+    } else {
         return number(os);
     }
 }

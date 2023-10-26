@@ -146,14 +146,14 @@ tokens to the AST and the prints out the answer using the evaluator to get the a
 int main() {
     std::ostream& os = std::cout;
     string line;
-    int line_count = 0;
-    
+    int line_count = 1; // Initialize to 1 because line numbering generally starts from 1
+    // Read multiple lines until EOF
     while (getline(cin, line)) {
         if (!line.empty()) {
             Lexer lexer(line);
-            lexer.increaseLine(line_count);
-            auto tokens = lexer.tokenize();
-            Parser parser(tokens);
+            lexer.increaseLine(line_count); // You mentioned this function updates the line count in Lexer
+            auto tokens = lexer.tokenize();            
+            Parser parser(tokens, line_count); // Now, Parser also knows about the line number
             Node* root = parser.parse(os);
             if (root) {
                 os << infixString(root, os) << endl;
@@ -161,7 +161,7 @@ int main() {
                 os << result << std::endl;
             }
         }
-        line_count += 1;
+        line_count++; // Increment the line count after each iteration
     }
     return 0;
 }
