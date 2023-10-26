@@ -145,19 +145,43 @@ The parser calls the tokensize function to create a token of each character. It 
 tokens to the AST and the prints out the answer using the evaluator to get the answer.
 */
 int main() {
-    ostream& os = cout;
-    string inputLine;
+    ostream& os = cout; // output stream
+    string inputLine; // for storing each line of input
+    
+    // Continue reading lines until end-of-file or other termination
     while (getline(cin, inputLine)) {
+        // Skip empty lines
         if (inputLine.empty()) {
             continue;
         }
+        
+        // Tokenize the input line
         Lexer lexer(inputLine);
         auto tokens = lexer.tokenize();
-        Parser parser(tokens);
-        Node* root = parser.parse(os);
-        os << infixString(root, os) << endl;
-        double result = evaluate(root, os);
-        os << result << endl;
+
+        // Initialize a flag for signaling errors
+        bool hasError = false;
+        
+        // Wrap the parsing and evaluation in a try-catch block
+        try {
+            Parser parser(tokens);
+            Node* root = parser.parse(os);
+
+            // Evaluate and print the AST, if parsing was successful
+            double result = evaluate(root, os);
+            os << infixString(root, os) << endl;
+            os << result << endl;
+        } catch (const std::exception& e) {
+            // Handle any standard exceptions here
+            os << "An exception occurred: " << e.what() << endl;
+            hasError = true;
+        }
+
+        // Additional error handling can go here, based on the hasError flag
+        if (hasError) {
+            // Perform any necessary cleanup or additional messaging
+        }
     }
-    return 0;
+    
+    return 0; // exit the program
 }

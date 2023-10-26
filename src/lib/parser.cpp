@@ -51,6 +51,13 @@ Node* Parser::expression(std::ostream& os) {
     } else if (currentToken().type == TokenType::IDENTIFIER) {
         Node* node = new Node(NodeType::IDENTIFIER, 0, currentToken().value);
         currentTokenIndex++;
+
+        // Check if the next token is a RIGHT_PAREN
+        if (currentToken().type != TokenType::RIGHT_PAREN) {
+            os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
+            exit(2);
+        }
+        currentTokenIndex++;
         return node;
     } else {
         return number(os);
