@@ -70,9 +70,6 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
     }
 }
 
-
-
-
 //Takes in a value and converts the input into a usable string format.
 // It ensures that there is the right amount of decimal points
 string formatDecimal(double value) {
@@ -84,7 +81,6 @@ string formatDecimal(double value) {
         return ss.str();
     }
 }
-
 
 /*Takes in a node object and then returns the an expression in infix form. Goes through the AST
 recursively and builds the string representation off the stored expression .*/
@@ -145,43 +141,19 @@ The parser calls the tokensize function to create a token of each character. It 
 tokens to the AST and the prints out the answer using the evaluator to get the answer.
 */
 int main() {
-    ostream& os = cout; // output stream
-    string inputLine; // for storing each line of input
-    
-    // Continue reading lines until end-of-file or other termination
+    ostream& os = cout;
+    string inputLine;
     while (getline(cin, inputLine)) {
-        // Skip empty lines
         if (inputLine.empty()) {
             continue;
         }
-        
-        // Tokenize the input line
         Lexer lexer(inputLine);
         auto tokens = lexer.tokenize();
-
-        // Initialize a flag for signaling errors
-        bool hasError = false;
-        
-        // Wrap the parsing and evaluation in a try-catch block
-        try {
-            Parser parser(tokens);
-            Node* root = parser.parse(os);
-
-            // Evaluate and print the AST, if parsing was successful
-            double result = evaluate(root, os);
-            os << infixString(root, os) << endl;
-            os << result << endl;
-        } catch (const std::exception& e) {
-            // Handle any standard exceptions here
-            os << "An exception occurred: " << e.what() << endl;
-            hasError = true;
-        }
-
-        // Additional error handling can go here, based on the hasError flag
-        if (hasError) {
-            // Perform any necessary cleanup or additional messaging
-        }
+        Parser parser(tokens);
+        Node* root = parser.parse(os);
+        os << infixString(root, os) << endl;
+        double result = evaluate(root, os);
+        os << result << endl;
     }
-    
-    return 0; // exit the program
+    return 0;
 }
