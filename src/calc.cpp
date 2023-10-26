@@ -11,10 +11,6 @@ std::unordered_map<std::string, double> variables;
 /*Evaluates the expression stored in the AST through recursion and returns a value.
 Throws errors when appropriate. */
 double evaluate(Node* node, std::ostream& os = std::cerr) {
-    if (!node) {
-        os << "Error: Null node encountered while evaluating.\n";
-        exit(1);
-    }
 
     switch (node->type) {
         case NodeType::NUMBER:
@@ -115,34 +111,27 @@ string infixString(Node* node, std::ostream& os = std::cout) {
     return result;
 }
 
+
 int main() {
-    std::ostream& os = std::cout;
-    string input;
-    string line;
-
-    // Read multiple lines until EOF
-    while (getline(cin, line)) {
-        input += line + "\n";
-    }
-
-    // Split the input into separate expressions by newline
-    stringstream ss(input);
-    while (getline(ss, line)) {
-        // Proceed with parsing and evaluation for each line
-        if (!line.empty()) {
-            Lexer lexer(line);
-            auto tokens = lexer.tokenize();
-            InfixParser parser(tokens);
-            Node* root = parser.parse(os);
-
-            if (root) { // Check if the root is not null before proceeding
-                os << infixString(root, os) << std::endl;
-                double result = evaluate(root, os);
-                os << result << std::endl;
-            }
+    ostream& os = cout;
+    string inputLine;
+    while (getline(cin, inputLine)) {
+        if (inputLine.empty()) {
+            continue;
+        }
+        Lexer lexer(inputLine);
+        auto tokens = lexer.tokenize();
+        InfixParser parser(tokens);
+        Node* root = parser.parse(os);
+        if (root == nullptr) {
+            os << "An error occurred while parsing. Skipping this input.\n";
+            continue; // Skip to next iteration
+        }
+        os << infixString(root, os) << endl;
+        double result = evaluate(root, os);
+        if (result != 0.0) { // Change this condition as per your logic to identify error
+            os << result << endl;
         }
     }
-
     return 0;
 }
-

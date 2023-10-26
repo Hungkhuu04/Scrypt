@@ -133,7 +133,6 @@ Node* InfixParser::parse(std::ostream& os) {
     return root;
 }
 
-
 // This function recursively deallocates memory used by the nodes in the AST, ensuring no memory leaks.
 void InfixParser::clearTree(Node* node) {
     if (!node) return;
@@ -141,6 +140,15 @@ void InfixParser::clearTree(Node* node) {
         clearTree(child);
     }
     delete node;
+}
+
+std::vector<Node*> InfixParser::parseMultiple(std::ostream& os) {
+    std::vector<Node*> roots;
+    while (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
+        Node* root = parse(os);
+        roots.push_back(root);
+    }
+    return roots;
 }
 
 // Destructor for the Parser class. It ensures that the memory used by the AST is deallocated.

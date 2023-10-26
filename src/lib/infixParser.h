@@ -36,6 +36,7 @@ public:
     InfixParser(const std::vector<Token>& tokens);
     ~InfixParser();
     Node* parse(std::ostream& os = std::cerr);
+    std::vector<Node*>parseMultiple(std::ostream& os);
 };
 
 #endif
