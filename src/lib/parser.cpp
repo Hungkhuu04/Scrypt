@@ -21,8 +21,6 @@ Everytime thers a new braket ( or ) it extends to the children nodes.
 Node *Parser::expression(std::ostream &os){
     if (currentToken().type == TokenType::LEFT_PAREN){
         currentTokenIndex++;
-        
-        // Validate the operator
         Node *node = nullptr;
         switch (currentToken().type){
         case TokenType::ADD:
@@ -45,31 +43,13 @@ Node *Parser::expression(std::ostream &os){
             exit(2);
         }
         currentTokenIndex++;
-        
-        // Validate the first operand
-        if (currentToken().type != TokenType::IDENTIFIER) {
-            os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << ", expected an identifier" << std::endl;
+        if (currentToken().type != TokenType::NUMBER && currentToken().type != TokenType::LEFT_PAREN && currentToken().type != TokenType::IDENTIFIER){
+            os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
             exit(2);
         }
-        node->children.push_back(expression(os));
-        
-        // Loop for other operands and close the parenthesis
-        bool expectCloseParenthesis = false;
-        while (currentToken().type != TokenType::RIGHT_PAREN) {
-            if(expectCloseParenthesis) {
-                os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << ", expected a closing parenthesis" << std::endl;
-                exit(2);
-            }
+        while (currentToken().type != TokenType::RIGHT_PAREN){
             node->children.push_back(expression(os));
-            expectCloseParenthesis = (currentToken().type != TokenType::IDENTIFIER);
         }
-
-        // Check if there is only one operand
-        if (node->children.size() <= 1) {
-            os << "Unexpected closing parenthesis at line " << currentToken().line << " column " << currentToken().column << ": expression must have more than one operand" << std::endl;
-            exit(2);
-        }
-        
         currentTokenIndex++;
         return node;
     }
@@ -77,7 +57,7 @@ Node *Parser::expression(std::ostream &os){
         Node *node = new Node(NodeType::IDENTIFIER, 0, currentToken().value);
         currentTokenIndex++;
         return node;
-    } else {
+    }else{
         return number(os);
     }
 }
