@@ -32,7 +32,6 @@ public:
     Parser(const vector<Token>& tokens);
     ~Parser();
     Node* parse(std::ostream& os = std::cerr);
-    vector<Node*> parseMultiple(std::ostream& os = std::cerr);  // New function
 };
 
 #endif
