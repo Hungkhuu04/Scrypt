@@ -15,6 +15,7 @@ If the token type is invalid it wont add it and then throw the error.
 Everytime thers a new braket ( or ) it extends to the children nodes.
 */
 
+
 Node *Parser::expression(std::ostream &os){
     if (currentToken().type == TokenType::LEFT_PAREN){
         currentTokenIndex++;
@@ -39,7 +40,6 @@ Node *Parser::expression(std::ostream &os){
             os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
             exit(2);
         }
-
         currentTokenIndex++;
         if (currentToken().type != TokenType::NUMBER && currentToken().type != TokenType::LEFT_PAREN && currentToken().type != TokenType::IDENTIFIER){
             os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
@@ -59,6 +59,8 @@ Node *Parser::expression(std::ostream &os){
         return number(os);
     }
 }
+
+
 
 // This function is responsible for parsing a number token into a Node object.
 Node *Parser::number(std::ostream &os){
@@ -96,7 +98,6 @@ void Parser::clearTree(Node *node){
 }
 
 // Desctructor
-
 Parser::~Parser(){
     clearTree(root);
 }

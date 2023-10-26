@@ -4,13 +4,16 @@
 #include<sstream>
 #include <unordered_map>
 
-
 using namespace std;
 
 std::unordered_map<string, double> variables;
 
+
+
 /* Evaluates the expression stored in the AST through recursion and returns a value.
+
    Throws errors when appropriate. */
+
 double evaluate(Node* node, std::ostream& os = std::cerr) {
     switch (node->type) {
         case NodeType::IDENTIFIER:
@@ -72,8 +75,11 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
     }
 }
 
+
+
 /* Takes in a value and converts the input into a usable string format.
    It ensures that there is the right amount of decimal points */
+
 string formatDecimal(double value) {
     if (value == static_cast<int>(value)) {
         return to_string(static_cast<int>(value));
@@ -84,8 +90,12 @@ string formatDecimal(double value) {
     }
 }
 
+
+
 /* Takes in a node object and then returns the expression in infix form. Goes through the AST
+
    recursively and builds the string representation of the stored expression. */
+
 string infixString(Node* node, std::ostream& os = std::cout) {
     if (!node) return "";
     switch (node->type) {
@@ -137,21 +147,26 @@ string infixString(Node* node, std::ostream& os = std::cout) {
     }
 }
 
+
+
 /*
+
 Reads the cin and creates the expression ready to send it to the parser.
+
 The parser calls the tokensize function to create a token of each character. It adds the 
+
 tokens to the AST and the prints out the answer using the evaluator to get the answer.
+
 */
+
 int main() {
     std::ostream& os = std::cout;
     string input;
     string line;
-
     // Read multiple lines until EOF
     while (getline(cin, line)) {
         input += line + "\n";
     }
-
     // Split the input into separate expressions by newline
     stringstream ss(input);
     while (getline(ss, line)) {
@@ -163,12 +178,11 @@ int main() {
             Node* root = parser.parse(os);
 
             if (root) { // Check if the root is not null before proceeding
-                os << infixString(root, os) << std::endl;
+                os << "Infix form: " << infixString(root, os) << std::endl;
                 double result = evaluate(root, os);
-                os << result << std::endl;
+                os << "Result: " << result << std::endl;
             }
         }
     }
-
     return 0;
 }
