@@ -164,25 +164,4 @@ int main() {
         line_count += 1;
     }
     return 0;
-}int main() {
-    std::ostream& os = std::cout;
-    string line;
-    int line_count = 0;
-    
-    while (getline(cin, line)) {
-        if (!line.empty()) {
-            Lexer lexer(line);
-            lexer.increaseLine(line_count);
-            auto tokens = lexer.tokenize();
-            Parser parser(tokens);
-            Node* root = parser.parse(os);
-            if (root) {
-                os << infixString(root, os) << endl;
-                double result = evaluate(root, os);
-                os << result << std::endl;
-            }
-        }
-        line_count += 1;
-    }
-    return 0;
 }
