@@ -16,7 +16,7 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
                 return variables[node->identifier];
             } else {
                 os << "Runtime error: undefined variable " << node->identifier << std::endl;
-                exit(3);
+                exit(2);
             }
         case NodeType::ASSIGN: {
             double value = evaluate(node->children.back(), os);
@@ -25,7 +25,7 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
                     variables[node->children[i]->identifier] = value;
                 } else {
                     os << "Runtime error: left-hand side of assignment must be variable." << std::endl;
-                    exit(3);
+                    exit(2);
                 }
             }
             return value;
