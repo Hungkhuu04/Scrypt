@@ -5,18 +5,17 @@
 #include<iostream>
 
 // Parser Header file
-
 using namespace std;
 enum class NodeType {
-    ADD, SUBTRACT, MULTIPLY, DIVIDE, NUMBER
-
+    ADD, SUBTRACT, MULTIPLY, DIVIDE, NUMBER, ASSIGN, IDENTIFIER
 };
 
 struct Node {
     NodeType type;
     double value;
+    string identifier;
     vector<Node*> children;
-    Node(NodeType t, double v = 0) : type(t), value(v) {}
+    Node(NodeType t, double v = 0, const string& id = "") : type(t), value(v), identifier(id) {}
 };
 
 class Parser {
@@ -30,12 +29,10 @@ private:
     void clearTree(Node* node);
 
 public:
-
     Parser(const vector<Token>& tokens);
     ~Parser();
-
     Node* parse(std::ostream& os = std::cerr);
-
+    vector<Node*> parseMultiple(std::ostream& os = std::cerr);  // New function
 };
 
 #endif
