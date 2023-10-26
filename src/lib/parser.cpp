@@ -1,23 +1,27 @@
+// Include the header file "parse.h" which likely contains the declarations for the Parser class and its methods.
 #include "parse.h"
-#include <iostream>
-#include<string>
-#include<iostream>
 
-//Used for accessing current token. 
+// Include necessary standard libraries.
+#include <iostream>    // Provides functionality for standard input/output.
+#include <string>      // Provides the string data type and related functions.
+#include <iostream>    // (Duplicate inclusion, this can be removed.)
+
+// Constructor for the Parser class. Initializes the tokens vector and sets the current token index to 0.
 Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens), currentTokenIndex(0) {}
+
+// Returns the current token being processed.
 Token& Parser::currentToken() {
     return tokens[currentTokenIndex];
 }
 
-/*Parses the expression and sets up the AST. 
-It is achieved by checking the current token type and adding that token to AST
-If the token type is invalid it wont add it and then throw the error.
-Everytime thers a new braket ( or ) it extends to the children nodes.
-*/
+// This function parses an expression and constructs the Abstract Syntax Tree (AST).
+// It checks the current token type and adds the corresponding node to the AST.
+// If the token type is invalid, it outputs an error message.
 Node* Parser::expression(std::ostream& os) {
     if (currentToken().type == TokenType::LEFT_PAREN) {
         currentTokenIndex++;
         Node* node = nullptr;
+        // Depending on the operator type, create a new node for the AST.
         switch (currentToken().type) {
             case TokenType::ADD:
                 node = new Node(NodeType::ADD);
@@ -36,10 +40,12 @@ Node* Parser::expression(std::ostream& os) {
                 exit(2);
         }
         currentTokenIndex++;
+        // Check for valid tokens after the operator.
         if (currentToken().type != TokenType::NUMBER && currentToken().type != TokenType::LEFT_PAREN) {
             os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
             exit(2);
         }
+        // Recursively add child nodes to the current node until a right parenthesis is found.
         while (currentToken().type != TokenType::RIGHT_PAREN) {
             node->children.push_back(expression(os));
         }
@@ -50,7 +56,7 @@ Node* Parser::expression(std::ostream& os) {
     }
 }
 
-//This function is responsible for parsing a number token into a Node object.
+// This function parses a number token and returns a new Node object representing that number.
 Node* Parser::number(std::ostream& os) {
     if (currentToken().type == TokenType::NUMBER) {
         Node* node = new Node(NodeType::NUMBER, std::stod(currentToken().value));
@@ -61,10 +67,9 @@ Node* Parser::number(std::ostream& os) {
         exit(2);
         return 0;
     }
-
 }
 
-//Resposible for parsing the tokens and setting up the AST. 
+// This function initiates the parsing process and returns the root of the AST.
 Node* Parser::parse(std::ostream& os) {
     root = expression(os);
     if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
@@ -74,7 +79,7 @@ Node* Parser::parse(std::ostream& os) {
     return root;
 }
 
-//Recursively deallocates memory being used by Nodes in the AST. Makes sure of no memory leaks.
+// This function recursively deallocates memory used by the nodes in the AST, ensuring no memory leaks.
 void Parser::clearTree(Node* node) {
     if (!node) return;
     for (Node* child : node->children) {
@@ -83,9 +88,7 @@ void Parser::clearTree(Node* node) {
     delete node;
 }
 
-//Desctructor 
+// Destructor for the Parser class. It ensures that the memory used by the AST is deallocated.
 Parser::~Parser() {
     clearTree(root);
 }
-
-
