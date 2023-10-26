@@ -5,11 +5,13 @@
 #include<iostream>
 
 // Parser Header file
+
+// Parser Header file
+
 using namespace std;
 enum class NodeType {
     ADD, SUBTRACT, MULTIPLY, DIVIDE, NUMBER, ASSIGN, IDENTIFIER
 };
-
 struct Node {
     NodeType type;
     double value;
@@ -26,12 +28,11 @@ private:
     Token& currentToken();
     Node* expression(std::ostream& os = std::cerr);
     Node* number(std::ostream& os = std::cerr);
-    void clearTree(Node* node);
-
 public:
     Parser(const vector<Token>& tokens);
     ~Parser();
     Node* parse(std::ostream& os = std::cerr);
+    void clearTree(Node* node);
 };
 
 #endif

@@ -8,7 +8,6 @@ using namespace std;
 Lexer::Lexer(const string& input) : inputStream(input), line(1), col(1) {}
 
 // Outputs the Error Code when there is an incorrect S expression
-
 bool Lexer::isSyntaxError(std::vector<Token>& tokens) {
     for (const auto& token : tokens) {
         if (token.type == TokenType::UNKNOWN && token.value != "END") {
@@ -36,6 +35,11 @@ bool Lexer::isDigit(char c) {
     return isdigit(c) || c == '.';
 }
 
+void Lexer::increaseLine(int line_count) {
+    for(int i = 0; i < line_count; i++ ){
+        line++;
+    }
+}
 
 //Checks if the character is a valid operator. 
 bool Lexer::isOperator(char c) {
@@ -66,9 +70,7 @@ Token Lexer::number() {
         return {TokenType::UNKNOWN, num, line, startCol};
     }
     return {TokenType::NUMBER, num, line, startCol};
-
 }
-
 //Responsible for creating and tokenizing operators.
 Token Lexer::op() {
     int startCol = col;
@@ -106,15 +108,13 @@ std::vector<Token> Lexer::tokenize() {
         } else if (isOperator(c)) {
             tokens.push_back(op());
         } else if (isalpha(c) || c == '_') {
-            // Recognize and tokenize identifiers (variables)
             std::string identifier;
-            int identifierStartCol = col; // Store the starting column position
+            int identifierStartCol = col;
             while (isalnum(inputStream.peek()) || inputStream.peek() == '_') {
                 identifier += consume();
             }
             tokens.push_back({TokenType::IDENTIFIER, identifier, line, identifierStartCol});
         } else if (c == '=') {
-            // Recognize and tokenize the assignment operator (=)
             tokens.push_back({TokenType::ASSIGN, "=", line, col});
             consume();
         } else {
@@ -128,7 +128,3 @@ std::vector<Token> Lexer::tokenize() {
     tokens.push_back({TokenType::UNKNOWN, "END", line, col});
     return tokens;
 }
-
-
-
-

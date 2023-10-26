@@ -1,8 +1,10 @@
 #include "parse.h"
 #include <iostream>
-#include <string>
-#include <iostream>
-// Used for accessing current token.
+#include<string>
+#include<iostream>
+
+//Used for accessing current token. 
+
 Parser::Parser(const std::vector<Token> &tokens) : tokens(tokens), currentTokenIndex(0) {}
 
 Token &Parser::currentToken(){
@@ -60,8 +62,6 @@ Node *Parser::expression(std::ostream &os){
     }
 }
 
-
-
 // This function is responsible for parsing a number token into a Node object.
 Node *Parser::number(std::ostream &os){
     if (currentToken().type == TokenType::NUMBER){
@@ -76,7 +76,6 @@ Node *Parser::number(std::ostream &os){
 }
 
 // Resposible for parsing the tokens and setting up the AST.
-
 Node *Parser::parse(std::ostream &os){
     root = expression(os);
     if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END"){
@@ -87,7 +86,6 @@ Node *Parser::parse(std::ostream &os){
 }
 
 // Recursively deallocates memory being used by Nodes in the AST. Makes sure of no memory leaks.
-
 void Parser::clearTree(Node *node){
     if (!node)
         return;
