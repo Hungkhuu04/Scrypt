@@ -36,7 +36,11 @@ bool Lexer::isDigit(char c) {
     return isdigit(c) || c == '.';
 }
 
-
+void Lexer::increaseLine(int line_count) {
+    for(int i = 0; i < line_count; i++ ){
+        line++;
+    }
+}
 //Checks if the character is a valid operator. 
 bool Lexer::isOperator(char c) {
     return c == '+' || c == '-' || c == '*' || c == '/';
@@ -126,3 +130,4 @@ std::vector<Token> Lexer::tokenize() {
     tokens.push_back({TokenType::UNKNOWN, "END", line, col});
     return tokens;
 }
+

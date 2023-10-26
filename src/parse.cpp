@@ -2,12 +2,39 @@
 #include <iostream>
 #include<string>
 #include<sstream>
+#include <unordered_map>
+
 using namespace std;
 
-/*Evaluates the expression stored in the AST through recursion and returns a value.
-Throws errors when appropiate. */
+std::unordered_map<string, double> variables;
+
+
+
+/* Evaluates the expression stored in the AST through recursion and returns a value.
+
+   Throws errors when appropriate. */
+
 double evaluate(Node* node, std::ostream& os = std::cerr) {
     switch (node->type) {
+        case NodeType::IDENTIFIER:
+            if (variables.find(node->identifier) != variables.end()) {
+                return variables[node->identifier];
+            } else {
+                os << "Runtime error: undefined variable " << node->identifier << std::endl;
+                exit(2);
+            }
+        case NodeType::ASSIGN: {
+            double value = evaluate(node->children.back(), os);
+            for (size_t i = 0; i < node->children.size() - 1; ++i) {
+                if (node->children[i]->type == NodeType::IDENTIFIER) {
+                    variables[node->children[i]->identifier] = value;
+                } else {
+                    os << "Runtime error: left-hand side of assignment must be variable." << std::endl;
+                    exit(2);
+                }
+            }
+            return value;
+        }
         case NodeType::NUMBER:
             return node->value;
         case NodeType::ADD: {
@@ -50,9 +77,9 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
 
 
 
+/* Takes in a value and converts the input into a usable string format.
+   It ensures that there is the right amount of decimal points */
 
-//Takes in a value and converts the input into a usable string format.
-// It ensures that there is the right amount of decimal points
 string formatDecimal(double value) {
     if (value == static_cast<int>(value)) {
         return to_string(static_cast<int>(value));
@@ -64,8 +91,11 @@ string formatDecimal(double value) {
 }
 
 
-/*Takes in a node object and then returns the an expression in infix form. Goes through the AST
-recursively and builds the string representation off the stored expression .*/
+
+/* Takes in a node object and then returns the expression in infix form. Goes through the AST
+
+   recursively and builds the string representation of the stored expression. */
+
 string infixString(Node* node, std::ostream& os = std::cout) {
     if (!node) return "";
     switch (node->type) {
@@ -100,32 +130,57 @@ string infixString(Node* node, std::ostream& os = std::cout) {
             result += ")";
             return result;
         }
+        case NodeType::ASSIGN: {
+            string result = "";
+            for (size_t i = 0; i < node->children.size(); ++i) {
+                result += infixString(node->children[i], os);
+                if (i != node->children.size() - 1) {
+                    result += " = ";
+                }
+            }
+            return "(" + result + ")";
+        }
+        case NodeType::IDENTIFIER:
+            return node->identifier;
         default:
             return "";
     }
 }
 
+
+
 /*
+
 Reads the cin and creates the expression ready to send it to the parser.
+
 The parser calls the tokensize function to create a token of each character. It adds the 
+
 tokens to the AST and the prints out the answer using the evaluator to get the answer.
+
 */
 
 int main() {
     std::ostream& os = std::cout;
-    string input;
-    char ch;
-    while (cin.get(ch)) {
-        input += ch;
+    string line;
+    int line_count = 0;
+    // Read multiple lines until EOF
+    while (getline(cin, line)) {
+        if (!line.empty()) {
+            Lexer lexer(line);
+            lexer.increaseLine(line_count);
+            auto tokens = lexer.tokenize();
+            
+
+            Parser parser(tokens);
+            Node* root = parser.parse(os);
+
+            if (root) {
+                os << infixString(root, os) << endl;
+                double result = evaluate(root, os);
+                os << result << std::endl;
+            }
+        }
+        line_count += 1;
     }
-    Lexer lexer(input);
-    auto tokens = lexer.tokenize();
-    Parser parser(tokens);
-    Node* root = parser.parse(os);
-    os << infixString(root, os) << std::endl;
-    double result = evaluate(root, os);
-    os << result << std::endl;
     return 0;
-
 }
-

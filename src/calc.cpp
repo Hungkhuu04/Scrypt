@@ -29,7 +29,7 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
                 double divisor = evaluate(node->children[1], os);
                 if (divisor == 0) {
                     os << "Error: Division by zero.\n";
-                    exit(1);
+                    throw;
                 }
                 return evaluate(node->children[0], os) / divisor;
             }
@@ -40,14 +40,14 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
                 return it->second;
             } else {
                 os << "Error: Undefined variable " << node->identifier << "\n";
-                exit(1);
+                throw;
             }
         }
         case NodeType::ASSIGN:
         {
             if (node->children[0]->type != NodeType::IDENTIFIER) {
                 os << "Error: Assignment must be to an identifier.\n";
-                exit(1);
+                throw;
             }
             double value = evaluate(node->children[1], os);
             variables[node->children[0]->identifier] = value;
@@ -55,7 +55,7 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
         }
         default:
             os << "Error: Unknown node type encountered while evaluating.\n";
-            exit(1);
+            throw;
     }
     return 0.0;  // Should not reach here.
 }
@@ -106,7 +106,7 @@ string infixString(Node* node, std::ostream& os = std::cout) {
             break;
         default:
             os << "Error: Unknown node type encountered while constructing infix string.\n";
-            exit(1);
+            throw;
     }
     return result;
 }
@@ -122,15 +122,14 @@ int main() {
         Lexer lexer(inputLine);
         auto tokens = lexer.tokenize();
         InfixParser parser(tokens);
-        Node* root = parser.parse(os);
-        if (root == nullptr) {
-            os << "An error occurred while parsing. Skipping this input.\n";
-            continue; // Skip to next iteration
-        }
-        os << infixString(root, os) << endl;
-        double result = evaluate(root, os);
-        if (result != 0.0) { // Change this condition as per your logic to identify error
+        try {
+            Node* root = parser.parse(os);
+            os << infixString(root, os) << endl;
+            double result = evaluate(root, os);
             os << result << endl;
+        }
+        catch (const std::exception& e) {
+            continue;
         }
     }
     return 0;

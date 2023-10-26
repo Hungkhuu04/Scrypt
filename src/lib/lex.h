@@ -11,6 +11,7 @@ class Lexer {
 public:
     Lexer(const std::string& input);
     std::vector<Token> tokenize();
+    void increaseLine(int line_count);
 
 private:
     bool isSyntaxError(std::vector<Token>& tokens);
