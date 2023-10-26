@@ -118,16 +118,31 @@ string infixString(Node* node, std::ostream& os = std::cout) {
 int main() {
     std::ostream& os = std::cout;
     string input;
-    char ch;
-    while (cin.get(ch)) {
-        input += ch;
+    string line;
+
+    // Read multiple lines until EOF
+    while (getline(cin, line)) {
+        input += line + "\n";
     }
-    Lexer lexer(input);
-    auto tokens = lexer.tokenize();
-    InfixParser parser(tokens);
-    Node* root = parser.parse(os);
-    os << infixString(root, os) << std::endl;
-    double result = evaluate(root, os);
-    os << result << std::endl;
+
+    // Split the input into separate expressions by newline
+    stringstream ss(input);
+    while (getline(ss, line)) {
+        // Proceed with parsing and evaluation for each line
+        if (!line.empty()) {
+            Lexer lexer(line);
+            auto tokens = lexer.tokenize();
+            InfixParser parser(tokens);
+            Node* root = parser.parse(os);
+
+            if (root) { // Check if the root is not null before proceeding
+                os << infixString(root, os) << std::endl;
+                double result = evaluate(root, os);
+                os << result << std::endl;
+            }
+        }
+    }
+
     return 0;
 }
+
