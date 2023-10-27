@@ -37,17 +37,41 @@ Node *Parser::expression(std::ostream &os){
                 node = new Node(NodeType::DIVIDE);
                 break;
             case TokenType::ASSIGN:
-                node = new Node(NodeType::ASSIGN);
+                {
+                    node = new Node(NodeType::ASSIGN);
+                    currentTokenIndex++;
+                    if (currentToken().type != TokenType::IDENTIFIER) {
+                        os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
+                        exit(2);
+                    }
+
+                    bool nonIdentifierEncountered = false;
+
+                    while (currentToken().type != TokenType::RIGHT_PAREN) {
+                        if (nonIdentifierEncountered && currentToken().type != TokenType::RIGHT_PAREN) {
+                            os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
+                            exit(2);
+                        }
+
+                        node->children.push_back(expression(os));
+
+                        if (node->children.back()->type != NodeType::IDENTIFIER) {
+                            nonIdentifierEncountered = true;
+                        }
+                    }
+
+                    if (node->children.size() <= 1) {
+                        os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
+                        exit(2);
+                    }
+
+                    currentTokenIndex++;
+                }
                 break;
             default:
-                os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
-                exit(2);
+                break;
         }
         currentTokenIndex++;
-        if (currentToken().type != TokenType::NUMBER && currentToken().type != TokenType::LEFT_PAREN && currentToken().type != TokenType::IDENTIFIER){
-            os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
-            exit(2);
-        }
         while (currentToken().type != TokenType::RIGHT_PAREN){
             node->children.push_back(expression(os));
         }
@@ -59,19 +83,6 @@ Node *Parser::expression(std::ostream &os){
         return node;
     } else {
         return number(os);
-    }
-}
-
-// This function is responsible for parsing a number token into a Node object.
-Node *Parser::number(std::ostream &os){
-    if (currentToken().type == TokenType::NUMBER){
-        Node *node = new Node(NodeType::NUMBER, std::stod(currentToken().value));
-        currentTokenIndex++;
-        return node;
-    }else{
-        os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
-        exit(2);
-        return 0;
     }
 }
 
@@ -98,4 +109,15 @@ void Parser::clearTree(Node *node){
 // Desctructor
 Parser::~Parser(){
     clearTree(root);
+}
+
+Node *Parser::number(std::ostream &os) {
+    if (currentToken().type == TokenType::NUMBER) {
+        Node *node = new Node(NodeType::NUMBER, std::stod(currentToken().value));
+        currentTokenIndex++;
+        return node;
+    } else {
+        os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
+        exit(2);
+    }
 }
