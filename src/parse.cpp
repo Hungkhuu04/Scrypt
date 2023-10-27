@@ -146,7 +146,7 @@ tokens to the AST and the prints out the answer using the evaluator to get the a
 int main() {
     std::ostream& os = std::cout;
     string line;
-    int line_count = 1; // Initialize to 1 because line numbering generally starts from 1
+    int line_count = 0; // Initialize to 1 because line numbering generally starts from 1
     // Read multiple lines until EOF
     while (getline(cin, line)) {
         if (!line.empty()) {
