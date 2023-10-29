@@ -32,6 +32,7 @@ public:
     ~Parser();
     Node* parse(std::ostream& os = std::cerr);
     void clearTree(Node* node);
+    
 };
 
 #endif

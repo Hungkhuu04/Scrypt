@@ -123,14 +123,18 @@ int main() {
         if (inputLine.empty()) {
             continue;
         }
-        Lexer lexer(inputLine);
-        auto tokens = lexer.tokenize();
-        InfixParser parser(tokens);
-        Node* root = parser.parse(os);
-        os << infixString(root, os) << endl;
-        double result = evaluate(root, os);
-        os << result << endl;
+        
+        try {  // <-- Begin try block
+            Lexer lexer(inputLine);
+            auto tokens = lexer.tokenize();
+            InfixParser parser(tokens);
+            Node* root = parser.parse(os);
+            os << infixString(root, os) << endl;
+            double result = evaluate(root, os);
+            os << result << endl;
+        } catch (const std::runtime_error& e) {  // <-- Catch exceptions
+            os << "Exception caught: " << e.what() << endl;
+        }
     }
     return 0;
 }
-

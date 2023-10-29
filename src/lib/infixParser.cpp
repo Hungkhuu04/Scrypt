@@ -2,6 +2,7 @@
 #include "infixParser.h"
 #include <iostream>    
 #include <string>      
+#include <stdexcept>
 
 // Constructor for the Parser class. Initializes the tokens vector and sets the current token index to 0.
 InfixParser::InfixParser(const std::vector<Token>& tokens) : tokens(tokens), currentTokenIndex(0) {}
@@ -39,8 +40,7 @@ Node* InfixParser::expression(std::ostream& os) {
     }
     if (currentToken().type == TokenType::ASSIGN) {
         if (node->type != NodeType::IDENTIFIER) {
-            os << "Error: Assignment must be to an identifier.\n";
-            exit(1);
+            throw std::runtime_error("Error: Assignment must be to an identifier."); // <-- Throw exception
         }
         currentTokenIndex++; //consume or move to next token
         Node* valueNode = expression(os);
@@ -73,8 +73,7 @@ Node* InfixParser::factor(std::ostream& os) {
 
         //check if there's a right parenthesis
         if (currentToken().type != TokenType::RIGHT_PAREN){
-            os << "Expected closing parenthesis at line " << token.line << " column " << token.column << std::endl;
-            exit(2);
+            throw std::runtime_error("Expected closing parenthesis."); // <-- Throw exception
         }
         currentTokenIndex++; // Consume the right parenthesis.
         return node;
@@ -127,8 +126,7 @@ Node* InfixParser::term(std::ostream& os) {
 Node* InfixParser::parse(std::ostream& os) {
     root = expression(os);
     if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
-        os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
-        exit(2);
+        throw std::runtime_error("Unexpected token at line."); // <-- Throw exception
     }
     return root;
 }
