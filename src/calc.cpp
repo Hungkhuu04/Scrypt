@@ -32,8 +32,7 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
             {
                 double divisor = evaluate(node->children[1], os);
                 if (divisor == 0) {
-                    os << "Error: Division by zero.\n";
-                    exit(1);
+                    throw std::runtime_error("Runtime Error: Division by zero.");
                 }
                 return evaluate(node->children[0], os) / divisor;
             }
@@ -43,15 +42,14 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
             if (it != variables.end()) {
                 return it->second;
             } else {
-                os << "Error: Undefined variable " << node->identifier << "\n";
-                exit(1);
+                throw std::runtime_error("Runtime error: undefined variable " + node->identifier);
             }
         }
         case NodeType::ASSIGN:
         {
             if (node->children[0]->type != NodeType::IDENTIFIER) {
                 os << "Error: Assignment must be to an identifier.\n";
-                exit(1);
+                exit(2);
             }
             double value = evaluate(node->children[1], os);
             variables[node->children[0]->identifier] = value;
@@ -133,7 +131,9 @@ int main() {
             double result = evaluate(root, os);
             os << result << endl;
         } catch (const std::runtime_error& e) {  // <-- Catch exceptions
-            os << "Exception caught: " << e.what() << endl;
+            os << e.what() << endl;
+        } catch (...) { // Catch all other types of exceptions
+            os << "An unknown exception occurred." << endl;
         }
     }
     return 0;
