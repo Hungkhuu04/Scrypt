@@ -40,7 +40,7 @@ Node* InfixParser::expression(std::ostream& os) {
     }
     if (currentToken().type == TokenType::ASSIGN) {
         if (node->type != NodeType::IDENTIFIER) {
-            throw std::runtime_error("Error: Assignment must be to an identifier."); // <-- Throw exception
+            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column));
         }
         currentTokenIndex++; //consume or move to next token
         Node* valueNode = expression(os);

@@ -47,10 +47,6 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
         }
         case NodeType::ASSIGN:
         {
-            if (node->children[0]->type != NodeType::IDENTIFIER) {
-                os << "Error: Assignment must be to an identifier.\n";
-                exit(2);
-            }
             double value = evaluate(node->children[1], os);
             variables[node->children[0]->identifier] = value;
             return value;
