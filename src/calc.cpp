@@ -32,7 +32,7 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
             {
                 double divisor = evaluate(node->children[1], os);
                 if (divisor == 0) {
-                    throw std::runtime_error("Runtime Error: Division by zero.");
+                    throw std::runtime_error("Runtime error: division by zero.");
                 }
                 return evaluate(node->children[0], os) / divisor;
             }
@@ -42,7 +42,7 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
             if (it != variables.end()) {
                 return it->second;
             } else {
-                throw std::runtime_error("Runtime error: undefined variable " + node->identifier);
+                throw std::runtime_error("Runtime error: unknown identifier " + node->identifier);
             }
         }
         case NodeType::ASSIGN:
