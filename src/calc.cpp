@@ -33,7 +33,7 @@ double evaluate(Node* node, std::unordered_map<std::string, double>& tempVariabl
             {
                 double divisor = evaluate(node->children[1], tempVariables, os);
                 if (divisor == 0) {
-                    throw std::runtime_error("Runtime error: division by zero." + '\n');
+                    throw std::runtime_error("Runtime error: division by zero.\n");
                 }
                 return evaluate(node->children[0], tempVariables, os) / divisor;
             }
