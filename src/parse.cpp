@@ -169,7 +169,9 @@ int main() {
             Lexer lexer(line);
             lexer.increaseLine(line_count);
             auto tokens = lexer.tokenize();
-            
+            if (lexer.isSyntaxError(tokens)) {
+                exit(1);
+            }
 
             Parser parser(tokens);
             Node* root = parser.parse(os);
