@@ -1,4 +1,3 @@
-
 // Include the header file "parse.h" which likely contains the declarations for the Parser class and its methods.
 #include "infixParser.h"
 #include <iostream>    
@@ -61,33 +60,31 @@ Node* InfixParser::expression(std::ostream& os) {
 Node* InfixParser::factor(std::ostream& os) {
     Token& token = currentToken();
 
-    //Number tokens
+    // Number tokens
     if (token.type == TokenType::NUMBER) {
         Node* node = new Node(NodeType::NUMBER, std::stod(token.value));
-        currentTokenIndex++; //consume or move to next token
+        currentTokenIndex++;
         return node;
-    // variable tokens
-    } else if (token.type == TokenType::IDENTIFIER) {
+    } 
+    // Variable tokens
+    else if (token.type == TokenType::IDENTIFIER) {
         Node* idNode = new Node(NodeType::IDENTIFIER, 0, token.value);
-        currentTokenIndex++; //consume or move to next token
+        currentTokenIndex++;
         return idNode;
-    //parenthesis stuff
-    } else if (token.type == TokenType::LEFT_PAREN) {
-        unmatchedParentheses++;  // Increment the counter
-        currentTokenIndex++; //consume open parenthesis
-        Node* node = expression(os); //parse expression inside
+    } 
+    // Parenthesis stuff
+    else if (token.type == TokenType::LEFT_PAREN) {
+        unmatchedParentheses++;
+        currentTokenIndex++;
+        Node* node = expression(os);
 
-        //check if there's a right parenthesis
-        if (currentToken().type != TokenType::RIGHT_PAREN){
-            unmatchedParentheses--;  // Decrement the counter because the parenthesis is unmatched
-            clearTree(node); 
-            throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ": " + token.value + "\n");
+        // Only check for the right parenthesis here
+        if (currentToken().type == TokenType::RIGHT_PAREN){
+            unmatchedParentheses--;
+            currentTokenIndex++;
         }
-        unmatchedParentheses--;  // Decrement the counter because the parenthesis is matched
-        currentTokenIndex++; // Consume the right parenthesis.
         return node;
     }
-
     else {
         throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ": " + token.value + "\n");
     }
@@ -132,7 +129,7 @@ Node* InfixParser::parse(std::ostream& os) {
     try {
         root = expression(os);
         if (unmatchedParentheses != 0) {
-            throw std::runtime_error("Unmatched parentheses in the expression.");
+            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
         if (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
             throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");

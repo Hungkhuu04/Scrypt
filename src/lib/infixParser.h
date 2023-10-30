@@ -21,6 +21,7 @@ struct Node {
         : type(t), value(v), identifier(id) {}
 };
 
+
 class InfixParser {
 private:
     std::vector<Token> tokens;
