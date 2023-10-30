@@ -23,7 +23,7 @@ Node* InfixParser::expression(std::ostream& os) {
     while (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
         Token op = currentToken(); // store operator token
         currentTokenIndex++;
-                // Check if we reach an 'END' immediately after an operator
+        // Check if we reach an 'END' immediately after an operator
         if (currentToken().value == "END") {
             throw std::runtime_error("Unexpected token at line " + std::to_string(op.line) + " column " + std::to_string(op.column) + ": " + op.value + "\n");
         }
