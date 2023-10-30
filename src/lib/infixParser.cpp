@@ -60,7 +60,7 @@ Node* InfixParser::expression(std::ostream& os) {
 
 Node* InfixParser::factor(std::ostream& os) {
     Token& token = currentToken();
-
+    Node* node = nullptr;
     // Number tokens
     if (token.type == TokenType::NUMBER) {
         Node* node = new Node(NodeType::NUMBER, std::stod(token.value));
@@ -87,6 +87,7 @@ Node* InfixParser::factor(std::ostream& os) {
         return node;
     }
     else {
+        clearTree(node);
         throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ": " + token.value + "\n");
     }
     return nullptr;
