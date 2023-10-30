@@ -83,13 +83,6 @@ Node* InfixParser::factor(std::ostream& os) {
         return node;
     }
 
-    else if (token.type == TokenType::SUBTRACT) {
-        currentTokenIndex++;
-        Node* node = new Node(NodeType::SUBTRACT);
-        node->children.push_back(factor(os));
-        return node;
-    }
-
     else {
         throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ": " + token.value + "\n");
     }
