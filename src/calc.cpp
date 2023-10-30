@@ -7,10 +7,11 @@
 using namespace std;
 
 std::unordered_map<std::string, double> variables;
+std::unordered_map<std::string, double> tempVariables;
 
 /*Evaluates the expression stored in the AST through recursion and returns a value.
 Throws errors when appropriate. */
-double evaluate(Node* node, std::ostream& os = std::cerr) {
+double evaluate(Node* node, std::unordered_map<std::string, double>& tempVariables, std::ostream& os = std::cerr) {
     if (!node) {
         os << "Error: Null node encountered while evaluating.\n";
         exit(1);
@@ -20,21 +21,21 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
         case NodeType::NUMBER:
             return node->value;
         case NodeType::ADD:
-            return evaluate(node->children[0], os) + evaluate(node->children[1], os);
+            return evaluate(node->children[0], tempVariables, os) + evaluate(node->children[1], tempVariables, os);
 
         case NodeType::SUBTRACT:
-            return evaluate(node->children[0], os) - evaluate(node->children[1], os);
+            return evaluate(node->children[0], tempVariables, os) - evaluate(node->children[1], tempVariables, os);
 
         case NodeType::MULTIPLY:
-            return evaluate(node->children[0], os) * evaluate(node->children[1], os);
+            return evaluate(node->children[0], tempVariables, os) * evaluate(node->children[1], tempVariables, os);
 
         case NodeType::DIVIDE:
             {
-                double divisor = evaluate(node->children[1], os);
+                double divisor = evaluate(node->children[1], tempVariables, os);
                 if (divisor == 0) {
                     throw std::runtime_error("Runtime error: division by zero.");
                 }
-                return evaluate(node->children[0], os) / divisor;
+                return evaluate(node->children[0], tempVariables, os) / divisor;
             }
         case NodeType::IDENTIFIER:
         {
@@ -47,8 +48,8 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
         }
         case NodeType::ASSIGN:
         {
-            double value = evaluate(node->children[1], os);
-            variables[node->children[0]->identifier] = value;
+            double value = evaluate(node->children[1], tempVariables, os);
+            tempVariables[node->children[0]->identifier] = value;
             return value;
         }
         default:
@@ -117,18 +118,21 @@ int main() {
         if (inputLine.empty()) {
             continue;
         }
-        
-        try {  // <-- Begin try block
+        std::unordered_map<std::string, double> tempVariables = variables; // Create a temporary copy
+        try {
             Lexer lexer(inputLine);
             auto tokens = lexer.tokenize();
             InfixParser parser(tokens);
             Node* root = parser.parse(os);
             os << infixString(root, os) << endl;
-            double result = evaluate(root, os);
+            
+            double result = evaluate(root, tempVariables, os); // Evaluate using the temporary copy
+            variables = tempVariables; // Update the original variables if successful
             os << result << endl;
-        } catch (const std::runtime_error& e) {  // <-- Catch exceptions
+
+        } catch (const std::runtime_error& e) {
             os << e.what() << endl;
-        } catch (...) { // Catch all other types of exceptions
+        } catch (...) {
             os << "An unknown exception occurred." << endl;
         }
     }

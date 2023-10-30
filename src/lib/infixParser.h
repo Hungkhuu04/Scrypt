@@ -4,6 +4,7 @@
 #include "lex.h"
 #include <vector>
 #include <iostream>
+#include<map>
 
 // Enum representing different node types in the AST
 enum class NodeType {
@@ -36,7 +37,6 @@ public:
     InfixParser(const std::vector<Token>& tokens);
     ~InfixParser();
     Node* parse(std::ostream& os = std::cerr);
-    std::vector<Node*>parseMultiple(std::ostream& os);
 };
 
 #endif
