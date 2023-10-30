@@ -1,3 +1,4 @@
+
 // Include the header file "parse.h" which likely contains the declarations for the Parser class and its methods.
 #include "infixParser.h"
 #include <iostream>    
@@ -23,12 +24,12 @@ Node* InfixParser::expression(std::ostream& os) {
         Token op = currentToken(); // store operator token
         currentTokenIndex++;
         if (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
-            clearTree(node); // Deallocate memory
-            throw std::runtime_error("Unexpected token...");
+            clearTree(node);
+            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
         Node* right = term(os); // get next term
         
-        // Create a new node based on the operator and attach left and right operands.
+        // create a new node based on the operator and attach left and right operands.
         Node* newNode;
         if(op.type == TokenType::ADD) {
             newNode = new Node(NodeType::ADD);
@@ -39,22 +40,22 @@ Node* InfixParser::expression(std::ostream& os) {
         newNode->children.push_back(node);
         newNode->children.push_back(right);
 
-        // Make new node the base for the next iteration.
+        //make new node the base for the next iteration.
         node = newNode;
     }
     if (currentToken().type == TokenType::ASSIGN) {
         if (node->type != NodeType::IDENTIFIER) {
             clearTree(node);  // Clear the memory before throwing
-            throw std::runtime_error("Unexpected token...");
+            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
-        currentTokenIndex++; // Consume or move to next token
+        currentTokenIndex++; //consume or move to next token
         Node* valueNode = expression(os);
         Node* assignNode = new Node(NodeType::ASSIGN);
         assignNode->children.push_back(node);
         assignNode->children.push_back(valueNode);
-        node = assignNode; // Now, 'node' points to the assignment node.
+        node = assignNode;
     }
-    return node; // Returning the node, which becomes part of the tree.
+    return node;
 }
 
 Node* InfixParser::factor(std::ostream& os) {
@@ -72,14 +73,17 @@ Node* InfixParser::factor(std::ostream& os) {
         return idNode;
     //parenthesis stuff
     } else if (token.type == TokenType::LEFT_PAREN) {
+        unmatchedParentheses++;  // Increment the counter
         currentTokenIndex++; //consume open parenthesis
         Node* node = expression(os); //parse expression inside
 
         //check if there's a right parenthesis
         if (currentToken().type != TokenType::RIGHT_PAREN){
+            unmatchedParentheses--;  // Decrement the counter because the parenthesis is unmatched
             clearTree(node); 
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + "\n");
+            throw std::runtime_error("Missing right parenthesis at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + "\n");
         }
+        unmatchedParentheses--;  // Decrement the counter because the parenthesis is matched
         currentTokenIndex++; // Consume the right parenthesis.
         return node;
     }
@@ -107,26 +111,30 @@ Node* InfixParser::term(std::ostream& os) {
         currentTokenIndex++;
 
         Node* newNode = new Node(nodeType);
-        newNode->children.push_back(node);  // first operand
-        newNode->children.push_back(factor(os));  // second operand
+
+        newNode->children.push_back(node); // first operand
+        newNode->children.push_back(factor(os)); // second operand
 
         // Check if a valid right-hand operand was received
         if (newNode->children.back() == nullptr) {
-            clearTree(newNode);  // Also clears `node` because `node` is a child of `newNode`.
+            clearTree(node); 
             throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ": " + token.value + "\n");
         }
 
-        node = newNode;  // Transfer ownership of new memory to `node`.
+        node = newNode;
     }
-
-    return node; 
+    
+    return node;
 }
 
 // This function initiates the parsing process and returns the root of the AST.
 Node* InfixParser::parse(std::ostream& os) {
     try {
         root = expression(os);
-         if (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
+        if (unmatchedParentheses != 0) {
+            throw std::runtime_error("Unmatched parentheses in the expression.");
+        }
+        if (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
             throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
         if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
@@ -140,12 +148,13 @@ Node* InfixParser::parse(std::ostream& os) {
 }
 
 // This function recursively deallocates memory used by the nodes in the AST, ensuring no memory leaks.
-void InfixParser::clearTree(Node* node) {
+void InfixParser::clearTree(Node*& node) {  // Changed node to a reference to a pointer
     if (!node) return;
-    for (Node* child : node->children) {
+    for (Node*& child : node->children) {
         clearTree(child);
     }
     delete node;
+    node = nullptr; 
 }
 
 

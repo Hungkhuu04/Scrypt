@@ -26,6 +26,7 @@ private:
     std::vector<Token> tokens;
     int currentTokenIndex;
     Node* root;
+    int unmatchedParentheses = 0;
 
     Token& currentToken();
     Node* expression(std::ostream& os = std::cerr); //Arithmetic expression like + or -
@@ -36,7 +37,7 @@ public:
     InfixParser(const std::vector<Token>& tokens);
     ~InfixParser();
     Node* parse(std::ostream& os = std::cerr);
-    void clearTree(Node* node);
+    void clearTree(Node*& node);
 };
 
 #endif
