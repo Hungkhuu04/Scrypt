@@ -1,3 +1,4 @@
+
 // Include the header file "parse.h" which likely contains the declarations for the Parser class and its methods.
 #include "infixParser.h"
 #include <iostream>    
@@ -22,12 +23,11 @@ Node* InfixParser::expression(std::ostream& os) {
     while (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
         Token op = currentToken(); // store operator token
         currentTokenIndex++;
-        Node* right = term(os); // get next term
         if (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
             clearTree(node);
-            clearTree(right);
             throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
+        Node* right = term(os); // get next term
         
         // create a new node based on the operator and attach left and right operands.
         Node* newNode;
@@ -45,7 +45,7 @@ Node* InfixParser::expression(std::ostream& os) {
     }
     if (currentToken().type == TokenType::ASSIGN) {
         if (node->type != NodeType::IDENTIFIER) {
-            clearTree(node);
+            clearTree(node);  // Clear the memory before throwing
             throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
         currentTokenIndex++; //consume or move to next token
@@ -116,6 +116,7 @@ Node* InfixParser::term(std::ostream& os) {
         // Check if a valid right-hand operand was received
         if (newNode->children.back() == nullptr) {
             clearTree(node); 
+            clearTree(newNode);
             throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ": " + token.value + "\n");
         }
 
@@ -130,15 +131,12 @@ Node* InfixParser::parse(std::ostream& os) {
     try {
         root = expression(os);
         if (unmatchedParentheses != 0) {
-            clearTree(root);
             throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
         if (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
-            clearTree(root);
             throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
         if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
-            clearTree(root);
             throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
     } catch (const std::runtime_error& e) {
