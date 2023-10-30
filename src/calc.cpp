@@ -13,8 +13,7 @@ std::unordered_map<std::string, double> tempVariables;
 Throws errors when appropriate. */
 double evaluate(Node* node, std::unordered_map<std::string, double>& tempVariables, std::ostream& os = std::cerr) {
     if (!node) {
-        os << "Error: Null node encountered while evaluating.\n";
-        exit(1);
+        throw std::runtime_error("");
     }
 
     switch (node->type) {
