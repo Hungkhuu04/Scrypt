@@ -33,7 +33,7 @@ double evaluate(Node* node, std::unordered_map<std::string, double>& tempVariabl
             {
                 double divisor = evaluate(node->children[1], tempVariables, os);
                 if (divisor == 0) {
-                    throw std::runtime_error("Runtime error: division by zero.");
+                    throw std::runtime_error("Runtime error: division by zero. \n");
                 }
                 return evaluate(node->children[0], tempVariables, os) / divisor;
             }
@@ -43,7 +43,7 @@ double evaluate(Node* node, std::unordered_map<std::string, double>& tempVariabl
             if (it != variables.end()) {
                 return it->second;
             } else {
-                throw std::runtime_error("Runtime error: unknown identifier " + node->identifier);
+                throw std::runtime_error("Runtime error: unknown identifier " + node->identifier + "\n");
             }
         }
         case NodeType::ASSIGN:
@@ -119,6 +119,9 @@ int main() {
         try {
             Lexer lexer(inputLine);
             auto tokens = lexer.tokenize();
+            if (lexer.isSyntaxError(tokens)) {
+                throw std::runtime_error("");
+            }
             InfixParser parser(tokens);
             Node* root = parser.parse(os);
             os << infixString(root, os) << endl;
@@ -127,7 +130,7 @@ int main() {
             os << result << endl;
 
         } catch (const std::runtime_error& e) {
-            os << e.what() << endl;
+            os << e.what();
         } catch (...) {
             os << "An unknown exception occurred." << endl;
         }

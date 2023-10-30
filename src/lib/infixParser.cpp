@@ -43,7 +43,7 @@ Node* InfixParser::expression(std::ostream& os) {
     if (currentToken().type == TokenType::ASSIGN) {
         if (node->type != NodeType::IDENTIFIER) {
             clearTree(node);  // Clear the memory before throwing
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value);
+            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
         currentTokenIndex++; //consume or move to next token
         Node* valueNode = expression(os);
@@ -76,7 +76,7 @@ Node* InfixParser::factor(std::ostream& os) {
 
         //check if there's a right parenthesis
         if (currentToken().type != TokenType::RIGHT_PAREN){
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column));
+            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + "\n");
         }
         currentTokenIndex++; // Consume the right parenthesis.
         return node;
@@ -90,7 +90,7 @@ Node* InfixParser::factor(std::ostream& os) {
     }
 
     else {
-        throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ": " + token.value);
+        throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ": " + token.value + "\n");
     }
     return nullptr;
 }
@@ -129,7 +129,7 @@ Node* InfixParser::parse(std::ostream& os) {
     try {
         root = expression(os);
         if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value);
+            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
     } catch (const std::runtime_error& e) {
         clearTree(root);  // Clear the memory
