@@ -127,7 +127,6 @@ int main() {
             double result = evaluate(root, tempVariables, os); // Evaluate using the temporary copy
             variables = tempVariables; // Update the original variables if successful
             os << result << endl;
-            parser.clearTree(root);
 
         } catch (const std::runtime_error& e) {
             os << e.what();
