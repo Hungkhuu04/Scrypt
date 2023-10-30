@@ -81,7 +81,7 @@ Node* InfixParser::factor(std::ostream& os) {
         if (currentToken().type != TokenType::RIGHT_PAREN){
             unmatchedParentheses--;  // Decrement the counter because the parenthesis is unmatched
             clearTree(node); 
-            throw std::runtime_error("Missing right parenthesis at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + "\n");
+            throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ": " + token.value + "\n");
         }
         unmatchedParentheses--;  // Decrement the counter because the parenthesis is matched
         currentTokenIndex++; // Consume the right parenthesis.
