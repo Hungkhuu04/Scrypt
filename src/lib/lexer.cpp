@@ -1,9 +1,11 @@
+
 #include "lex.h"
 #include <cctype>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 using namespace std;
+
 Lexer::Lexer(const string& input) : inputStream(input), line(1), col(1) {}
 
 // Outputs the Error Code when there is an incorrect S expression
@@ -11,6 +13,7 @@ Lexer::Lexer(const string& input) : inputStream(input), line(1), col(1) {}
 bool Lexer::isSyntaxError(std::vector<Token>& tokens) {
     for (const auto& token : tokens) {
         if (token.type == TokenType::UNKNOWN && token.value != "END") {
+            std::cout << "Syntax error on line " << token.line << " column " << token.column << "." << std::endl;
             return true;
         }
     }
@@ -52,25 +55,23 @@ Token Lexer::number() {
     string num;
     bool hasDecimal = false;
     while (isDigit(inputStream.peek())) {
-        char c = inputStream.peek();
+        char c = consume();
         if (c == '.') {
             if (hasDecimal) {
-                return {TokenType::UNKNOWN, num, line, startCol};
+                return {TokenType::UNKNOWN, num + c, line, col - 1};
             }
             hasDecimal = true;
-            inputStream.get(); // consume the dot
             if (!isdigit(inputStream.peek())) {
-                return {TokenType::UNKNOWN, num + '.', line, startCol};
+                return {TokenType::UNKNOWN, num + c, line, col};
             }
-            inputStream.putback('.'); // put the dot back
         }
-        consume();
         num += c;
     }
     if (num.front() == '.' || num.back() == '.') {
         return {TokenType::UNKNOWN, num, line, startCol};
     }
     return {TokenType::NUMBER, num, line, startCol};
+
 }
 
 //Responsible for creating and tokenizing operators.
@@ -90,34 +91,41 @@ Token Lexer::op() {
 and puts them in a vector.*/
 std::vector<Token> Lexer::tokenize() {
     std::vector<Token> tokens;
-    bool hasError = false; 
-    int lastGoodCol = col;  // New variable to track the column of the last known good token
-
     while (inputStream.peek() != EOF) {
         char c = inputStream.peek();
         if (isspace(c)) {
             consume();
+        } else if (c == '(') {
+            tokens.push_back({TokenType::LEFT_PAREN, "(", line, col});
+            consume();
+        } else if (c == ')') {
+            tokens.push_back({TokenType::RIGHT_PAREN, ")", line, col});
+            consume();
         } else if (isDigit(c)) {
             Token numToken = number();
-            lastGoodCol = col;  // Update last known good column
             if (numToken.type == TokenType::UNKNOWN) {
                 tokens.push_back(numToken);
-                hasError = true;
-            } else {
-                tokens.push_back(numToken);
+                return tokens;
             }
+            tokens.push_back(numToken);
         } else if (isOperator(c)) {
             tokens.push_back(op());
-            lastGoodCol = col;  // Update last known good column
-        } else {
-            tokens.push_back({TokenType::UNKNOWN, string(1, c), line, col});
+        } else if (isalpha(c) || c == '_') {
+            std::string identifier;
+            int identifierStartCol = col;
+            while (isalnum(inputStream.peek()) || inputStream.peek() == '_') {
+                identifier += consume();
+            }
+            tokens.push_back({TokenType::IDENTIFIER, identifier, line, identifierStartCol});
+        } else if (c == '=') {
+            tokens.push_back({TokenType::ASSIGN, "=", line, col});
             consume();
-            hasError = true;  // Set the flag to true
+        } else {
+            tokens.push_back({TokenType::UNKNOWN, std::string(1, c), line, col});
+            consume();
         }
-
-        if (hasError) {
-            errors.push_back("Syntax error on line " + std::to_string(line) + " column " + std::to_string(lastGoodCol+1) + ".");
-            break;
+        if (isSyntaxError(tokens)) {
+            exit(1);
         }
     }
     tokens.push_back({TokenType::UNKNOWN, "END", line, col});
