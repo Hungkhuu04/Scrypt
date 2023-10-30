@@ -31,12 +31,12 @@ private:
     Node* expression(std::ostream& os = std::cerr); //Arithmetic expression like + or -
     Node* term(std::ostream& os = std::cerr); // For multiplication and division
     Node* factor(std::ostream& os = std::cerr); // The most basic element whether it is an expression in parenthesis or numbers or variables.
-    void clearTree(Node* node);
 
 public:
     InfixParser(const std::vector<Token>& tokens);
     ~InfixParser();
     Node* parse(std::ostream& os = std::cerr);
+    void clearTree(Node* node);
 };
 
 #endif
