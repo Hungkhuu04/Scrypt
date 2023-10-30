@@ -36,7 +36,11 @@ bool Lexer::isDigit(char c) {
     return isdigit(c) || c == '.';
 }
 
-
+void Lexer::increaseLine(int line_count) {
+    for(int i = 0; i < line_count; i++ ){
+        line++;
+    }
+}
 //Checks if the character is a valid operator. 
 bool Lexer::isOperator(char c) {
     return c == '+' || c == '-' || c == '*' || c == '/';
@@ -84,8 +88,8 @@ Token Lexer::op() {
 
 /*Is responsible for tokenizing the input stream. Classifies the differnet tokens
 and puts them in a vector.*/
-vector<Token> Lexer::tokenize() {
-    vector<Token> tokens;
+std::vector<Token> Lexer::tokenize() {
+    std::vector<Token> tokens;
     while (inputStream.peek() != EOF) {
         char c = inputStream.peek();
         if (isspace(c)) {
@@ -105,16 +109,21 @@ vector<Token> Lexer::tokenize() {
             tokens.push_back(numToken);
         } else if (isOperator(c)) {
             tokens.push_back(op());
-        } else {
-            tokens.push_back({TokenType::UNKNOWN, string(1, c), line, col});
+        } else if (isalpha(c) || c == '_') {
+            std::string identifier;
+            int identifierStartCol = col;
+            while (isalnum(inputStream.peek()) || inputStream.peek() == '_') {
+                identifier += consume();
+            }
+            tokens.push_back({TokenType::IDENTIFIER, identifier, line, identifierStartCol});
+        } else if (c == '=') {
+            tokens.push_back({TokenType::ASSIGN, "=", line, col});
             consume();
-        }
-        if (isSyntaxError(tokens)) {
-            exit(1);
+        } else {
+            tokens.push_back({TokenType::UNKNOWN, std::string(1, c), line, col});
+            consume();
         }
     }
     tokens.push_back({TokenType::UNKNOWN, "END", line, col});
     return tokens;
 }
-
-
