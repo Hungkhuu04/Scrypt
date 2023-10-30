@@ -18,10 +18,20 @@ If the token type is invalid it wont add it and then throw the error.
 Everytime thers a new braket ( or ) it extends to the children nodes.
 */
 
-
 Node *Parser::expression(std::ostream &os){
+    // If we unexpectedly reach the end of the tokens
+    if (currentToken().type == TokenType::UNKNOWN && currentToken().value == "END") {
+        os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": END" << std::endl;
+        exit(2);
+    }
+
     if (currentToken().type == TokenType::LEFT_PAREN){
         currentTokenIndex++;
+        if (currentTokenIndex >= (tokens.size())) {
+            os << "Unexpected end of tokens" << std::endl;
+            exit(2);
+        }
+
         Node *node = nullptr;
         switch (currentToken().type) {
             case TokenType::ADD:
@@ -37,44 +47,22 @@ Node *Parser::expression(std::ostream &os){
                 node = new Node(NodeType::DIVIDE);
                 break;
             case TokenType::ASSIGN:
-                {
-                    node = new Node(NodeType::ASSIGN);
-                    currentTokenIndex++;
-                    if (currentToken().type != TokenType::IDENTIFIER) {
-                        os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
-                        exit(2);
-                    }
-
-                    bool nonIdentifierEncountered = false;
-
-                    while (currentToken().type != TokenType::RIGHT_PAREN) {
-                        if (nonIdentifierEncountered && currentToken().type != TokenType::RIGHT_PAREN) {
-                            os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
-                            exit(2);
-                        }
-
-                        node->children.push_back(expression(os));
-
-                        if (node->children.back()->type != NodeType::IDENTIFIER) {
-                            nonIdentifierEncountered = true;
-                        }
-                    }
-
-                    if (node->children.size() <= 1) {
-                        os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
-                        exit(2);
-                    }
-
-                    currentTokenIndex++;
-                }
+                node = new Node(NodeType::ASSIGN);
                 break;
             default:
-                break;
+                os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
+                exit(2);
         }
+
         currentTokenIndex++;
         while (currentToken().type != TokenType::RIGHT_PAREN){
+            if (currentTokenIndex >= (tokens.size())) {
+                os << "Unexpected end of tokens" << std::endl;
+                exit(2);
+            }
             node->children.push_back(expression(os));
         }
+
         currentTokenIndex++;
         return node;
     } else if (currentToken().type == TokenType::IDENTIFIER){
@@ -98,8 +86,7 @@ Node *Parser::parse(std::ostream &os){
 
 // Recursively deallocates memory being used by Nodes in the AST. Makes sure of no memory leaks.
 void Parser::clearTree(Node *node){
-    if (!node)
-        return;
+    if (!node) return;
     for (Node *child : node->children){
         clearTree(child);
     }
@@ -112,12 +99,16 @@ Parser::~Parser(){
 }
 
 Node *Parser::number(std::ostream &os) {
-    if (currentToken().type == TokenType::NUMBER) {
+    if (currentToken().type != TokenType::NUMBER || currentToken().value.empty() || currentToken().value == "END") {
+        os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << (currentToken().value.empty() ? "EMPTY" : currentToken().value) << std::endl;
+        exit(2);
+    }
+    try {
         Node *node = new Node(NodeType::NUMBER, std::stod(currentToken().value));
         currentTokenIndex++;
         return node;
-    } else {
-        os << "Unexpected token at line " << currentToken().line << " column " << currentToken().column << ": " << currentToken().value << std::endl;
+    } catch (const std::invalid_argument& ia) {
+        os << "Invalid argument at line " << currentToken().line << " column " << currentToken().column << ": Cannot convert '" << currentToken().value << "' to double." << std::endl;
         exit(2);
     }
 }

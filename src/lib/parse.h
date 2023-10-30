@@ -6,8 +6,6 @@
 
 // Parser Header file
 
-// Parser Header file
-
 using namespace std;
 enum class NodeType {
     ADD, SUBTRACT, MULTIPLY, DIVIDE, NUMBER, ASSIGN, IDENTIFIER
@@ -22,8 +20,9 @@ struct Node {
 
 class Parser {
 private:
+    static const Token someEndOrInvalidToken;
     vector<Token> tokens;
-    int currentTokenIndex;
+    size_t currentTokenIndex;
     int currentLineNumber;
     Node* root;
     Token& currentToken();

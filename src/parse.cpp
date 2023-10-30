@@ -21,14 +21,17 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
                 exit(2);
             }
         case NodeType::ASSIGN: {
+            if (node->children.size() < 2) {
+                os << "Runtime error: malformed assignment." << std::endl;
+                exit(2);
+            }
             double value = evaluate(node->children.back(), os);
             for (size_t i = 0; i < node->children.size() - 1; ++i) {
-                if (node->children[i]->type == NodeType::IDENTIFIER) {
-                    variables[node->children[i]->identifier] = value;
-                } else {
+                if (node->children[i]->type != NodeType::IDENTIFIER) {
                     os << "Runtime error: left-hand side of assignment must be variable." << std::endl;
                     exit(2);
                 }
+                variables[node->children[i]->identifier] = value;
             }
             return value;
         }
