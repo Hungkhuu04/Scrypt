@@ -130,4 +130,3 @@ std::vector<Token> Lexer::tokenize() {
     tokens.push_back({TokenType::UNKNOWN, "END", line, col});
     return tokens;
 }
-
