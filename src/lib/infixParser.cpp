@@ -23,6 +23,7 @@ Node* InfixParser::expression(std::ostream& os) {
         Token op = currentToken(); // store operator token
         currentTokenIndex++;
         if (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
+            clearTree(node);
             throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
         Node* right = term(os); // get next term
@@ -53,7 +54,6 @@ Node* InfixParser::expression(std::ostream& os) {
         assignNode->children.push_back(valueNode);
         node = assignNode;
     }
-
     return node;
 }
 
@@ -77,6 +77,7 @@ Node* InfixParser::factor(std::ostream& os) {
 
         //check if there's a right parenthesis
         if (currentToken().type != TokenType::RIGHT_PAREN){
+            clearTree(node); 
             throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + "\n");
         }
         currentTokenIndex++; // Consume the right parenthesis.
@@ -112,6 +113,7 @@ Node* InfixParser::term(std::ostream& os) {
 
         // Check if a valid right-hand operand was received
         if (newNode->children.back() == nullptr) {
+            clearTree(node); 
             throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ": " + token.value + "\n");
         }
 
