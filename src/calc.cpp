@@ -52,9 +52,6 @@ double evaluate(Node* node, std::unordered_map<std::string, double>& tempVariabl
             tempVariables[node->children[0]->identifier] = value;
             return value;
         }
-        default:
-            os << "Error: Unknown node type encountered while evaluating.\n";
-            exit(1);
     }
     return 0.0;  // Should not reach here.
 }
