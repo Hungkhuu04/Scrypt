@@ -21,17 +21,14 @@ double evaluate(Node* node, std::ostream& os = std::cerr) {
                 exit(2);
             }
         case NodeType::ASSIGN: {
-            if (node->children.size() < 2) {
-                os << "Runtime error: malformed assignment." << std::endl;
-                exit(2);
-            }
             double value = evaluate(node->children.back(), os);
             for (size_t i = 0; i < node->children.size() - 1; ++i) {
-                if (node->children[i]->type != NodeType::IDENTIFIER) {
+                if (node->children[i]->type == NodeType::IDENTIFIER) {
+                    variables[node->children[i]->identifier] = value;
+                } else {
                     os << "Runtime error: left-hand side of assignment must be variable." << std::endl;
                     exit(2);
                 }
-                variables[node->children[i]->identifier] = value;
             }
             return value;
         }
@@ -149,22 +146,26 @@ tokens to the AST and the prints out the answer using the evaluator to get the a
 int main() {
     std::ostream& os = std::cout;
     string line;
-    int line_count = 0; // Initialize to 1 because line numbering generally starts from 0
-    // Read multiple lines until EOF
+    string accumulated_line;
+    int line_count = 0;
+
     while (getline(cin, line)) {
-        if (!line.empty()) {
-            Lexer lexer(line);
-            lexer.increaseLine(line_count); // You mentioned this function updates the line count in Lexer
-            auto tokens = lexer.tokenize();            
-            Parser parser(tokens, line_count); // Now, Parser also knows about the line number
-            Node* root = parser.parse(os);
-            if (root) {
-                os << infixString(root, os) << endl;
-                double result = evaluate(root, os);
-                os << result << std::endl;
-            }
-        }
-        line_count++; // Increment the line count after each iteration
+        accumulated_line += line;  // accumulate lines
+        line_count++;
     }
+
+    if (!accumulated_line.empty()) {
+        Lexer lexer(accumulated_line);
+        auto tokens = lexer.tokenize();
+        Parser parser(tokens, line_count); 
+        Node* root = parser.parse(os);
+
+        if (root) {
+            os << infixString(root, os) << endl;
+            double result = evaluate(root, os);
+            os << result << std::endl;
+        }
+    }
+
     return 0;
 }

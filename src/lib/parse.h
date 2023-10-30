@@ -20,9 +20,8 @@ struct Node {
 
 class Parser {
 private:
-    static const Token someEndOrInvalidToken;
     vector<Token> tokens;
-    size_t currentTokenIndex;
+    int currentTokenIndex;
     int currentLineNumber;
     Node* root;
     Token& currentToken();
