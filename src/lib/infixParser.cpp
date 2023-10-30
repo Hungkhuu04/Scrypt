@@ -1,3 +1,4 @@
+
 // Include the header file "parse.h" which likely contains the declarations for the Parser class and its methods.
 #include "infixParser.h"
 #include <iostream>    
@@ -42,7 +43,6 @@ Node* InfixParser::expression(std::ostream& os) {
     }
     if (currentToken().type == TokenType::ASSIGN) {
         if (node->type != NodeType::IDENTIFIER) {
-            clearTree(node);  // Clear the memory before throwing
             throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value);
         }
         currentTokenIndex++; //consume or move to next token
@@ -126,14 +126,9 @@ Node* InfixParser::term(std::ostream& os) {
 
 // This function initiates the parsing process and returns the root of the AST.
 Node* InfixParser::parse(std::ostream& os) {
-    try {
-        root = expression(os);
-        if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value);
-        }
-    } catch (const std::runtime_error& e) {
-        clearTree(root);  // Clear the memory
-        throw;  // Re-throw the caught exception
+    root = expression(os);
+    if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
+        throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value);
     }
     return root;
 }

@@ -19,14 +19,11 @@ int main() {
     }
     Lexer lexer(input);
     auto tokens = lexer.tokenize();
-    if (lexer.isSyntaxError(tokens)) {
-        exit(1);
+    if (!lexer.errors.empty()) {
+    for (const auto& error : lexer.errors) {
+        cout << error << endl;
+        return 1;
     }
-    for (const auto& token : tokens) {
-        if (token.type == TokenType::UNKNOWN && token.value != "END") {
-            cout << "Syntax error on line " << token.line << " column " << token.column << "." << endl;
-            return 1;
-        }
     }
     for (const auto& token : tokens) {
         cout << right << setw(4) << token.line << setw(5) << token.column << setw(2) << "  " << token.value << endl;

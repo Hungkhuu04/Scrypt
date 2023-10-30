@@ -13,6 +13,7 @@ public:
     std::vector<Token> tokenize();
     void increaseLine(int line_count);
     bool isSyntaxError(std::vector<Token>& tokens);
+    std::vector<std::string> errors;
 
 private:
     char consume();
