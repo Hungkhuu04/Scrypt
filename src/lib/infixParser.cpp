@@ -132,6 +132,9 @@ Node* InfixParser::term(std::ostream& os) {
 Node* InfixParser::parse(std::ostream& os) {
     try {
         root = expression(os);
+         if (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
+            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
+        }
         if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
             throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
