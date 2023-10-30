@@ -90,7 +90,7 @@ Node* InfixParser::factor(std::ostream& os) {
     }
 
     else {
-        throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ": " + token.value);
+        throw std::runtime_error("Syntax Error on line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ".");
     }
     return nullptr;
 }
@@ -128,7 +128,7 @@ Node* InfixParser::term(std::ostream& os) {
 Node* InfixParser::parse(std::ostream& os) {
     root = expression(os);
     if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
-        throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value);
+        throw std::runtime_error("Syntax Error on line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ".");
     }
     return root;
 }

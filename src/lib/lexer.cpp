@@ -124,8 +124,6 @@ std::vector<Token> Lexer::tokenize() {
             tokens.push_back({TokenType::UNKNOWN, std::string(1, c), line, col});
             consume();
         }
-        if (isSyntaxError(tokens)) {
-        }
     }
     tokens.push_back({TokenType::UNKNOWN, "END", line, col});
     return tokens;
