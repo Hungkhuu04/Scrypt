@@ -8,6 +8,7 @@
 Parser::Parser(const std::vector<Token> &tokens, int lineCount) 
     : tokens(tokens), currentTokenIndex(0), currentLineNumber(lineCount) {}
 
+//Returns current token.
 Token &Parser::currentToken(){
     return tokens[currentTokenIndex];
 }
@@ -103,6 +104,7 @@ Parser::~Parser(){
     clearTree(root);
 }
 
+//Processes and parses a number from the list of tokens. 
 Node *Parser::number(std::ostream &os) {
     if (currentToken().type == TokenType::NUMBER) {
         Node *node = new Node(NodeType::NUMBER, std::stod(currentToken().value));
