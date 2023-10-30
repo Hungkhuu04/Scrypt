@@ -125,7 +125,6 @@ int main() {
             InfixParser parser(tokens);
             Node* root = parser.parse(os);
             os << infixString(root, os) << endl;
-            
             double result = evaluate(root, tempVariables, os); // Evaluate using the temporary copy
             variables = tempVariables; // Update the original variables if successful
             os << result << endl;
