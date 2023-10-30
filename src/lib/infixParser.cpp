@@ -23,15 +23,8 @@ Node* InfixParser::expression(std::ostream& os) {
     while (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
         Token op = currentToken(); // store operator token
         currentTokenIndex++;
-        // Check if we reach an 'END' immediately after an operator
-        if (currentToken().value == "END") {
-            throw std::runtime_error("Unexpected token at line " + std::to_string(op.line) + " column " + std::to_string(op.column) + ": " + op.value + "\n");
-        }
         Node* right = term(os); // get next term
 
-        if (right == nullptr) {
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
-        }
 
         // create a new node based on the operator and attach left and right operands.
         Node* newNode;
