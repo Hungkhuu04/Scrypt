@@ -23,8 +23,15 @@ Node* InfixParser::expression(std::ostream& os) {
     while (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
         Token op = currentToken(); // store operator token
         currentTokenIndex++;
-
+                // Check if we reach an 'END' immediately after an operator
+        if (currentToken().value == "END") {
+            throw std::runtime_error("Unexpected token at line " + std::to_string(op.line) + " column " + std::to_string(op.column) + ": " + op.value + "\n");
+        }
         Node* right = term(os); // get next term
+
+        if (right == nullptr) {
+            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
+        }
 
         // create a new node based on the operator and attach left and right operands.
         Node* newNode;
@@ -102,7 +109,7 @@ Node* InfixParser::term(std::ostream& os) {
         Token& token = currentToken();
         NodeType nodeType;
 
-        //determine multiply or divide)
+        // determine multiply or divide
         if (token.type == TokenType::MULTIPLY) {
             nodeType = NodeType::MULTIPLY;
         } else {
@@ -114,15 +121,18 @@ Node* InfixParser::term(std::ostream& os) {
         Node* newNode = new Node(nodeType);
 
         newNode->children.push_back(node); // first operand
-
         newNode->children.push_back(factor(os)); // second operand
+
+        // Check if a valid right-hand operand was received
+        if (newNode->children.back() == nullptr) {
+            throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ": " + token.value + "\n");
+        }
 
         node = newNode;
     }
     
     return node;
 }
-
 
 // This function initiates the parsing process and returns the root of the AST.
 Node* InfixParser::parse(std::ostream& os) {
