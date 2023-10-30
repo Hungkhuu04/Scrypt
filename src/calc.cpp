@@ -123,9 +123,9 @@ int main() {
             }
             InfixParser parser(tokens);
             Node* root = parser.parse(os);
-            os << infixString(root, os) << endl;
             double result = evaluate(root, tempVariables, os); // Evaluate using the temporary copy
             variables = tempVariables; // Update the original variables if successful
+            os << infixString(root, os) << endl;
             os << result << endl;
 
         } catch (const std::runtime_error& e) {
