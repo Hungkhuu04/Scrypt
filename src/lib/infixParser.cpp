@@ -19,13 +19,14 @@ Token& InfixParser::currentToken() {
 // If the token type is invalid, it outputs an error message.
 Node* InfixParser::expression(std::ostream& os) {
     Node* node = term(os); //get first term
-
     while (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
         Token op = currentToken(); // store operator token
         currentTokenIndex++;
+        if (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
+            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
+        }
         Node* right = term(os); // get next term
-
-
+        
         // create a new node based on the operator and attach left and right operands.
         Node* newNode;
         if(op.type == TokenType::ADD) {
