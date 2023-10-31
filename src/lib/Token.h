@@ -9,11 +9,19 @@
 
 enum class TokenType {
     LEFT_PAREN, RIGHT_PAREN,
-    ADD, SUBTRACT, MULTIPLY, DIVIDE,
+    ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULO,
     NUMBER,
-    IDENTIFIER,  // New token type for identifiers (variables)
-    ASSIGN,      // New token type for the assignment operator (=)
-    UNKNOWN
+    TRUE, FALSE, 
+    IDENTIFIER,
+    ASSIGN,
+    UNKNOWN,
+    LESS, LESS_EQUAL,
+    GREATER, GREATER_EQUAL,
+    EQUAL, NOT_EQUAL,
+    LOGICAL_AND,
+    LOGICAL_XOR,
+    LOGICAL_OR,
+    BOOLEAN // true and false.
 };
 
 

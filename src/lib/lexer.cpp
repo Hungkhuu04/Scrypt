@@ -3,6 +3,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+
 using namespace std;
 
 Lexer::Lexer(const string& input) : inputStream(input), line(1), col(1) {}
@@ -43,7 +44,9 @@ void Lexer::increaseLine(int line_count) {
 }
 //Checks if the character is a valid operator. 
 bool Lexer::isOperator(char c) {
-    return c == '+' || c == '-' || c == '*' || c == '/';
+    return c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || 
+           c == '<' || c == '>' || c == '=' || c == '!' || c == '&' || 
+           c == '^' || c == '|';
 }
 
 /*Handles the tokenization of a numerical value. Specifically, if the number 
@@ -73,19 +76,47 @@ Token Lexer::number() {
 
 }
 
+
 //Responsible for creating and tokenizing operators.
 Token Lexer::op() {
     int startCol = col;
-    char op = consume();
-    switch (op) {
+    char op1 = consume();
+    char op2 = inputStream.peek(); // Peek the next character for two-character operators
+    
+    // Two-character operators
+    if (op1 == '<' && op2 == '=') {
+        consume(); // consume '='
+        return {TokenType::LESS_EQUAL, "<=", line, startCol};
+    }
+    if (op1 == '>' && op2 == '=') {
+        consume(); // consume '='
+        return {TokenType::GREATER_EQUAL, ">=", line, startCol};
+    }
+    if (op1 == '=' && op2 == '=') {
+        consume(); // consume '='
+        return {TokenType::EQUAL, "==", line, startCol};
+    }
+    if (op1 == '!' && op2 == '=') {
+        consume(); // consume '='
+        return {TokenType::NOT_EQUAL, "!=", line, startCol};
+    }
+
+    // Single-character operators
+    switch (op1) {
         case '+': return {TokenType::ADD, "+", line, startCol};
         case '-': return {TokenType::SUBTRACT, "-", line, startCol};
         case '*': return {TokenType::MULTIPLY, "*", line, startCol};
         case '/': return {TokenType::DIVIDE, "/", line, startCol};
-        default: return {TokenType::UNKNOWN, string(1, op), line, startCol};
+        case '%': return {TokenType::MODULO, "%", line, startCol};
+        case '<': return {TokenType::LESS, "<", line, startCol};
+        case '>': return {TokenType::GREATER, ">", line, startCol};
+        case '&': return {TokenType::LOGICAL_AND, "&", line, startCol};
+        case '^': return {TokenType::LOGICAL_XOR, "^", line, startCol};
+        case '|': return {TokenType::LOGICAL_OR, "|", line, startCol};
+        case '=': return {TokenType::ASSIGN, "=", line, startCol};
+        default: return {TokenType::UNKNOWN, std::string(1, op1), line, startCol};
     }
 }
-
 /*Is responsible for tokenizing the input stream. Classifies the differnet tokens
 and puts them in a vector.*/
 std::vector<Token> Lexer::tokenize() {
@@ -115,10 +146,11 @@ std::vector<Token> Lexer::tokenize() {
             while (isalnum(inputStream.peek()) || inputStream.peek() == '_') {
                 identifier += consume();
             }
-            tokens.push_back({TokenType::IDENTIFIER, identifier, line, identifierStartCol});
-        } else if (c == '=') {
-            tokens.push_back({TokenType::ASSIGN, "=", line, col});
-            consume();
+            if (identifier == "true" || identifier == "false") {
+                tokens.push_back({TokenType::BOOLEAN, identifier, line, identifierStartCol});
+            } else {
+                tokens.push_back({TokenType::IDENTIFIER, identifier, line, identifierStartCol});
+            }
         } else {
             tokens.push_back({TokenType::UNKNOWN, std::string(1, c), line, col});
             consume();
