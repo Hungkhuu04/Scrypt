@@ -131,7 +131,16 @@ std::vector<Token> Lexer::tokenize() {
         } else if (c == ')') {
             tokens.push_back({TokenType::RIGHT_PAREN, ")", line, col});
             consume();
-        } else if (isDigit(c)) {
+        } 
+        // NEW: Support for curly braces
+        else if (c == '{') {
+            tokens.push_back({TokenType::LEFT_BRACE, "{", line, col});
+            consume();
+        } else if (c == '}') {
+            tokens.push_back({TokenType::RIGHT_BRACE, "}", line, col});
+            consume();
+        }
+        else if (isDigit(c)) {
             Token numToken = number();
             if (numToken.type == TokenType::UNKNOWN) {
                 tokens.push_back(numToken);
@@ -148,7 +157,16 @@ std::vector<Token> Lexer::tokenize() {
             }
             if (identifier == "true" || identifier == "false") {
                 tokens.push_back({TokenType::BOOLEAN, identifier, line, identifierStartCol});
-            } else {
+            } 
+            // NEW: Support for if, while, print
+            else if (identifier == "if") {
+                tokens.push_back({TokenType::IF, identifier, line, identifierStartCol});
+            } else if (identifier == "while") {
+                tokens.push_back({TokenType::WHILE, identifier, line, identifierStartCol});
+            } else if (identifier == "print") {
+                tokens.push_back({TokenType::PRINT, identifier, line, identifierStartCol});
+            } 
+            else {
                 tokens.push_back({TokenType::IDENTIFIER, identifier, line, identifierStartCol});
             }
         } else {

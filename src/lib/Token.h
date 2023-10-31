@@ -8,6 +8,8 @@
 // Enumerated Type to represent each type of tokens
 
 enum class TokenType {
+    IF, WHILE, PRINT,
+    LEFT_BRACE, RIGHT_BRACE,// curly braces { , }
     LEFT_PAREN, RIGHT_PAREN,
     ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULO,
     NUMBER,
