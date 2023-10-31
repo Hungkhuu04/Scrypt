@@ -23,7 +23,9 @@ enum class TokenType {
     LOGICAL_AND,
     LOGICAL_XOR,
     LOGICAL_OR,
-    BOOLEAN // true and false.
+    BOOLEAN_TRUE,
+    BOOLEAN_FALSE
+    
 };
 
 

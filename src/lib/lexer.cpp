@@ -156,7 +156,12 @@ std::vector<Token> Lexer::tokenize() {
                 identifier += consume();
             }
             if (identifier == "true" || identifier == "false") {
-                tokens.push_back({TokenType::BOOLEAN, identifier, line, identifierStartCol});
+                if (identifier == "true"){
+                    tokens.push_back({TokenType::BOOLEAN_TRUE, identifier, line, identifierStartCol});
+                }
+                else{
+                    tokens.push_back({TokenType::BOOLEAN_FALSE, identifier, line, identifierStartCol});
+                }
             } 
             // NEW: Support for if, while, print
             else if (identifier == "if") {

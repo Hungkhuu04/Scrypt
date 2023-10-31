@@ -27,36 +27,67 @@ string formatDecimal(double value) {
 Throws errors when appropriate. */
 std::string evaluate(Node* node, std::unordered_map<std::string, double>& variables) {
     if (!node) return "0";
-
     std::string result;
+    std::string left, right; 
     switch (node->type) {
         case NodeType::NUMBER:
             return formatDecimal(node->value);
         case NodeType::ADD:
-            return formatDecimal(stod(evaluate(node->children[0], variables)) + stod(evaluate(node->children[1], variables)));
+            return formatDecimal(std::stod(evaluate(node->children[0], variables)) + std::stod(evaluate(node->children[1], variables)));
         case NodeType::SUBTRACT:
-            return formatDecimal(stod(evaluate(node->children[0], variables)) - stod(evaluate(node->children[1], variables)));
+            return formatDecimal(std::stod(evaluate(node->children[0], variables)) - std::stod(evaluate(node->children[1], variables)));
         case NodeType::MULTIPLY:
-            return formatDecimal(stod(evaluate(node->children[0], variables)) * stod(evaluate(node->children[1], variables)));
+            return formatDecimal(std::stod(evaluate(node->children[0], variables)) * std::stod(evaluate(node->children[1], variables)));
         case NodeType::DIVIDE:
-            return formatDecimal(stod(evaluate(node->children[0], variables)) / stod(evaluate(node->children[1], variables)));
-        case NodeType::ASSIGN:
-            variables[node->children[0]->identifier] = stod(evaluate(node->children[1], variables));
-            return formatDecimal(variables[node->children[0]->identifier]);
+            {
+                double divisor = std::stod(evaluate(node->children[1], variables));
+                if (divisor == 0) {
+                    throw std::runtime_error("Runtime error: division by zero.\n");
+                }
+                return formatDecimal(std::stod(evaluate(node->children[0], variables)) / divisor);
+            }
         case NodeType::IDENTIFIER:
-            return formatDecimal(variables[node->identifier]);
+            {
+                if (node->identifier == "true" || node->identifier == "false") {
+                    return node->identifier;
+                }
+                auto it = variables.find(node->identifier);
+                if (it != variables.end()) {
+                    return formatDecimal(it->second);
+                } else {
+                    throw std::runtime_error("Runtime error: unknown identifier " + node->identifier + '\n');
+                }
+            }
+        case NodeType::ASSIGN:
+            {
+                double value = std::stod(evaluate(node->children[1], variables));
+                variables[node->children[0]->identifier] = value;
+                return formatDecimal(value);
+            }
+        case NodeType::BOOLEAN_LITERAL:
+            return (node->value == 1) ? "true" : "false";
         case NodeType::LESS_THAN:
-            return (stod(evaluate(node->children[0], variables)) < stod(evaluate(node->children[1], variables))) ? "true" : "false";
+            return (std::stod(evaluate(node->children[0], variables)) < std::stod(evaluate(node->children[1], variables))) ? "true" : "false";
         case NodeType::LESS_EQUAL:
-            return (stod(evaluate(node->children[0], variables)) <= stod(evaluate(node->children[1], variables))) ? "true" : "false";
+            return (std::stod(evaluate(node->children[0], variables)) <= std::stod(evaluate(node->children[1], variables))) ? "true" : "false";
         case NodeType::GREATER_THAN:
-            return (stod(evaluate(node->children[0], variables)) > stod(evaluate(node->children[1], variables))) ? "true" : "false";
+            return (std::stod(evaluate(node->children[0], variables)) > std::stod(evaluate(node->children[1], variables))) ? "true" : "false";
         case NodeType::GREATER_EQUAL:
-            return (stod(evaluate(node->children[0], variables)) >= stod(evaluate(node->children[1], variables))) ? "true" : "false";
+            return (std::stod(evaluate(node->children[0], variables)) >= std::stod(evaluate(node->children[1], variables))) ? "true" : "false";
         case NodeType::EQUAL:
-            return (stod(evaluate(node->children[0], variables)) == stod(evaluate(node->children[1], variables))) ? "true" : "false";
+            left = evaluate(node->children[0], variables);
+            right = evaluate(node->children[1], variables);
+            if (left == "true" || left == "false" || right == "true" || right == "false") {
+                return (left == right) ? "true" : "false";
+            }
+            return (std::stod(left) == std::stod(right)) ? "true" : "false";
         case NodeType::NOT_EQUAL:
-            return (stod(evaluate(node->children[0], variables)) != stod(evaluate(node->children[1], variables))) ? "true" : "false";
+            left = evaluate(node->children[0], variables);
+            right = evaluate(node->children[1], variables);
+            if (left == "true" || left == "false" || right == "true" || right == "false") {
+                return (left != right) ? "true" : "false";
+            }
+            return (std::stod(left) != std::stod(right)) ? "true" : "false";
         case NodeType::LOGICAL_AND:
             return (evaluate(node->children[0], variables) == "true" && evaluate(node->children[1], variables) == "true") ? "true" : "false";
         case NodeType::LOGICAL_OR:
@@ -64,9 +95,9 @@ std::string evaluate(Node* node, std::unordered_map<std::string, double>& variab
         case NodeType::LOGICAL_XOR:
             return ((evaluate(node->children[0], variables) == "true") ^ (evaluate(node->children[1], variables) == "true")) ? "true" : "false";
         default:
-            return "Error: Unknown node type";
+            throw std::runtime_error("Unknown node type");
     }
-    return result;
+    return "0";
 }
 
 
@@ -100,6 +131,9 @@ std::string infixString(Node* node, std::ostream& os = std::cout) {
             break;
         case NodeType::IDENTIFIER:
             result = node->identifier;
+            break;
+        case NodeType::BOOLEAN_LITERAL:
+            result = (node->value == 1) ? "true" : "false";
             break;
         // New node types for logical and relational operators
         case NodeType::LESS_THAN:

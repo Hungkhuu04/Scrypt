@@ -6,7 +6,8 @@
 
 // Constructor for the Parser class. Initializes the tokens vector and sets the current token index to 0.
 InfixParser::InfixParser(const std::vector<Token>& tokens) 
-    : tokens(tokens), currentTokenIndex(0), root(nullptr) {}
+    : tokens(tokens), currentTokenIndex(0), root(nullptr), unmatchedParentheses(0) {}
+
 
 // Returns the current token being processed.
 Token& InfixParser::currentToken() {
@@ -101,6 +102,16 @@ Node* InfixParser::factor(std::ostream& os) {
             unmatchedParentheses--;
             currentTokenIndex++;
         }
+        return node;
+    }
+    else if (token.type == TokenType::BOOLEAN_TRUE) {
+        Node* node = new Node(NodeType::BOOLEAN_LITERAL, 1); // 1 for true
+        currentTokenIndex++;
+        return node;
+    }
+    else if (token.type == TokenType::BOOLEAN_FALSE) {
+        Node* node = new Node(NodeType::BOOLEAN_LITERAL, 0); // 0 for false
+        currentTokenIndex++;
         return node;
     }
     else {
