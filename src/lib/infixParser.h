@@ -9,13 +9,17 @@
 
 // Enum representing different node types in the AST
 enum class NodeType {
-    ADD, SUBTRACT, MULTIPLY, DIVIDE, NUMBER, IDENTIFIER, ASSIGN
+    ADD, SUBTRACT, MULTIPLY, DIVIDE, NUMBER, IDENTIFIER, ASSIGN,
+    BOOLEAN, LESS_THAN, LESS_EQUAL, GREATER_THAN, GREATER_EQUAL,
+    EQUAL, NOT_EQUAL, LOGICAL_AND, LOGICAL_XOR, LOGICAL_OR, 
+    IF, WHILE, PRINT
 };
 
 // Structure representing a node in the AST
 struct Node {
     NodeType type;
     double value;
+    bool boolValue;
     std::string identifier;
     std::vector<Node*> children;
     Node(NodeType t, double v = 0, const std::string& id = "") 

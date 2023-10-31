@@ -10,53 +10,6 @@ using namespace std;
 std::unordered_map<std::string, double> variables;
 std::unordered_map<std::string, double> tempVariables;
 
-/*Evaluates the expression stored in the AST through recursion and returns a value.
-Throws errors when appropriate. */
-double evaluate(Node* node, std::unordered_map<std::string, double>& tempVariables, std::ostream& os = std::cerr) {
-    if (!node) {
-        throw std::runtime_error("");
-    }
-
-    switch (node->type) {
-        case NodeType::NUMBER:
-            return node->value;
-        case NodeType::ADD:
-            return evaluate(node->children[0], tempVariables, os) + evaluate(node->children[1], tempVariables, os);
-
-        case NodeType::SUBTRACT:
-            return evaluate(node->children[0], tempVariables, os) - evaluate(node->children[1], tempVariables, os);
-
-        case NodeType::MULTIPLY:
-            return evaluate(node->children[0], tempVariables, os) * evaluate(node->children[1], tempVariables, os);
-
-        case NodeType::DIVIDE:
-            {
-                double divisor = evaluate(node->children[1], tempVariables, os);
-                if (divisor == 0) {
-                    throw std::runtime_error("Runtime error: division by zero.\n");
-                }
-                return evaluate(node->children[0], tempVariables, os) / divisor;
-            }
-        case NodeType::IDENTIFIER:
-        {
-            auto it = variables.find(node->identifier);
-            if (it != variables.end()) {
-                return it->second;
-            } else {
-                throw std::runtime_error("Runtime error: unknown identifier " + node->identifier + "\n");
-            }
-        }
-        case NodeType::ASSIGN:
-        {
-            double value = evaluate(node->children[1], tempVariables, os);
-            tempVariables[node->children[0]->identifier] = value;
-            return value;
-        }
-    }
-    return 0.0;  // Should not reach here.
-}
-
-
 //Takes in a value and converts the input into a usable string format.
 // It ensures that there is the right amount of decimal points
 string formatDecimal(double value) {
@@ -69,18 +22,66 @@ string formatDecimal(double value) {
     }
 }
 
+
+/*Evaluates the expression stored in the AST through recursion and returns a value.
+Throws errors when appropriate. */
+std::string evaluate(Node* node, std::unordered_map<std::string, double>& variables) {
+    if (!node) return "0";
+
+    std::string result;
+    switch (node->type) {
+        case NodeType::NUMBER:
+            return formatDecimal(node->value);
+        case NodeType::ADD:
+            return formatDecimal(stod(evaluate(node->children[0], variables)) + stod(evaluate(node->children[1], variables)));
+        case NodeType::SUBTRACT:
+            return formatDecimal(stod(evaluate(node->children[0], variables)) - stod(evaluate(node->children[1], variables)));
+        case NodeType::MULTIPLY:
+            return formatDecimal(stod(evaluate(node->children[0], variables)) * stod(evaluate(node->children[1], variables)));
+        case NodeType::DIVIDE:
+            return formatDecimal(stod(evaluate(node->children[0], variables)) / stod(evaluate(node->children[1], variables)));
+        case NodeType::ASSIGN:
+            variables[node->children[0]->identifier] = stod(evaluate(node->children[1], variables));
+            return formatDecimal(variables[node->children[0]->identifier]);
+        case NodeType::IDENTIFIER:
+            return formatDecimal(variables[node->identifier]);
+        case NodeType::LESS_THAN:
+            return (stod(evaluate(node->children[0], variables)) < stod(evaluate(node->children[1], variables))) ? "true" : "false";
+        case NodeType::LESS_EQUAL:
+            return (stod(evaluate(node->children[0], variables)) <= stod(evaluate(node->children[1], variables))) ? "true" : "false";
+        case NodeType::GREATER_THAN:
+            return (stod(evaluate(node->children[0], variables)) > stod(evaluate(node->children[1], variables))) ? "true" : "false";
+        case NodeType::GREATER_EQUAL:
+            return (stod(evaluate(node->children[0], variables)) >= stod(evaluate(node->children[1], variables))) ? "true" : "false";
+        case NodeType::EQUAL:
+            return (stod(evaluate(node->children[0], variables)) == stod(evaluate(node->children[1], variables))) ? "true" : "false";
+        case NodeType::NOT_EQUAL:
+            return (stod(evaluate(node->children[0], variables)) != stod(evaluate(node->children[1], variables))) ? "true" : "false";
+        case NodeType::LOGICAL_AND:
+            return (evaluate(node->children[0], variables) == "true" && evaluate(node->children[1], variables) == "true") ? "true" : "false";
+        case NodeType::LOGICAL_OR:
+            return (evaluate(node->children[0], variables) == "true" || evaluate(node->children[1], variables) == "true") ? "true" : "false";
+        case NodeType::LOGICAL_XOR:
+            return (evaluate(node->children[0], variables) == "true" ^ evaluate(node->children[1], variables) == "true") ? "true" : "false";
+        default:
+            return "Error: Unknown node type";
+    }
+    return result;
+}
+
+
 /*Takes in a node object and then returns the expression in infix form. Goes through the AST
 recursively and builds the string representation off the stored expression .*/
-string infixString(Node* node, std::ostream& os = std::cout) {
+std::string infixString(Node* node, std::ostream& os = std::cout) {
     if (!node) {
         return "";
     }
     
-    string result;
+    std::string result;
     
     switch (node->type) {
         case NodeType::NUMBER:
-            result = formatDecimal(node->value);
+            result = formatDecimal(node->value);  // assuming formatDecimal is defined elsewhere
             break;
         case NodeType::ADD:
             result = "(" + infixString(node->children[0], os) + " + " + infixString(node->children[1], os) + ")";
@@ -99,6 +100,34 @@ string infixString(Node* node, std::ostream& os = std::cout) {
             break;
         case NodeType::IDENTIFIER:
             result = node->identifier;
+            break;
+        // New node types for logical and relational operators
+        case NodeType::LESS_THAN:
+            result = "(" + infixString(node->children[0], os) + " < " + infixString(node->children[1], os) + ")";
+            break;
+        case NodeType::LESS_EQUAL:
+            result = "(" + infixString(node->children[0], os) + " <= " + infixString(node->children[1], os) + ")";
+            break;
+        case NodeType::GREATER_THAN:
+            result = "(" + infixString(node->children[0], os) + " > " + infixString(node->children[1], os) + ")";
+            break;
+        case NodeType::GREATER_EQUAL:
+            result = "(" + infixString(node->children[0], os) + " >= " + infixString(node->children[1], os) + ")";
+            break;
+        case NodeType::EQUAL:
+            result = "(" + infixString(node->children[0], os) + " == " + infixString(node->children[1], os) + ")";
+            break;
+        case NodeType::NOT_EQUAL:
+            result = "(" + infixString(node->children[0], os) + " != " + infixString(node->children[1], os) + ")";
+            break;
+        case NodeType::LOGICAL_AND:
+            result = "(" + infixString(node->children[0], os) + " && " + infixString(node->children[1], os) + ")";
+            break;
+        case NodeType::LOGICAL_OR:
+            result = "(" + infixString(node->children[0], os) + " || " + infixString(node->children[1], os) + ")";
+            break;
+        case NodeType::LOGICAL_XOR:
+            result = "(" + infixString(node->children[0], os) + " ^^ " + infixString(node->children[1], os) + ")";
             break;
         default:
             os << "Error: Unknown node type encountered while constructing infix string.\n";
@@ -119,13 +148,14 @@ int main() {
         try {
             Lexer lexer(inputLine);
             auto tokens = lexer.tokenize();
+            // Your error handling for lexer
             if (lexer.isSyntaxError(tokens)) {
                 throw std::runtime_error("");
             }
             InfixParser parser(tokens);
             Node* root = parser.parse(os);
             os << infixString(root, os) << endl;
-            double result = evaluate(root, tempVariables, os); // Evaluate using the temporary copy
+            string result = evaluate(root, tempVariables); // Evaluate using the temporary copy
             variables = tempVariables; // Update the original variables if successful
             os << result << endl;
 

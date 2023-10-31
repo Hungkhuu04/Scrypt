@@ -18,42 +18,60 @@ Token& InfixParser::currentToken() {
 // It checks the current token type and adds the corresponding node to the AST.
 // If the token type is invalid, it outputs an error message.
 Node* InfixParser::expression(std::ostream& os) {
-    Node* node = term(os); //get first term
-    while (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
-        Token op = currentToken(); // store operator token
-        currentTokenIndex++;
-        if (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
-            clearTree(node);
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
-        }
-        Node* right = term(os); // get next term
+    Node* node = term(os); // get first term
+    
+    while (true) { // Changed to while(true) loop for better control
+        Token op = currentToken(); // Store operator token
         
-        // create a new node based on the operator and attach left and right operands.
-        Node* newNode;
-        if(op.type == TokenType::ADD) {
-            newNode = new Node(NodeType::ADD);
-        } else { // TokenType::SUBTRACT
-            newNode = new Node(NodeType::SUBTRACT);
-        }
+        if (op.type == TokenType::ADD || op.type == TokenType::SUBTRACT || 
+            op.type == TokenType::LESS || op.type == TokenType::LESS_EQUAL ||
+            op.type == TokenType::GREATER || op.type == TokenType::GREATER_EQUAL ||
+            op.type == TokenType::EQUAL || op.type == TokenType::NOT_EQUAL ||
+            op.type == TokenType::LOGICAL_AND || op.type == TokenType::LOGICAL_OR ||
+            op.type == TokenType::LOGICAL_XOR) {
 
-        newNode->children.push_back(node);
-        newNode->children.push_back(right);
-
-        //make new node the base for the next iteration.
-        node = newNode;
-    }
-    if (currentToken().type == TokenType::ASSIGN) {
-        if (node->type != NodeType::IDENTIFIER) {
-            clearTree(node);  // Clear the memory before throwing
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
+            currentTokenIndex++;
+            Node* right = term(os); // Get next term
+            
+            Node* newNode;
+            
+            // Create a new node based on the operator and attach left and right operands
+            switch (op.type) {
+                case TokenType::ADD: newNode = new Node(NodeType::ADD); break;
+                case TokenType::SUBTRACT: newNode = new Node(NodeType::SUBTRACT); break;
+                case TokenType::LESS: newNode = new Node(NodeType::LESS_THAN); break;
+                case TokenType::LESS_EQUAL: newNode = new Node(NodeType::LESS_EQUAL); break;
+                case TokenType::GREATER: newNode = new Node(NodeType::GREATER_THAN); break;
+                case TokenType::GREATER_EQUAL: newNode = new Node(NodeType::GREATER_EQUAL); break;
+                case TokenType::EQUAL: newNode = new Node(NodeType::EQUAL); break;
+                case TokenType::NOT_EQUAL: newNode = new Node(NodeType::NOT_EQUAL); break;
+                case TokenType::LOGICAL_AND: newNode = new Node(NodeType::LOGICAL_AND); break;
+                case TokenType::LOGICAL_OR: newNode = new Node(NodeType::LOGICAL_OR); break;
+                case TokenType::LOGICAL_XOR: newNode = new Node(NodeType::LOGICAL_XOR); break;
+                default: throw std::runtime_error("Unexpected operator");
+            }
+            
+            newNode->children.push_back(node);
+            newNode->children.push_back(right);
+            
+            node = newNode;  // Make the new node the base for the next iteration
+            
+        } else if (op.type == TokenType::ASSIGN) {
+            if (node->type != NodeType::IDENTIFIER) {
+                clearTree(node);  // Clear the memory before throwing
+                throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
+            }
+            currentTokenIndex++; // Consume or move to the next token
+            Node* valueNode = expression(os);
+            Node* assignNode = new Node(NodeType::ASSIGN);
+            assignNode->children.push_back(node);
+            assignNode->children.push_back(valueNode);
+            node = assignNode;
+        } else {
+            break;
         }
-        currentTokenIndex++; //consume or move to next token
-        Node* valueNode = expression(os);
-        Node* assignNode = new Node(NodeType::ASSIGN);
-        assignNode->children.push_back(node);
-        assignNode->children.push_back(valueNode);
-        node = assignNode;
     }
+    
     return node;
 }
 
