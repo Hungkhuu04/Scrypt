@@ -62,7 +62,7 @@ std::string evaluate(Node* node, std::unordered_map<std::string, double>& variab
         case NodeType::LOGICAL_OR:
             return (evaluate(node->children[0], variables) == "true" || evaluate(node->children[1], variables) == "true") ? "true" : "false";
         case NodeType::LOGICAL_XOR:
-            return (evaluate(node->children[0], variables) == "true" ^ evaluate(node->children[1], variables) == "true") ? "true" : "false";
+            return ((evaluate(node->children[0], variables) == "true") ^ (evaluate(node->children[1], variables) == "true")) ? "true" : "false";
         default:
             return "Error: Unknown node type";
     }
