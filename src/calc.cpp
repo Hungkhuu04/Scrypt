@@ -48,8 +48,10 @@ std::string evaluate(Node* node, std::unordered_map<std::string, double>& variab
             }
         case NodeType::IDENTIFIER:
             {
-                if (node->identifier == "true" || node->identifier == "false") {
-                    return node->identifier;
+                if (node->identifier == "true" || node->identifier == "t") { // Add "t" here
+                    return "true";
+                } else if (node->identifier == "false" || node->identifier == "f") { // Add "f" here
+                    return "false";
                 }
                 auto it = variables.find(node->identifier);
                 if (it != variables.end()) {
@@ -60,9 +62,18 @@ std::string evaluate(Node* node, std::unordered_map<std::string, double>& variab
             }
         case NodeType::ASSIGN:
             {
-                double value = std::stod(evaluate(node->children[1], variables));
-                variables[node->children[0]->identifier] = value;
-                return formatDecimal(value);
+                string value = evaluate(node->children[1], variables);
+                if (value == "true") {
+                    variables[node->children[0]->identifier] = 1;
+                    return "true";
+                } else if (value == "false") {
+                    variables[node->children[0]->identifier] = 0;
+                    return "false";
+                } else {
+                    double numericValue = std::stod(value);
+                    variables[node->children[0]->identifier] = numericValue;
+                    return formatDecimal(numericValue);
+                }
             }
         case NodeType::BOOLEAN_LITERAL:
             return (node->value == 1) ? "true" : "false";
@@ -93,7 +104,12 @@ std::string evaluate(Node* node, std::unordered_map<std::string, double>& variab
         case NodeType::LOGICAL_OR:
             return (evaluate(node->children[0], variables) == "true" || evaluate(node->children[1], variables) == "true") ? "true" : "false";
         case NodeType::LOGICAL_XOR:
-            return ((evaluate(node->children[0], variables) == "true") ^ (evaluate(node->children[1], variables) == "true")) ? "true" : "false";
+            left = evaluate(node->children[0], variables);
+            right = evaluate(node->children[1], variables);
+            if ((left == "true" && right == "false") || (left == "false" && right == "true")) {
+                return "true";
+            }
+            return "false";
         default:
             throw std::runtime_error("Unknown node type");
     }
@@ -155,13 +171,13 @@ std::string infixString(Node* node, std::ostream& os = std::cout) {
             result = "(" + infixString(node->children[0], os) + " != " + infixString(node->children[1], os) + ")";
             break;
         case NodeType::LOGICAL_AND:
-            result = "(" + infixString(node->children[0], os) + " && " + infixString(node->children[1], os) + ")";
+            result = "(" + infixString(node->children[0], os) + " & " + infixString(node->children[1], os) + ")";
             break;
         case NodeType::LOGICAL_OR:
-            result = "(" + infixString(node->children[0], os) + " || " + infixString(node->children[1], os) + ")";
+            result = "(" + infixString(node->children[0], os) + " | " + infixString(node->children[1], os) + ")";
             break;
         case NodeType::LOGICAL_XOR:
-            result = "(" + infixString(node->children[0], os) + " ^^ " + infixString(node->children[1], os) + ")";
+            result = "(" + infixString(node->children[0], os) + " ^ " + infixString(node->children[1], os) + ")";
             break;
         default:
             os << "Error: Unknown node type encountered while constructing infix string.\n";

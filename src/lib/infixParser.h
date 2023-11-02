@@ -34,6 +34,8 @@ private:
     int currentTokenIndex;
     Node* root;
     int unmatchedParentheses = 0;
+    Node*assignmentExpression(std::ostream& os);
+
     Node* logicalOrExpression(std::ostream& os);
     Node* logicalAndExpression(std::ostream& os);
     Node* equalityExpression(std::ostream& os);
