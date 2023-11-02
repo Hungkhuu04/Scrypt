@@ -273,13 +273,22 @@ Node* InfixParser::multiplicativeExpression(std::ostream& os) {
     Node* right = nullptr;
 
     try {
-        while (currentToken().type == TokenType::MULTIPLY || currentToken().type == TokenType::DIVIDE) {
+        while (currentToken().type == TokenType::MULTIPLY || currentToken().type == TokenType::DIVIDE || currentToken().type == TokenType::MODULO) {
             Token op = currentToken();
             currentTokenIndex++; // Move past the operator token
 
             right = factor(os); // Get the next factor (operand)
 
-            Node* newNode = new Node(op.type == TokenType::MULTIPLY ? NodeType::MULTIPLY : NodeType::DIVIDE);
+            NodeType newNodeType; // Determine node type based on token type
+            if (op.type == TokenType::MULTIPLY) {
+                newNodeType = NodeType::MULTIPLY;
+            } else if (op.type == TokenType::DIVIDE) {
+                newNodeType = NodeType::DIVIDE;
+            } else { // Must be TokenType::MODULO
+                newNodeType = NodeType::MODULO;
+            }
+
+            Node* newNode = new Node(newNodeType);
             newNode->children.push_back(node);
             newNode->children.push_back(right);
 
