@@ -101,7 +101,7 @@ Node* InfixParser::factor(std::ostream& os) {
             currentTokenIndex++;
         }
         else {
-            throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + ": " + token.value);
+            throw std::runtime_error("Unexpected tokn at line " + std::to_string(token.line) + ": " + token.value);
         }
     } catch (...) {
         clearTree(node); // Clear up any memory allocated before re-throwing
