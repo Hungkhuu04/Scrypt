@@ -110,81 +110,36 @@ Node* InfixParser::factor(std::ostream& os) {
     return node;
 }
 
-/* 
-Node* InfixParser::factor(std::ostream& os) {
-    Token& token = currentToken();
-    // Number tokens
-    if (token.type == TokenType::NUMBER) {
-        Node* node = new Node(NodeType::NUMBER, std::stod(token.value));
-        currentTokenIndex++;
-        return node;
-    } 
-    // Variable tokens
-    else if (token.type == TokenType::IDENTIFIER) {
-        Node* idNode = new Node(NodeType::IDENTIFIER, 0, token.value);
-        currentTokenIndex++;
-        return idNode;
-    } 
-    // Parenthesis stuff
-    else if (token.type == TokenType::LEFT_PAREN) {
-        unmatchedParentheses++;
-        currentTokenIndex++;
-        Node* node = expression(os);
 
-        // Only check for the right parenthesis here
-        if (currentToken().type == TokenType::RIGHT_PAREN){
-            unmatchedParentheses--;
-            currentTokenIndex++;
-        }
-        return node;
-    }
-    else if (token.type == TokenType::BOOLEAN_TRUE) {
-        Node* node = new Node(NodeType::BOOLEAN_LITERAL, 1); // 1 for true
-        currentTokenIndex++;
-        return node;
-    }
-    else if (token.type == TokenType::BOOLEAN_FALSE) {
-        Node* node = new Node(NodeType::BOOLEAN_LITERAL, 0); // 0 for false
-        currentTokenIndex++;
-        return node;
-    }
-    else {
-        clearTree(root);
-        throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ": " + token.value + "\n");
-    }
-    return nullptr;
-}*/
 
 Node* InfixParser::term(std::ostream& os) {
     Node* node = factor(os);
 
     while (currentToken().type == TokenType::MULTIPLY || currentToken().type == TokenType::DIVIDE) {
         Token& token = currentToken();
-        NodeType nodeType;
+        NodeType nodeType = (token.type == TokenType::MULTIPLY) ? NodeType::MULTIPLY : NodeType::DIVIDE;
 
-        // determine multiply or divide
-        if (token.type == TokenType::MULTIPLY) {
-            nodeType = NodeType::MULTIPLY;
-        } else {
-            nodeType = NodeType::DIVIDE;
+        Node* newNode = nullptr;
+        try {
+            newNode = new Node(nodeType);
+            currentTokenIndex++;
+
+            newNode->children.push_back(node);  // First operand
+
+            Node* rightNode = factor(os);  // Attempt to get the second operand
+            if (!rightNode) {
+                clearTree(newNode); // Clear the new operation node
+                throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
+            }
+            newNode->children.push_back(rightNode);
+
+            node = newNode;  // Update the current node to the new operation node
+        } catch (...) {
+            clearTree(newNode);  // Clean up in case of exception
+            throw;  // Re-throw the exception to be handled further up the call stack
         }
-
-        currentTokenIndex++;
-
-        Node* newNode = new Node(nodeType);
-
-        newNode->children.push_back(node); // first operand
-        newNode->children.push_back(factor(os)); // second operand
-
-        // Check if a valid right-hand operand was received
-        if (newNode->children.back() == nullptr) {
-            clearTree(root); 
-            throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ": " + token.value + "\n");
-        }
-
-        node = newNode;
     }
-    
+
     return node;
 }
 
