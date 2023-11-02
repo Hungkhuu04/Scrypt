@@ -309,29 +309,35 @@ Node* InfixParser::factor(std::ostream& os) {
     Node* node = nullptr;  // Initialize node pointer to nullptr
 
     try {
-       switch (token.type) {
-            case TokenType::NUMBER:
-                node = new Node(NodeType::NUMBER, std::stod(token.value));
-                currentTokenIndex++;
-                break;
-            case TokenType::IDENTIFIER:
-                node = new Node(NodeType::IDENTIFIER, 0, token.value);
-                currentTokenIndex++;
-                break;
-            case TokenType::LEFT_PAREN:
-                unmatchedParentheses++;
-                currentTokenIndex++;
-                node = expression(os);
-                if (currentToken().type != TokenType::RIGHT_PAREN) {
-                    clearTree(node); // Clear the current sub-expression
-                    throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
-                }
-                unmatchedParentheses--;
-                currentTokenIndex++;
-                break;
-            default:
-                // For boolean literals or any other types, you can either handle them here or consider them invalid
-                throw std::runtime_error("Runtime error: invalid operand type.\n");
+        if (token.type == TokenType::NUMBER) {
+            node = new Node(NodeType::NUMBER, std::stod(token.value));
+            currentTokenIndex++;
+        } 
+        else if (token.type == TokenType::IDENTIFIER) {
+            node = new Node(NodeType::IDENTIFIER, 0, token.value);
+            currentTokenIndex++;
+        } 
+        else if (token.type == TokenType::LEFT_PAREN) {
+            unmatchedParentheses++;
+            currentTokenIndex++;
+            node = expression(os);
+            if (currentToken().type != TokenType::RIGHT_PAREN) {
+                clearTree(node); // Clear the current sub-expression
+                throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
+            }
+            unmatchedParentheses--;
+            currentTokenIndex++;
+        }
+        else if (token.type == TokenType::BOOLEAN_TRUE) {
+            node = new Node(NodeType::BOOLEAN_LITERAL, 1);
+            currentTokenIndex++;
+        }
+        else if (token.type == TokenType::BOOLEAN_FALSE) {
+            node = new Node(NodeType::BOOLEAN_LITERAL, 0);
+            currentTokenIndex++;
+        }
+        else {
+            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
     } catch (...) {
         clearTree(node); // Clear up any memory allocated before re-throwing

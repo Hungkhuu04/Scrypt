@@ -28,111 +28,104 @@ string formatDecimal(double value) {
 Throws errors when appropriate. */
 std::string evaluate(Node* node, std::unordered_map<std::string, double>& variables) {
     if (!node) return "0";
-    std::string result;
-    std::string left, right; 
-    switch (node->type) {
-        case NodeType::NUMBER:
-            return formatDecimal(node->value);
-        case NodeType::ADD:
-            return formatDecimal(std::stod(evaluate(node->children[0], variables)) + std::stod(evaluate(node->children[1], variables)));
-        case NodeType::SUBTRACT:
-            return formatDecimal(std::stod(evaluate(node->children[0], variables)) - std::stod(evaluate(node->children[1], variables)));
-        case NodeType::MULTIPLY:
-            return formatDecimal(std::stod(evaluate(node->children[0], variables)) * std::stod(evaluate(node->children[1], variables)));
-        case NodeType::DIVIDE:
-            {
-                double divisor = std::stod(evaluate(node->children[1], variables));
-                if (divisor == 0) {
-                    throw std::runtime_error("Runtime error: division by zero.\n");
+
+    try {
+        switch (node->type) {
+            case NodeType::NUMBER:
+                return formatDecimal(node->value);
+            case NodeType::ADD:
+                return formatDecimal(std::stod(evaluate(node->children[0], variables)) + std::stod(evaluate(node->children[1], variables)));
+            case NodeType::SUBTRACT:
+                return formatDecimal(std::stod(evaluate(node->children[0], variables)) - std::stod(evaluate(node->children[1], variables)));
+            case NodeType::MULTIPLY:
+                return formatDecimal(std::stod(evaluate(node->children[0], variables)) * std::stod(evaluate(node->children[1], variables)));
+            case NodeType::DIVIDE:
+                {
+                    double divisor = std::stod(evaluate(node->children[1], variables));
+                    if (divisor == 0) {
+                        throw std::runtime_error("Runtime error: division by zero.\n");
+                    }
+                    return formatDecimal(std::stod(evaluate(node->children[0], variables)) / divisor);
                 }
-                return formatDecimal(std::stod(evaluate(node->children[0], variables)) / divisor);
-            }
-        case NodeType::IDENTIFIER:
-            {
-                if (node->identifier == "true" || node->identifier == "t") { // Add "t" here
-                    return "true";
-                } else if (node->identifier == "false" || node->identifier == "f") { // Add "f" here
-                    return "false";
+            case NodeType::IDENTIFIER:
+                {
+                    auto it = variables.find(node->identifier);
+                    if (it != variables.end()) {
+                        return formatDecimal(it->second);
+                    } else {
+                        throw std::runtime_error("Runtime error: unknown identifier " + node->identifier + '\n');
+                    }
                 }
-                auto it = variables.find(node->identifier);
-                if (it != variables.end()) {
-                    return formatDecimal(it->second);
-                } else {
-                    throw std::runtime_error("Runtime error: unknown identifier " + node->identifier + '\n');
-                }
-            }
-        case NodeType::ASSIGN:
-            {
-                string value = evaluate(node->children[1], variables);
-                if (value == "true") {
-                    variables[node->children[0]->identifier] = 1;
-                    return "true";
-                } else if (value == "false") {
-                    variables[node->children[0]->identifier] = 0;
-                    return "false";
-                } else {
+            case NodeType::ASSIGN:
+                {
+                    std::string value = evaluate(node->children[1], variables);
                     double numericValue = std::stod(value);
                     variables[node->children[0]->identifier] = numericValue;
                     return formatDecimal(numericValue);
                 }
-            }
-        case NodeType::BOOLEAN_LITERAL:
-            return (node->value == 1) ? "true" : "false";
-        case NodeType::LESS_THAN:
-            return (std::stod(evaluate(node->children[0], variables)) < std::stod(evaluate(node->children[1], variables))) ? "true" : "false";
-        case NodeType::LESS_EQUAL:
-            return (std::stod(evaluate(node->children[0], variables)) <= std::stod(evaluate(node->children[1], variables))) ? "true" : "false";
-        case NodeType::GREATER_THAN:
-            return (std::stod(evaluate(node->children[0], variables)) > std::stod(evaluate(node->children[1], variables))) ? "true" : "false";
-        case NodeType::GREATER_EQUAL:
-            return (std::stod(evaluate(node->children[0], variables)) >= std::stod(evaluate(node->children[1], variables))) ? "true" : "false";
-        case NodeType::EQUAL:
-            left = evaluate(node->children[0], variables);
-            right = evaluate(node->children[1], variables);
-            // If either side is a boolean string ("true" or "false")
-            if (left == "true" || left == "false") {
-                return (left == (right == "1" ? "true" : (right == "0" ? "false" : right))) ? "true" : "false";
-            } else if (right == "true" || right == "false") {
-                return (right == (left == "1" ? "true" : (left == "0" ? "false" : left))) ? "true" : "false";
-            } else { // Both are numbers
-                return (std::stod(left) == std::stod(right)) ? "true" : "false";
-            }
-
-        case NodeType::NOT_EQUAL:
-            left = evaluate(node->children[0], variables);
-            right = evaluate(node->children[1], variables);
-            // If either side is a boolean string ("true" or "false")
-            if (left == "true" || left == "false") {
-                return (left != (right == "1" ? "true" : (right == "0" ? "false" : right))) ? "true" : "false";
-            } else if (right == "true" || right == "false") {
-                return (right != (left == "1" ? "true" : (left == "0" ? "false" : left))) ? "true" : "false";
-            } else { // Both are numbers
-                return (std::stod(left) != std::stod(right)) ? "true" : "false";
-            }
-        case NodeType::LOGICAL_AND:
-            return (evaluate(node->children[0], variables) == "true" && evaluate(node->children[1], variables) == "true") ? "true" : "false";
-        case NodeType::LOGICAL_OR:
-            return (evaluate(node->children[0], variables) == "true" || evaluate(node->children[1], variables) == "true") ? "true" : "false";
-        case NodeType::LOGICAL_XOR:
-            left = evaluate(node->children[0], variables);
-            right = evaluate(node->children[1], variables);
-            if ((left == "true" && right == "false") || (left == "false" && right == "true")) {
-                return "true";
-            }
-            return "false";
-        case NodeType::MODULO:
-        {
-            double divisor = std::stod(evaluate(node->children[1], variables));
-            if (divisor == 0) {
-                throw std::runtime_error("Runtime error: modulo by zero.\n");
-            }
-            return formatDecimal(std::fmod(std::stod(evaluate(node->children[0], variables)), divisor));
+            case NodeType::BOOLEAN_LITERAL:
+                return node->value == 1 ? "true" : "false";
+            case NodeType::LESS_THAN:
+                return std::stod(evaluate(node->children[0], variables)) < std::stod(evaluate(node->children[1], variables)) ? "true" : "false";
+            case NodeType::LESS_EQUAL:
+                return std::stod(evaluate(node->children[0], variables)) <= std::stod(evaluate(node->children[1], variables)) ? "true" : "false";
+            case NodeType::GREATER_THAN:
+                return std::stod(evaluate(node->children[0], variables)) > std::stod(evaluate(node->children[1], variables)) ? "true" : "false";
+            case NodeType::GREATER_EQUAL:
+                return std::stod(evaluate(node->children[0], variables)) >= std::stod(evaluate(node->children[1], variables)) ? "true" : "false";
+            case NodeType::EQUAL:
+                {
+                    std::string left = evaluate(node->children[0], variables);
+                    std::string right = evaluate(node->children[1], variables);
+                    if (left == "true" || left == "false") {
+                        return left == right ? "true" : "false";
+                    } else {
+                        return std::stod(left) == std::stod(right) ? "true" : "false";
+                    }
+                }
+            case NodeType::NOT_EQUAL:
+                {
+                    std::string left = evaluate(node->children[0], variables);
+                    std::string right = evaluate(node->children[1], variables);
+                    if (left == "true" || left == "false") {
+                        return left != right ? "true" : "false";
+                    } else {
+                        return std::stod(left) != std::stod(right) ? "true" : "false";
+                    }
+                }
+            case NodeType::LOGICAL_AND:
+                return evaluate(node->children[0], variables) == "true" && evaluate(node->children[1], variables) == "true" ? "true" : "false";
+            case NodeType::LOGICAL_OR:
+                return evaluate(node->children[0], variables) == "true" || evaluate(node->children[1], variables) == "true" ? "true" : "false";
+            case NodeType::LOGICAL_XOR:
+                {
+                    std::string left = evaluate(node->children[0], variables);
+                    std::string right = evaluate(node->children[1], variables);
+                    if ((left == "true" && right == "false") || (left == "false" && right == "true")) {
+                        return "true";
+                    }
+                    return "false";
+                }
+            case NodeType::MODULO:
+                {
+                    double divisor = std::stod(evaluate(node->children[1], variables));
+                    if (divisor == 0) {
+                        throw std::runtime_error("Runtime error: modulo by zero.\n");
+                    }
+                    return formatDecimal(std::fmod(std::stod(evaluate(node->children[0], variables)), divisor));
+                }
+            default:
+                throw std::runtime_error("Unknown node type");
         }
-        default:
-            throw std::runtime_error("Unknown node type");
+    } catch (const std::invalid_argument&) {
+        throw std::runtime_error("Runtime error: invalid operand type.\n");
+    } catch (const std::out_of_range&) {
+        throw std::runtime_error("Runtime error: operand value out of range.\n");
     }
+
     return "0";
 }
+
 
 
 /*Takes in a node object and then returns the expression in infix form. Goes through the AST
