@@ -34,34 +34,17 @@ Node* InfixParser::expression(std::ostream& os) {
                 op.type == TokenType::LOGICAL_XOR) {
                 
                 currentTokenIndex++;
-                Node* right = nullptr;
-                try {
-                    right = term(os);  // Get next term
-                } catch (...) {
-                    clearTree(node);  // Cleanup left side
-                    throw;  // Continue propagating the exception
-                }
+                Node* right = term(os);  // Get next term
                 
-                Node* newNode = nullptr;
-                try {
-                    switch (op.type) {
-                        // Operator cases omitted for brevity...
-                        // Each case should create a new Node and assign to newNode
-                        default: throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
-                    }
-                    newNode->children.push_back(node);
-                    newNode->children.push_back(right);
-                } catch (...) {
-                    clearTree(node);  // Cleanup left side
-                    clearTree(right);  // Cleanup right side
-                    throw;  // Continue propagating the exception
-                }
+                Node* newNode = new Node(op.type == TokenType::ADD ? NodeType::ADD : NodeType::SUBTRACT);
                 
+                newNode->children.push_back(node);
+                newNode->children.push_back(right);
+
                 node = newNode;  // Make the new node the base for the next iteration
             } else if (op.type == TokenType::ASSIGN) {
                 if (node->type != NodeType::IDENTIFIER) {
                     clearTree(node);
-                    // If root is a member variable pointing to the tree's root, it should be cleaned up here.
                     throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
                 }
                 currentTokenIndex++;
@@ -83,6 +66,7 @@ Node* InfixParser::expression(std::ostream& os) {
     
     return node;  // Return the constructed node
 }
+
 
 Node* InfixParser::factor(std::ostream& os) {
     Token& token = currentToken();
