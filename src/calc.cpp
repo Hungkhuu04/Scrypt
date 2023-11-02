@@ -23,6 +23,10 @@ string formatDecimal(double value) {
     }
 }
 
+bool isBooleanString(const std::string& str) {
+    return str == "true" || str == "false";
+}
+
 
 /*Evaluates the expression stored in the AST through recursion and returns a value.
 Throws errors when appropriate. */
@@ -112,27 +116,30 @@ std::string evaluate(Node* node, std::unordered_map<std::string, double>& variab
                 }
             case NodeType::LOGICAL_AND:
                 return (evaluate(node->children[0], variables) == "true" && evaluate(node->children[1], variables) == "true") ? "true" : "false";
-            case NodeType::LOGICAL_OR:
-                left = evaluate(node->children[0], variables);
-                right = evaluate(node->children[1], variables);
-                if ((left == "true" || left == "false") && (right == "true" || right == "false")) {
-                    return (left == "true" || right == "true") ? "true" : "false";
-                } else if ((left == "true" || left == "false") || (right == "true" || right == "false")) {
-                    // if one is boolean and other is numeric, return the boolean value
-                    return (left == "true" || right == "true") ? "true" : "false";
-                } else { // Both are numbers
-                    return "false";
-                }
-
             case NodeType::LOGICAL_XOR:
                 left = evaluate(node->children[0], variables);
                 right = evaluate(node->children[1], variables);
+                
+                // Check if one is boolean and the other is a number
+                if ((isBooleanString(left) && !isBooleanString(right)) || (!isBooleanString(left) && isBooleanString(right))) {
+                    throw std::runtime_error("Runtime error: invalid operand type.\n");
+                }
+                
                 if ((left == "true" && right == "false") || (left == "false" && right == "true")) {
-                    return "true";
-                } else if ((left == "true" && (right != "true" && right != "false")) || (right == "true" && (left != "true" && left != "false"))) {
                     return "true";
                 }
                 return "false";
+
+            case NodeType::LOGICAL_OR:
+                left = evaluate(node->children[0], variables);
+                right = evaluate(node->children[1], variables);
+                
+                // Check if one is boolean and the other is a number
+                if ((isBooleanString(left) && !isBooleanString(right)) || (!isBooleanString(left) && isBooleanString(right))) {
+                    throw std::runtime_error("Runtime error: invalid operand type.\n");
+                }
+    
+    return (left == "true" || right == "true") ? "true" : "false";
             case NodeType::MODULO:
             {
                 double divisor = std::stod(evaluate(node->children[1], variables));
