@@ -70,47 +70,56 @@ Node* InfixParser::expression(std::ostream& os) {
 
 Node* InfixParser::assignmentExpression(std::ostream& os) {
     Node* node = logicalOrExpression(os);
+    Node* valueNode = nullptr;
 
-    Token op = currentToken();
-    if (op.type == TokenType::ASSIGN) {
-        if (node->type != NodeType::IDENTIFIER) {
-            clearTree(node);
-            throw std::runtime_error("Unexpected token at line " + std::to_string(op.line) + " column " + std::to_string(op.column) + ": " + op.value + "\n");
+    try {
+        Token op = currentToken();
+        if (op.type == TokenType::ASSIGN) {
+            if (node->type != NodeType::IDENTIFIER) {
+                clearTree(node);
+                throw std::runtime_error("Unexpected token at line " + std::to_string(op.line) + " column " + std::to_string(op.column) + ": " + op.value + "\n");
+            }
+            currentTokenIndex++;
+            valueNode = assignmentExpression(os);  // Handle right-associative behavior
+
+            Node* assignNode = new Node(NodeType::ASSIGN);
+            assignNode->children.push_back(node);
+            assignNode->children.push_back(valueNode);
+
+            node = assignNode;
+            valueNode = nullptr;  
         }
-        currentTokenIndex++;
-        Node* valueNode = assignmentExpression(os);  // Handle right-associative behavior
-
-        Node* assignNode = new Node(NodeType::ASSIGN);
-        assignNode->children.push_back(node);
-        assignNode->children.push_back(valueNode);
-
-        node = assignNode;
+    } catch (...) {
+        clearTree(valueNode); // valueNode might have been partially constructed, so clean it up.
+        clearTree(node);  // Clean up the entire node tree
+        throw; // Re-throw the current exception
     }
 
     return node;
 }
 
 
+
 Node* InfixParser::logicalOrExpression(std::ostream& os) {
-    Node* node = logicalXorExpression(os); // Start with a lower precedence expression
+    Node* node = logicalXorExpression(os);
     Node* right = nullptr;
 
     try {
         while (currentToken().type == TokenType::LOGICAL_OR) {
             currentTokenIndex++;
-            right = logicalAndExpression(os); // Get the next term
+            right = logicalXorExpression(os);
 
             Node* newNode = new Node(NodeType::LOGICAL_OR);
             newNode->children.push_back(node);
             newNode->children.push_back(right);
 
-            node = newNode; // This node now becomes the left-hand operand for any further LOGICAL_ORs
-            right = nullptr; // The right node is now managed by newNode, clear the pointer without deleting
+            node = newNode;
+            right = nullptr;
         }
     } catch (...) {
-        clearTree(right); // right might have been partially constructed, so clean it up.
-        clearTree(node);  // Clean up the entire left side tree
-        throw; // Re-throw the current exception
+        clearTree(right);
+        clearTree(node);
+        throw;
     }
 
     return node;
