@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 #include <unordered_map>
+#include <cmath> 
 using namespace std;
 
 std::unordered_map<std::string, double> variables;
@@ -110,6 +111,14 @@ std::string evaluate(Node* node, std::unordered_map<std::string, double>& variab
                 return "true";
             }
             return "false";
+        case NodeType::MODULO:
+        {
+            double divisor = std::stod(evaluate(node->children[1], variables));
+            if (divisor == 0) {
+                throw std::runtime_error("Runtime error: modulo by zero.\n");
+            }
+            return formatDecimal(std::fmod(std::stod(evaluate(node->children[0], variables)), divisor));
+        }
         default:
             throw std::runtime_error("Unknown node type");
     }
@@ -179,6 +188,8 @@ std::string infixString(Node* node, std::ostream& os = std::cout) {
         case NodeType::LOGICAL_XOR:
             result = "(" + infixString(node->children[0], os) + " ^ " + infixString(node->children[1], os) + ")";
             break;
+        case NodeType::MODULO:
+            return "(" + infixString(node->children[0]) + " % " + infixString(node->children[1]) + ")";
         default:
             os << "Error: Unknown node type encountered while constructing infix string.\n";
             exit(1);
