@@ -68,7 +68,7 @@ Node* InfixParser::expression(std::ostream& os) {
 }
 
 Node* InfixParser::logicalOrExpression(std::ostream& os) {
-    Node* node = logicalAndExpression(os); // Start with a lower precedence expression
+    Node* node = logicalXorExpression(os); // Start with a lower precedence expression
     Node* right = nullptr;
 
     try {
@@ -91,6 +91,32 @@ Node* InfixParser::logicalOrExpression(std::ostream& os) {
 
     return node;
 }
+
+Node* InfixParser::logicalXorExpression(std::ostream& os) {
+    Node* node = logicalAndExpression(os); // Start with a lower precedence expression
+    Node* right = nullptr;
+
+    try {
+        while (currentToken().type == TokenType::LOGICAL_XOR) {
+            currentTokenIndex++;
+            right = logicalAndExpression(os); // Get the next term
+
+            Node* newNode = new Node(NodeType::LOGICAL_XOR);
+            newNode->children.push_back(node);
+            newNode->children.push_back(right);
+
+            node = newNode; // This node now becomes the left-hand operand for any further LOGICAL_XORs
+            right = nullptr; // The right node is now managed by newNode, clear the pointer without deleting
+        }
+    } catch (...) {
+        clearTree(right); // right might have been partially constructed, so clean it up.
+        clearTree(node);  // Clean up the entire left side tree
+        throw; // Re-throw the current exception
+    }
+
+    return node;
+}
+
 
 
 Node* InfixParser::logicalAndExpression(std::ostream& os) {
