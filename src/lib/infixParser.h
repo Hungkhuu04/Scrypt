@@ -12,7 +12,7 @@ enum class NodeType {
     ADD, SUBTRACT, MULTIPLY, DIVIDE, NUMBER, IDENTIFIER, ASSIGN,
     BOOLEAN, LESS_THAN, LESS_EQUAL, GREATER_THAN, GREATER_EQUAL,
     EQUAL, NOT_EQUAL, LOGICAL_AND, LOGICAL_XOR, LOGICAL_OR, 
-    IF, WHILE, PRINT,
+    IF, WHILE, PRINT,MODULO,
     BOOLEAN_LITERAL
 };
 
@@ -34,6 +34,13 @@ private:
     int currentTokenIndex;
     Node* root;
     int unmatchedParentheses = 0;
+    Node* logicalOrExpression(std::ostream& os);
+    Node* logicalAndExpression(std::ostream& os);
+    Node* equalityExpression(std::ostream& os);
+    Node* relationalExpression(std::ostream& os);
+    Node* additiveExpression(std::ostream& os); 
+    Node* multiplicativeExpression(std::ostream& os);
+    Node* unaryExpression(std::ostream& os);
 
     Token& currentToken();
     Node* expression(std::ostream& os = std::cerr); //Arithmetic expression like + or -
