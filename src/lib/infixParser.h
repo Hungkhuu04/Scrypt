@@ -40,8 +40,7 @@ private:
     Node* relationalExpression(std::ostream& os);
     Node* additiveExpression(std::ostream& os); 
     Node* multiplicativeExpression(std::ostream& os);
-    Node* unaryExpression(std::ostream& os);
-
+    
     Token& currentToken();
     Node* expression(std::ostream& os = std::cerr); //Arithmetic expression like + or -
     Node* term(std::ostream& os = std::cerr); // For multiplication and division
