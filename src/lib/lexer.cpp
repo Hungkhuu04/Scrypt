@@ -3,6 +3,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+
 using namespace std;
 
 Lexer::Lexer(const string& input) : inputStream(input), line(1), col(1) {}
@@ -36,10 +37,16 @@ bool Lexer::isDigit(char c) {
     return isdigit(c) || c == '.';
 }
 
-
+void Lexer::increaseLine(int line_count) {
+    for(int i = 0; i < line_count; i++ ){
+        line++;
+    }
+}
 //Checks if the character is a valid operator. 
 bool Lexer::isOperator(char c) {
-    return c == '+' || c == '-' || c == '*' || c == '/';
+    return c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || 
+           c == '<' || c == '>' || c == '=' || c == '!' || c == '&' || 
+           c == '^' || c == '|';
 }
 
 /*Handles the tokenization of a numerical value. Specifically, if the number 
@@ -69,19 +76,47 @@ Token Lexer::number() {
 
 }
 
+
 //Responsible for creating and tokenizing operators.
 Token Lexer::op() {
     int startCol = col;
-    char op = consume();
-    switch (op) {
+    char op1 = consume();
+    char op2 = inputStream.peek(); // Peek the next character for two-character operators
+    
+    // Two-character operators
+    if (op1 == '<' && op2 == '=') {
+        consume(); // consume '='
+        return {TokenType::LESS_EQUAL, "<=", line, startCol};
+    }
+    if (op1 == '>' && op2 == '=') {
+        consume(); // consume '='
+        return {TokenType::GREATER_EQUAL, ">=", line, startCol};
+    }
+    if (op1 == '=' && op2 == '=') {
+        consume(); // consume '='
+        return {TokenType::EQUAL, "==", line, startCol};
+    }
+    if (op1 == '!' && op2 == '=') {
+        consume(); // consume '='
+        return {TokenType::NOT_EQUAL, "!=", line, startCol};
+    }
+
+    // Single-character operators
+    switch (op1) {
         case '+': return {TokenType::ADD, "+", line, startCol};
         case '-': return {TokenType::SUBTRACT, "-", line, startCol};
         case '*': return {TokenType::MULTIPLY, "*", line, startCol};
         case '/': return {TokenType::DIVIDE, "/", line, startCol};
-        default: return {TokenType::UNKNOWN, string(1, op), line, startCol};
+        case '%': return {TokenType::MODULO, "%", line, startCol};
+        case '<': return {TokenType::LESS, "<", line, startCol};
+        case '>': return {TokenType::GREATER, ">", line, startCol};
+        case '&': return {TokenType::LOGICAL_AND, "&", line, startCol};
+        case '^': return {TokenType::LOGICAL_XOR, "^", line, startCol};
+        case '|': return {TokenType::LOGICAL_OR, "|", line, startCol};
+        case '=': return {TokenType::ASSIGN, "=", line, startCol};
+        default: return {TokenType::UNKNOWN, std::string(1, op1), line, startCol};
     }
 }
-
 /*Is responsible for tokenizing the input stream. Classifies the differnet tokens
 and puts them in a vector.*/
 std::vector<Token> Lexer::tokenize() {
@@ -96,7 +131,16 @@ std::vector<Token> Lexer::tokenize() {
         } else if (c == ')') {
             tokens.push_back({TokenType::RIGHT_PAREN, ")", line, col});
             consume();
-        } else if (isDigit(c)) {
+        } 
+        // NEW: Support for curly braces
+        else if (c == '{') {
+            tokens.push_back({TokenType::LEFT_BRACE, "{", line, col});
+            consume();
+        } else if (c == '}') {
+            tokens.push_back({TokenType::RIGHT_BRACE, "}", line, col});
+            consume();
+        }
+        else if (isDigit(c)) {
             Token numToken = number();
             if (numToken.type == TokenType::UNKNOWN) {
                 tokens.push_back(numToken);
@@ -106,29 +150,35 @@ std::vector<Token> Lexer::tokenize() {
         } else if (isOperator(c)) {
             tokens.push_back(op());
         } else if (isalpha(c) || c == '_') {
-            // Recognize and tokenize identifiers (variables)
             std::string identifier;
-            int identifierStartCol = col; // Store the starting column position
+            int identifierStartCol = col;
             while (isalnum(inputStream.peek()) || inputStream.peek() == '_') {
                 identifier += consume();
             }
-            tokens.push_back({TokenType::IDENTIFIER, identifier, line, identifierStartCol});
-        } else if (c == '=') {
-            // Recognize and tokenize the assignment operator (=)
-            tokens.push_back({TokenType::ASSIGN, "=", line, col});
-            consume();
+            if (identifier == "true" || identifier == "false") {
+                if (identifier == "true"){
+                    tokens.push_back({TokenType::BOOLEAN_TRUE, identifier, line, identifierStartCol});
+                }
+                else{
+                    tokens.push_back({TokenType::BOOLEAN_FALSE, identifier, line, identifierStartCol});
+                }
+            } 
+            // NEW: Support for if, while, print
+            else if (identifier == "if") {
+                tokens.push_back({TokenType::IF, identifier, line, identifierStartCol});
+            } else if (identifier == "while") {
+                tokens.push_back({TokenType::WHILE, identifier, line, identifierStartCol});
+            } else if (identifier == "print") {
+                tokens.push_back({TokenType::PRINT, identifier, line, identifierStartCol});
+            } 
+            else {
+                tokens.push_back({TokenType::IDENTIFIER, identifier, line, identifierStartCol});
+            }
         } else {
             tokens.push_back({TokenType::UNKNOWN, std::string(1, c), line, col});
             consume();
-        }
-        if (isSyntaxError(tokens)) {
-            exit(1);
         }
     }
     tokens.push_back({TokenType::UNKNOWN, "END", line, col});
     return tokens;
 }
-
-
-
-

@@ -1,3 +1,4 @@
+
 #ifndef TOKEN_H
 #define TOKEN_H
 #include <string>
@@ -7,12 +8,24 @@
 // Enumerated Type to represent each type of tokens
 
 enum class TokenType {
+    IF, WHILE, PRINT,
+    LEFT_BRACE, RIGHT_BRACE,// curly braces { , }
     LEFT_PAREN, RIGHT_PAREN,
-    ADD, SUBTRACT, MULTIPLY, DIVIDE,
+    ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULO,
     NUMBER,
-    IDENTIFIER,  // New token type for identifiers (variables)
-    ASSIGN,      // New token type for the assignment operator (=)
-    UNKNOWN
+    TRUE, FALSE, 
+    IDENTIFIER,
+    ASSIGN,
+    UNKNOWN,
+    LESS, LESS_EQUAL,
+    GREATER, GREATER_EQUAL,
+    EQUAL, NOT_EQUAL,
+    LOGICAL_AND,
+    LOGICAL_XOR,
+    LOGICAL_OR,
+    BOOLEAN_TRUE,
+    BOOLEAN_FALSE
+    
 };
 
 

@@ -1,3 +1,4 @@
+
 #ifndef LEX_H
 #define LEX_H
 #include <string>
@@ -11,9 +12,11 @@ class Lexer {
 public:
     Lexer(const std::string& input);
     std::vector<Token> tokenize();
+    void increaseLine(int line_count);
+    bool isSyntaxError(std::vector<Token>& tokens);
+    std::vector<std::string> errors;
 
 private:
-    bool isSyntaxError(std::vector<Token>& tokens);
     char consume();
     bool isDigit(char c);
     bool isOperator(char c);
