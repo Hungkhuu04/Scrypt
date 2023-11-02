@@ -78,7 +78,6 @@ Node* InfixParser::expression(std::ostream& os) {
 
 Node* InfixParser::factor(std::ostream& os) {
     Token& token = currentToken();
-    Node* node = nullptr;
     // Number tokens
     if (token.type == TokenType::NUMBER) {
         Node* node = new Node(NodeType::NUMBER, std::stod(token.value));
