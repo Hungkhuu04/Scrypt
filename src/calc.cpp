@@ -89,17 +89,26 @@ std::string evaluate(Node* node, std::unordered_map<std::string, double>& variab
         case NodeType::EQUAL:
             left = evaluate(node->children[0], variables);
             right = evaluate(node->children[1], variables);
-            if (left == "true" || left == "false" || right == "true" || right == "false") {
-                return (left == right) ? "true" : "false";
+            // If either side is a boolean string ("true" or "false")
+            if (left == "true" || left == "false") {
+                return (left == (right == "1" ? "true" : (right == "0" ? "false" : right))) ? "true" : "false";
+            } else if (right == "true" || right == "false") {
+                return (right == (left == "1" ? "true" : (left == "0" ? "false" : left))) ? "true" : "false";
+            } else { // Both are numbers
+                return (std::stod(left) == std::stod(right)) ? "true" : "false";
             }
-            return (std::stod(left) == std::stod(right)) ? "true" : "false";
+
         case NodeType::NOT_EQUAL:
             left = evaluate(node->children[0], variables);
             right = evaluate(node->children[1], variables);
-            if (left == "true" || left == "false" || right == "true" || right == "false") {
-                return (left != right) ? "true" : "false";
+            // If either side is a boolean string ("true" or "false")
+            if (left == "true" || left == "false") {
+                return (left != (right == "1" ? "true" : (right == "0" ? "false" : right))) ? "true" : "false";
+            } else if (right == "true" || right == "false") {
+                return (right != (left == "1" ? "true" : (left == "0" ? "false" : left))) ? "true" : "false";
+            } else { // Both are numbers
+                return (std::stod(left) != std::stod(right)) ? "true" : "false";
             }
-            return (std::stod(left) != std::stod(right)) ? "true" : "false";
         case NodeType::LOGICAL_AND:
             return (evaluate(node->children[0], variables) == "true" && evaluate(node->children[1], variables) == "true") ? "true" : "false";
         case NodeType::LOGICAL_OR:
