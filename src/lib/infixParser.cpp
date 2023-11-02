@@ -45,7 +45,7 @@ Node* InfixParser::expression(std::ostream& os) {
             } else if (op.type == TokenType::ASSIGN) {
                 if (node->type != NodeType::IDENTIFIER) {
                     clearTree(node);
-                    throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
+                    throw std::runtime_error("Syntax error on line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
                 }
                 currentTokenIndex++;
                 Node* valueNode = expression(os);  // Recursively call expression
@@ -101,7 +101,7 @@ Node* InfixParser::factor(std::ostream& os) {
             currentTokenIndex++;
         }
         else {
-            throw std::runtime_error("Unexpected tokn at line " + std::to_string(token.line) + ": " + token.value);
+            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
     } catch (...) {
         clearTree(node); // Clear up any memory allocated before re-throwing
