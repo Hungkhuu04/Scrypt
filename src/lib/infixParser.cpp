@@ -115,29 +115,31 @@ Node* InfixParser::term(std::ostream& os) {
 
     while (currentToken().type == TokenType::MULTIPLY || currentToken().type == TokenType::DIVIDE) {
         Token& token = currentToken();
-        NodeType nodeType = (token.type == TokenType::MULTIPLY) ? NodeType::MULTIPLY : NodeType::DIVIDE;
+        NodeType nodeType;
 
-        Node* newNode = nullptr;
-        try {
-            newNode = new Node(nodeType);
-            currentTokenIndex++;
-
-            newNode->children.push_back(node);  // First operand
-
-            Node* rightNode = factor(os);  // Attempt to get the second operand
-            if (!rightNode) {
-                clearTree(newNode); // Clear the new operation node
-                throw std::runtime_error("Invalid right-hand operand at line " + std::to_string(token.line));
-            }
-            newNode->children.push_back(rightNode);
-
-            node = newNode;  // Update the current node to the new operation node
-        } catch (...) {
-            clearTree(newNode);  // Clean up in case of exception
-            throw;  // Re-throw the exception to be handled further up the call stack
+        // determine multiply or divide
+        if (token.type == TokenType::MULTIPLY) {
+            nodeType = NodeType::MULTIPLY;
+        } else {
+            nodeType = NodeType::DIVIDE;
         }
-    }
 
+        currentTokenIndex++;
+
+        Node* newNode = new Node(nodeType);
+
+        newNode->children.push_back(node); // first operand
+        newNode->children.push_back(factor(os)); // second operand
+
+        // Check if a valid right-hand operand was received
+        if (newNode->children.back() == nullptr) {
+            clearTree(root); 
+            throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ": " + token.value + "\n");
+        }
+
+        node = newNode;
+    }
+    
     return node;
 }
 
