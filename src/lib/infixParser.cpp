@@ -21,7 +21,7 @@ Token& InfixParser::currentToken() {
 Node* InfixParser::expression(std::ostream& os) {
     Node* node = nullptr;
     try {
-        node = logicalOrExpression(os);  // get first term
+        node = assignmentExpression(os);  // get first term
 
         while (true) {
             Token op = currentToken();  // Store operator token
@@ -67,6 +67,30 @@ Node* InfixParser::expression(std::ostream& os) {
     return node;  // Return the constructed node
 }
 
+
+Node* InfixParser::assignmentExpression(std::ostream& os) {
+    Node* node = logicalOrExpression(os);
+
+    Token op = currentToken();
+    if (op.type == TokenType::ASSIGN) {
+        if (node->type != NodeType::IDENTIFIER) {
+            clearTree(node);
+            throw std::runtime_error("Unexpected token at line " + std::to_string(op.line) + " column " + std::to_string(op.column) + ": " + op.value + "\n");
+        }
+        currentTokenIndex++;
+        Node* valueNode = assignmentExpression(os);  // Handle right-associative behavior
+
+        Node* assignNode = new Node(NodeType::ASSIGN);
+        assignNode->children.push_back(node);
+        assignNode->children.push_back(valueNode);
+
+        node = assignNode;
+    }
+
+    return node;
+}
+
+
 Node* InfixParser::logicalOrExpression(std::ostream& os) {
     Node* node = logicalXorExpression(os); // Start with a lower precedence expression
     Node* right = nullptr;
@@ -99,14 +123,14 @@ Node* InfixParser::logicalXorExpression(std::ostream& os) {
     try {
         while (currentToken().type == TokenType::LOGICAL_XOR) {
             currentTokenIndex++;
-            right = logicalAndExpression(os); // Get the next term
+            right = logicalAndExpression(os);
 
             Node* newNode = new Node(NodeType::LOGICAL_XOR);
             newNode->children.push_back(node);
             newNode->children.push_back(right);
 
-            node = newNode; // This node now becomes the left-hand operand for any further LOGICAL_XORs
-            right = nullptr; // The right node is now managed by newNode, clear the pointer without deleting
+            node = newNode;
+            right = nullptr;
         }
     } catch (...) {
         clearTree(right); // right might have been partially constructed, so clean it up.
