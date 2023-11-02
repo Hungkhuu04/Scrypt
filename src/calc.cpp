@@ -113,11 +113,23 @@ std::string evaluate(Node* node, std::unordered_map<std::string, double>& variab
             case NodeType::LOGICAL_AND:
                 return (evaluate(node->children[0], variables) == "true" && evaluate(node->children[1], variables) == "true") ? "true" : "false";
             case NodeType::LOGICAL_OR:
-                return (evaluate(node->children[0], variables) == "true" || evaluate(node->children[1], variables) == "true") ? "true" : "false";
+                left = evaluate(node->children[0], variables);
+                right = evaluate(node->children[1], variables);
+                if ((left == "true" || left == "false") && (right == "true" || right == "false")) {
+                    return (left == "true" || right == "true") ? "true" : "false";
+                } else if ((left == "true" || left == "false") || (right == "true" || right == "false")) {
+                    // if one is boolean and other is numeric, return the boolean value
+                    return (left == "true" || right == "true") ? "true" : "false";
+                } else { // Both are numbers
+                    return "false";
+                }
+
             case NodeType::LOGICAL_XOR:
                 left = evaluate(node->children[0], variables);
                 right = evaluate(node->children[1], variables);
                 if ((left == "true" && right == "false") || (left == "false" && right == "true")) {
+                    return "true";
+                } else if ((left == "true" && (right != "true" && right != "false")) || (right == "true" && (left != "true" && left != "false"))) {
                     return "true";
                 }
                 return "false";
