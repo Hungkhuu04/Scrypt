@@ -19,7 +19,7 @@ Token& InfixParser::currentToken() {
 // It checks the current token type and adds the corresponding node to the AST.
 // If the token type is invalid, it outputs an error message.
 Node* InfixParser::expression(std::ostream& os) {
-    Node* node = term(os); // get first term
+    Node* node = logicalOrExpression(os);; // get first term
     
     while (true) { // Changed to while(true) loop for better control
         Token op = currentToken(); // Store operator token
@@ -73,6 +73,182 @@ Node* InfixParser::expression(std::ostream& os) {
         }
     }
     
+    return node;
+}
+
+Node* InfixParser::logicalOrExpression(std::ostream& os) {
+    Node* node = logicalAndExpression(os); // Next level of precedence
+    while (currentToken().type == TokenType::LOGICAL_OR) {
+        currentTokenIndex++;
+        Node* right = logicalAndExpression(os); // Get the next term
+        Node* newNode = new Node(NodeType::LOGICAL_OR);
+        newNode->children.push_back(node);
+        newNode->children.push_back(right);
+        node = newNode; // This node now becomes the left-hand operand for any further LOGICAL_ORs
+    }
+    return node;
+}
+
+Node* InfixParser::logicalAndExpression(std::ostream& os) {
+    Node* node = equalityExpression(os);  // Start with a higher precedence level expression
+
+    while (currentToken().type == TokenType::LOGICAL_AND) {
+        Token op = currentToken();
+        currentTokenIndex++; // Consume the '&&' token
+        Node* right = equalityExpression(os); // Parse the right-hand operand
+        
+        // Now create a new logical AND node with the left and right operands
+        Node* andNode = new Node(NodeType::LOGICAL_AND);
+        andNode->children.push_back(node);
+        andNode->children.push_back(right);
+
+        node = andNode; // This node now becomes the left-hand operand for any further LOGICAL_ANDs
+    }
+    
+    return node;
+}
+
+Node* InfixParser::equalityExpression(std::ostream& os) {
+    Node* node = relationalExpression(os);  // Start with a higher precedence level expression
+
+    // Continue parsing while the current token is an equality or inequality operator
+    while (currentToken().type == TokenType::EQUAL || currentToken().type == TokenType::NOT_EQUAL) {
+        Token op = currentToken();
+        currentTokenIndex++; // Consume the equality/inequality token
+        
+        // Parse the right-hand operand using another call to relationalExpression()
+        Node* right = relationalExpression(os);
+        
+        // Create a new node based on the operator
+        Node* equalityNode = nullptr;
+        if (op.type == TokenType::EQUAL) {
+            equalityNode = new Node(NodeType::EQUAL);
+        } else if (op.type == TokenType::NOT_EQUAL) {
+            equalityNode = new Node(NodeType::NOT_EQUAL);
+        } else {
+            // This should not happen, but it's good practice to handle unexpected cases
+            clearTree(node);  // Clear memory to prevent leaks
+            throw std::runtime_error("Invalid operator type for an equality expression");
+        }
+
+        // Add left and right operands to the new node
+        equalityNode->children.push_back(node);
+        equalityNode->children.push_back(right);
+
+        node = equalityNode; // This node now becomes the left-hand operand for any further equality operations
+    }
+    
+    return node;
+}
+
+Node* InfixParser::relationalExpression(std::ostream& os) {
+    Node* node = additiveExpression(os); // Start with a higher precedence level expression
+
+    // Continue parsing while the current token is a relational operator
+    while (currentToken().type == TokenType::LESS || currentToken().type == TokenType::LESS_EQUAL ||
+           currentToken().type == TokenType::GREATER || currentToken().type == TokenType::GREATER_EQUAL) {
+        Token op = currentToken();
+        currentTokenIndex++; // Consume the relational token
+        
+        // Parse the right-hand operand using another call to additiveExpression()
+        Node* right = additiveExpression(os);
+        
+        // Create a new node based on the operator
+        Node* relationalNode = nullptr;
+        switch (op.type) {
+            case TokenType::LESS:
+                relationalNode = new Node(NodeType::LESS_THAN);
+                break;
+            case TokenType::LESS_EQUAL:
+                relationalNode = new Node(NodeType::LESS_EQUAL);
+                break;
+            case TokenType::GREATER:
+                relationalNode = new Node(NodeType::GREATER_THAN);
+                break;
+            case TokenType::GREATER_EQUAL:
+                relationalNode = new Node(NodeType::GREATER_EQUAL);
+                break;
+            default:
+                // This should not happen, but it's good practice to handle unexpected cases
+                clearTree(node); // Clear memory to prevent leaks
+                throw std::runtime_error("Invalid operator type for a relational expression");
+        }
+
+        // Add left and right operands to the new node
+        relationalNode->children.push_back(node);
+        relationalNode->children.push_back(right);
+
+        node = relationalNode; // This node now becomes the left-hand operand for any further relational operations
+    }
+    
+    return node;
+}
+
+Node* InfixParser::additiveExpression(std::ostream& os) {
+    Node* node = multiplicativeExpression(os); // Start with the highest precedence expressions
+
+    while (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
+        Token op = currentToken();
+        currentTokenIndex++; // Consume the operator token
+
+        Node* right = multiplicativeExpression(os); // Parse the next multiplicative expression
+
+        Node* additiveNode;
+        switch (op.type) {
+            case TokenType::ADD:
+                additiveNode = new Node(NodeType::ADD);
+                break;
+            case TokenType::SUBTRACT:
+                additiveNode = new Node(NodeType::SUBTRACT);
+                break;
+            default:
+                // This shouldn't happen, but just in case
+                clearTree(node);
+                throw std::runtime_error("Invalid operator type for an additive expression");
+        }
+
+        // Add the left and right operands to the new node
+        additiveNode->children.push_back(node);
+        additiveNode->children.push_back(right);
+
+        node = additiveNode; // Update node to the newly created one for subsequent loops
+    }
+
+    return node; // Return the root of the constructed subtree for additive expressions
+}
+
+Node* InfixParser::multiplicativeExpression(std::ostream& os) {
+    Node* node = factor(os); // get the first operand
+
+    while (currentToken().type == TokenType::MULTIPLY || currentToken().type == TokenType::DIVIDE) {
+        Token op = currentToken();
+        currentTokenIndex++; // move past the operator token
+
+        Node* right = factor(os); // get the second operand
+
+        Node* newNode;
+        // Create a new node based on the operator and attach left and right operands
+        switch (op.type) {
+            case TokenType::MULTIPLY:
+                newNode = new Node(NodeType::MULTIPLY);
+                break;
+            case TokenType::DIVIDE:
+                newNode = new Node(NodeType::DIVIDE);
+                break;
+            default:
+                // It's a good practice to handle unexpected cases,
+                // even though the logic should not reach this point.
+                clearTree(node);
+                clearTree(right);
+                throw std::runtime_error("Unexpected token in multiplicativeExpression");
+        }
+
+        newNode->children.push_back(node);
+        newNode->children.push_back(right);
+
+        node = newNode; // The new node becomes the current node for the next iteration
+    }
+
     return node;
 }
 
