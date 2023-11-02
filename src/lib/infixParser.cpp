@@ -60,6 +60,7 @@ Node* InfixParser::expression(std::ostream& os) {
         } else if (op.type == TokenType::ASSIGN) {
             if (node->type != NodeType::IDENTIFIER) {
                 clearTree(root);  // Clear the memory before throwing
+                clearTree(node);
                 throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
             }
             currentTokenIndex++; // Consume or move to the next token
@@ -143,6 +144,7 @@ Node* InfixParser::term(std::ostream& os) {
 
         // Check if a valid right-hand operand was received
         if (newNode->children.back() == nullptr) {
+            clearTree(newNode);
             clearTree(root); 
             throw std::runtime_error("Unexpected token at line " + std::to_string(token.line) + " column " + std::to_string(token.column) + ": " + token.value + "\n");
         }
