@@ -170,7 +170,9 @@ std::vector<Token> Lexer::tokenize() {
                 tokens.push_back({TokenType::WHILE, identifier, line, identifierStartCol});
             } else if (identifier == "print") {
                 tokens.push_back({TokenType::PRINT, identifier, line, identifierStartCol});
-            } 
+            } else if (identifier == "else") {
+                tokens.push_back({TokenType::ELSE, identifier, line, identifierStartCol});
+            }
             else {
                 tokens.push_back({TokenType::IDENTIFIER, identifier, line, identifierStartCol});
             }
