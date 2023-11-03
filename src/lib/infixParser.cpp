@@ -21,50 +21,12 @@ Token& InfixParser::currentToken() {
 Node* InfixParser::expression(std::ostream& os) {
     Node* node = nullptr;
     try {
-        node = assignmentExpression(os);  // get first term
-
-        while (true) {
-            Token op = currentToken();  // Store operator token
-
-            if (op.type == TokenType::ADD || op.type == TokenType::SUBTRACT || 
-                op.type == TokenType::LESS || op.type == TokenType::LESS_EQUAL ||
-                op.type == TokenType::GREATER || op.type == TokenType::GREATER_EQUAL ||
-                op.type == TokenType::EQUAL || op.type == TokenType::NOT_EQUAL ||
-                op.type == TokenType::LOGICAL_AND || op.type == TokenType::LOGICAL_OR ||
-                op.type == TokenType::LOGICAL_XOR) {
-
-                currentTokenIndex++;
-                Node* right = term(os);  // Get next term
-
-                Node* newNode = new Node(op.type == TokenType::ADD ? NodeType::ADD : NodeType::SUBTRACT);
-
-                newNode->children.push_back(node);
-                newNode->children.push_back(right);
-
-                node = newNode;  // Make the new node the base for the next iteration
-            } else if (op.type == TokenType::ASSIGN) {
-                if (node->type != NodeType::IDENTIFIER) {
-                    clearTree(node);
-                    throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
-                }
-                currentTokenIndex++;
-                Node* valueNode = expression(os);  // Recursively call expression
-
-                Node* assignNode = new Node(NodeType::ASSIGN);
-                assignNode->children.push_back(node);
-                assignNode->children.push_back(valueNode);
-
-                node = assignNode;
-            } else {
-                break;  // If none of the operators match, break out of the loop
-            }
-        }
+        node = assignmentExpression(os);
     } catch (...) {
-        clearTree(node);  // Clean up whatever was built up to this point
-        throw;  // Re-throw the current exception
+        clearTree(node);
+        throw;
     }
-
-    return node;  // Return the constructed node
+    return node;  
 }
 
 

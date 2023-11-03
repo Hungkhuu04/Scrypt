@@ -5,7 +5,8 @@
 #include <string>
 #include <sstream>
 #include <unordered_map>
-#include <cmath> 
+#include <cmath>
+
 using namespace std;
 
 std::unordered_map<std::string, double> variables;
