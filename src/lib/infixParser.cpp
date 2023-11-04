@@ -310,23 +310,42 @@ Node* InfixParser::factor(std::ostream& os) {
 
 
 // This function initiates the parsing process and returns the root of the AST.
-Node* InfixParser::parse(std::ostream& os) {
+std::vector<Node*> InfixParser::parse(std::ostream& os) {
+    std::vector<Node*> statements;  // A vector to hold all parsed statements
+    int statementLine = currentToken().line;  // Initialize with the line of the first token
+
     try {
-        root = expression(os);
-        if (unmatchedParentheses != 0) {
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
-        }
-        if (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
-        }
-        if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
+        while (currentToken().type != TokenType::UNKNOWN) {
+            Node* stmt = expression(os);  // Parse a single statement
+
+            // If we have reached the end of input, or the line number of the current token
+            // is greater than the line number of the statement's first token, then we consider
+            // it the end of the current statement and prepare to parse the next one.
+            if (currentToken().type == TokenType::UNKNOWN || currentToken().line > statementLine) {
+                statements.push_back(stmt);  // Add the statement to the list
+                // If not at the end, set up the line for the next statement
+                if (currentToken().type != TokenType::UNKNOWN) {
+                    statementLine = currentToken().line;
+                }
+            } else {
+                // If the line number hasn't changed and we haven't reached the end of the input,
+                // then we've encountered an unexpected token.
+                std::ostringstream errMsg;
+                errMsg << "Unexpected token on the same line at line " << currentToken().line
+                       << " column " << currentToken().column << ": " << currentToken().value << "\n";
+                for (auto& stmt : statements) {  // Clear already parsed statements
+                    clearTree(stmt);
+                }
+                throw std::runtime_error(errMsg.str());
+            }
         }
     } catch (const std::runtime_error& e) {
-        clearTree(root);  // Clear the memory
+        for (auto& stmt : statements) {  // Clear any statements that were parsed
+            clearTree(stmt);
+        }
         throw;  // Re-throw the caught exception
     }
-    return root;
+    return statements;  // Return the vector of all parsed statements
 }
 
 

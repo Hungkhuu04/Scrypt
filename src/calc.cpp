@@ -262,11 +262,17 @@ int main() {
                 throw std::runtime_error("");
             }
             InfixParser parser(tokens);
-            Node* root = parser.parse(os);
-            os << infixString(root, os) << endl;
-            string result = evaluate(root, tempVariables); // Evaluate using the temporary copy
-            variables = tempVariables; // Update the original variables if successful
-            os << result << endl;
+            vector<Node*> roots = parser.parse(os); // Change to vector<Node*>
+            for (Node* root : roots) { // Iterate through the vector of Node*
+                if (root) {
+                    os << infixString(root, os) << endl;
+                    string result = evaluate(root, tempVariables); // Evaluate using the temporary copy
+                    // Do something with the result
+                    os << result << endl;
+                }
+                delete root; // Assuming the Node* were dynamically allocated, they need to be deleted to avoid memory leaks
+            }
+            variables = tempVariables; // Update the main variable map
 
         } catch (const std::runtime_error& e) {
             os << e.what();
