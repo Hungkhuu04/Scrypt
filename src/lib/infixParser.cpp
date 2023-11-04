@@ -331,11 +331,12 @@ std::vector<Node*> InfixParser::parse(std::ostream& os) {
                 // If the line number hasn't changed and we haven't reached the end of the input,
                 // then we've encountered an unexpected token.
                 std::ostringstream errMsg;
-                errMsg << "Unexpected token on the same line at line " << currentToken().line
+                errMsg << "Unexpected token at line " << currentToken().line
                        << " column " << currentToken().column << ": " << currentToken().value << "\n";
                 for (auto& stmt : statements) {  // Clear already parsed statements
                     clearTree(stmt);
                 }
+                clearTree(root);
                 throw std::runtime_error(errMsg.str());
             }
         }
@@ -343,6 +344,7 @@ std::vector<Node*> InfixParser::parse(std::ostream& os) {
         for (auto& stmt : statements) {  // Clear any statements that were parsed
             clearTree(stmt);
         }
+        clearTree(root);
         throw;  // Re-throw the caught exception
     }
     return statements;  // Return the vector of all parsed statements
