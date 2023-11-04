@@ -14,15 +14,6 @@ Token& InfixParser::currentToken() {
     return tokens[currentTokenIndex];
 }
 
-void InfixParser::consume(TokenType expected, std::ostream& os) {
-    if (currentToken().type == expected) {
-        // Consume the token and move to the next
-        currentTokenIndex++;
-    } else {
-        throw std::runtime_error("Not expecting this token");
-    }
-}
-
 
 // This function parses an expression and constructs the Abstract Syntax Tree (AST).
 // It checks the current token type and adds the corresponding node to the AST.
@@ -317,36 +308,6 @@ Node* InfixParser::factor(std::ostream& os) {
     return node;
 }
 
-Node* InfixParser::term(std::ostream& os) {
-    Node* node = factor(os);
-
-    while (currentToken().type == TokenType::MULTIPLY || currentToken().type == TokenType::DIVIDE) {
-        Token& token = currentToken();
-        NodeType nodeType = (token.type == TokenType::MULTIPLY) ? NodeType::MULTIPLY : NodeType::DIVIDE;
-
-        Node* newNode = nullptr;
-        try {
-            newNode = new Node(nodeType);
-            currentTokenIndex++;
-
-            newNode->children.push_back(node);  // First operand
-
-            Node* rightNode = factor(os);  // Attempt to get the second operand
-            if (!rightNode) {
-                clearTree(newNode); // Clear the new operation node
-                throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
-            }
-            newNode->children.push_back(rightNode);
-
-            node = newNode;  // Update the current node to the new operation node
-        } catch (...) {
-            clearTree(newNode);  // Clean up in case of exception
-            throw;  // Re-throw the exception to be handled further up the call stack
-        }
-    }
-
-    return node;
-}
 
 // This function initiates the parsing process and returns the root of the AST.
 Node* InfixParser::parse(std::ostream& os) {
@@ -368,87 +329,6 @@ Node* InfixParser::parse(std::ostream& os) {
     return root;
 }
 
-Node* InfixParser::parseIfStatement(std::ostream& os) {
-    // Expecting current token to be 'if', which should already be consumed
-    consume(TokenType::IF, os);
-
-    Node* condition = expression(os);
-    consume(TokenType::LEFT_BRACE, os); // Assuming '{' follows the condition
-    Node* thenBranch = parseBlock(os);
-    consume(TokenType::RIGHT_BRACE, os);
-
-    Node* elseBranch = nullptr;
-    if (currentToken().type == TokenType::ELSE) {
-        consume(TokenType::ELSE, os);
-        if (currentToken().type == TokenType::IF) {
-            elseBranch = parseIfStatement(os);
-        } else {
-            consume(TokenType::LEFT_BRACE, os);
-            elseBranch = parseBlock(os);
-            consume(TokenType::RIGHT_BRACE, os);
-        }
-    }
-
-    Node* ifNode = new Node(NodeType::IF_STATEMENT);
-    ifNode->condition = condition;
-    ifNode->thenBranch = thenBranch;
-    ifNode->elseBranch = elseBranch;
-
-    return ifNode;
-}
-
-Node* InfixParser::parseWhileStatement(std::ostream& os) {
-    consume(TokenType::WHILE, os);
-
-    Node* condition = expression(os);
-    consume(TokenType::LEFT_BRACE, os);
-    Node* body = parseBlock(os);
-    consume(TokenType::RIGHT_BRACE, os);
-
-    Node* whileNode = new Node(NodeType::WHILE_STATEMENT);
-    whileNode->condition = condition;
-    whileNode->body.push_back(body);
-
-    return whileNode;
-}
-
-Node* InfixParser::parsePrintStatement(std::ostream& os) {
-    consume(TokenType::PRINT, os);
-
-    Node* expr = expression(os);
-    Node* printNode = new Node(NodeType::PRINT_STATEMENT);
-    printNode->children.push_back(expr);
-
-    return printNode;
-}
-
-Node* InfixParser::parseBlock(std::ostream& os) {
-    // Assuming LEFT_BRACE was already consumed before this call
-    std::vector<Node*> statements;
-    while (currentToken().type != TokenType::RIGHT_BRACE) {
-        Node* statementNode = parseStatement(os);
-        statements.push_back(statementNode);
-    }
-
-    Node* blockNode = new Node(NodeType::BLOCK);
-    blockNode->body = statements;
-
-    return blockNode;
-}
-
-Node* InfixParser::parseStatement(std::ostream& os) {
-    switch (currentToken().type) {
-        case TokenType::IF:
-            return parseIfStatement(os);
-        case TokenType::WHILE:
-            return parseWhileStatement(os);
-        case TokenType::PRINT:
-            return parsePrintStatement(os);
-        // Other cases for different statements
-        default:
-            return expression(os); // Default to expression if not a recognized statement
-    }
-}
 
 // This function recursively deallocates memory used by the nodes in the AST, ensuring no memory leaks.
 void InfixParser::clearTree(Node*& node) {  // Changed node to a reference to a pointer
