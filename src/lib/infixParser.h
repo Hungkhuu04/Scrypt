@@ -54,7 +54,7 @@ private:
 public:
     InfixParser(const std::vector<Token>& tokens);
     ~InfixParser();
-    Node* parse(std::ostream& os = std::cerr);
+    std::vector<Node*> parse(std::ostream& os);
     void clearTree(Node*& node);
 };
 
