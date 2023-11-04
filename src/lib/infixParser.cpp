@@ -336,11 +336,10 @@ std::vector<Node*> InfixParser::parse(std::ostream& os) {
                 for (auto& stmt : statements) {  // Clear already parsed statements
                     clearTree(stmt);
                 }
-                clearTree(root);
                 throw std::runtime_error(errMsg.str());
             }
         }
-    } catch (const std::runtime_error& e) {
+    } catch (...) {
         for (auto& stmt : statements) {  // Clear any statements that were parsed
             clearTree(stmt);
         }
