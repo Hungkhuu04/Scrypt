@@ -239,8 +239,7 @@ std::string infixString(Node* node, std::ostream& os = std::cout) {
         case NodeType::MODULO:
             return "(" + infixString(node->children[0]) + " % " + infixString(node->children[1]) + ")";
         default:
-            os << "Error: Unknown node type encountered while constructing infix string.\n";
-            exit(1);
+            return result;
     }
     return result;
 }

@@ -2,166 +2,144 @@
 #include "lib/infixParser.h"
 #include <iostream>
 #include <string>
+using namespace std;
+std::string formatDecimal(double value) {
+    if (value == static_cast<int>(value)) {
+        return to_string(static_cast<int>(value));
+    } else {
+        ostringstream ss;
+        ss << value;
+        return ss.str();
+    }
+}
 
-std::string formatNode(Node* node) {
-    if (node == nullptr) return "";
-    std::string formatted;
-
+std::string format(Node* node, std::ostream& os = std::cout) {
+    if (!node) {
+        return "";
+    }
+    
+    std::string result;
+    
     switch (node->type) {
-        case NodeType::ASSIGN:
-            if (node->children.size() >= 2) { // Make sure there are at least two children
-                formatted += "(" + formatNode(node->children[0]) + " = " + formatNode(node->children[1]) + ")";
-            }
+        case NodeType::NUMBER:
+            result = formatDecimal(node->value);  // assuming formatDecimal is defined elsewhere
             break;
         case NodeType::ADD:
-        case NodeType::SUBTRACT:
-        case NodeType::MULTIPLY:
-        case NodeType::DIVIDE:
-        case NodeType::MODULO:
-        case NodeType::LESS_THAN:
-        case NodeType::LESS_EQUAL:
-        case NodeType::GREATER_THAN:
-        case NodeType::GREATER_EQUAL:
-        case NodeType::EQUAL:
-        case NodeType::NOT_EQUAL:
-        case NodeType::LOGICAL_AND:
-        case NodeType::LOGICAL_XOR:
-        case NodeType::LOGICAL_OR:
-            if (node->children.size() >= 2) { // Binary operations require two children
-                const char* op = "";
-                switch (node->type) {
-                    case NodeType::ADD: op = " + "; break;
-                    case NodeType::SUBTRACT: op = " - "; break;
-                    case NodeType::MULTIPLY: op = " * "; break;
-                    case NodeType::DIVIDE: op = " / "; break;
-                    case NodeType::MODULO: op = " % "; break;
-                    case NodeType::LESS_THAN: op = " < "; break;
-                    case NodeType::LESS_EQUAL: op = " <= "; break;
-                    case NodeType::GREATER_THAN: op = " > "; break;
-                    case NodeType::GREATER_EQUAL: op = " >= "; break;
-                    case NodeType::EQUAL: op = " == "; break;
-                    case NodeType::NOT_EQUAL: op = " != "; break;
-                    case NodeType::LOGICAL_AND: op = " & "; break;
-                    case NodeType::LOGICAL_XOR: op = " ^ "; break;
-                    case NodeType::LOGICAL_OR: op = " | "; break;
-                    default: break;
-                }
-                formatted += "(" + formatNode(node->children[0]) + op + formatNode(node->children[1]) + ")";
-            }
+            result = "(" + format(node->children[0], os) + " + " + format(node->children[1], os) + ")";
             break;
-        case NodeType::NUMBER:
-            formatted += std::to_string(node->value);
+        case NodeType::SUBTRACT:
+            result = "(" + format(node->children[0], os) + " - " + format(node->children[1], os) + ")";
+            break;
+        case NodeType::MULTIPLY:
+            result = "(" + format(node->children[0], os) + " * " + format(node->children[1], os) + ")";
+            break;
+        case NodeType::DIVIDE:
+            result = "(" + format(node->children[0], os) + " / " + format(node->children[1], os) + ")";
+            break;
+        case NodeType::ASSIGN:
+            result = "(" + node->children[0]->identifier + " = " + format(node->children[1], os) + ")";
             break;
         case NodeType::IDENTIFIER:
-            formatted += node->identifier;
+            result = node->identifier;
             break;
         case NodeType::BOOLEAN_LITERAL:
-            formatted += (node->boolValue ? "true" : "false");
+            result = (node->value == 1) ? "true" : "false";
             break;
-        case NodeType::IF_STATEMENT:
-            formatted += "if (" + formatNode(node->condition) + ") {\n";
-            formatted += formatNode(node->thenBranch);
-            if (node->elseBranch != nullptr) {
-                formatted += "}\nelse {\n";
-                formatted += formatNode(node->elseBranch);
-            }
-            formatted += "}\n";
+        // New node types for logical and relational operators
+        case NodeType::LESS_THAN:
+            result = "(" + format(node->children[0], os) + " < " + format(node->children[1], os) + ")";
             break;
-            
-        case NodeType::WHILE_STATEMENT:
-            formatted += "while (" + formatNode(node->condition) + ") {\n";
-            for (auto& child : node->body) {
-                formatted += formatNode(child) + "\n";
-            }
-            formatted += "}\n";
+        case NodeType::LESS_EQUAL:
+            result = "(" + format(node->children[0], os) + " <= " + format(node->children[1], os) + ")";
             break;
-            
-        case NodeType::PRINT_STATEMENT:
-            formatted += "print " + formatNode(node->children[0]);
+        case NodeType::GREATER_THAN:
+            result = "(" + format(node->children[0], os) + " > " + format(node->children[1], os) + ")";
             break;
-            
-        case NodeType::BLOCK:
-            for (auto& child : node->children) {
-                formatted += formatNode(child) + "\n";
-            }
+        case NodeType::GREATER_EQUAL:
+            result = "(" + format(node->children[0], os) + " >= " + format(node->children[1], os) + ")";
             break;
-            
-        case NodeType::STATEMENT:
-            for (auto& child : node->children) {
-                formatted += "(" + formatNode(child) + ")";
-            }
+        case NodeType::EQUAL:
+            result = "(" + format(node->children[0], os) + " == " + format(node->children[1], os) + ")";
             break;
+        case NodeType::NOT_EQUAL:
+            result = "(" + format(node->children[0], os) + " != " + format(node->children[1], os) + ")";
+            break;
+        case NodeType::LOGICAL_AND:
+            result = "(" + format(node->children[0], os) + " & " + format(node->children[1], os) + ")";
+            break;
+        case NodeType::LOGICAL_OR:
+            result = "(" + format(node->children[0], os) + " | " + format(node->children[1], os) + ")";
+            break;
+        case NodeType::LOGICAL_XOR:
+            result = "(" + format(node->children[0], os) + " ^ " + format(node->children[1], os) + ")";
+            break;
+        case NodeType::MODULO:
+            return "(" + format(node->children[0]) + " % " + format(node->children[1]) + ")";
         default:
-            // Handle other complex structures
-            // ...
-            break;
+            os << "Error: Unknown node type encountered while constructing infix string.\n";
+            exit(1);
+    }
+    return result;
+}
+
+void clearTree(Node* node) {
+    if (node == nullptr) return;
+
+    // Recursively delete children nodes
+    for (auto& child : node->children) {
+        clearTree(child);
     }
 
-    return formatted;
+    // Delete the current node
+    delete node;
 }
 
-// Helper function to format a statement node
-std::string formatStatement(Node* node) {
-    return formatNode(node) + ";\n"; // Assuming each statement ends with a semicolon
-}
-
-// Helper function to format a block of statements
-std::string formatBlock(const std::vector<Node*>& statements) {
-    std::string formatted;
-    for (const auto& statement : statements) {
-        formatted += "    " + formatNode(statement) + "\n"; // Added newline for formatting
-    }
-    return formatted;
-}
 
 int main() {
-    std::string code;
+    std::ostream& os = std::cout;
+    std::vector<std::string> expressions;
     std::string line;
-    std::ostream& os = std::cout; // You can replace std::cout with another ostream if needed
-
-    os << "Enter code (press Ctrl+D on a new line to finish):" << std::endl;
 
     // Read lines until EOF is encountered (Ctrl+D)
     while (std::getline(std::cin, line)) {
-        code += line + "\n";
-    }
-
-    if (code.empty()) {
-        os << "No input provided." << std::endl;
-        return 1;
-    }
-
-    Lexer lexer(code);
-    auto tokens = lexer.tokenize();
-
-    if (lexer.isSyntaxError(tokens)) {
-        for (const auto& error : lexer.errors) {
-            os << "Syntax error: " << error << std::endl;
+        // Skip empty lines
+        if (!line.empty()) {
+            expressions.push_back(line);
         }
-        return 1;
     }
 
-    InfixParser parser(tokens);
-    Node* root = parser.parse(os); // Now parse the tokens
+    std::vector<Node*> statements;
+    for (const auto& expr : expressions) {
+        Lexer lexer(expr);
+        auto tokens = lexer.tokenize();
 
-    if (!root) {
-        os << "Parse error: The input did not result in a valid syntax tree." << std::endl;
-        return 1;
+        if (lexer.isSyntaxError(tokens)) {
+            throw std::runtime_error("");
+        }
+
+        InfixParser parser(tokens);
+        Node* parsedExpr = nullptr;
+        try {
+            parsedExpr = parser.parse(os);
+        } catch (const std::runtime_error& e) {
+            os << "Parse error: " << e.what() << std::endl;
+            continue;
+        }
+
+        if (parsedExpr) {
+            statements.push_back(parsedExpr);
+        }
     }
 
-    // Check if the root is a BLOCK node and format it accordingly
-    if (root->type == NodeType::BLOCK) {
-        std::string formattedCode = formatBlock(root->children);
-        os << formattedCode;
-    } else {
-        // If the root is not a BLOCK, you might want to handle this case differently.
-        // For now, let's just format whatever the root node is.
-        os << formatNode(root);
+    // Output formatted blocks of code
+    for (auto& statement : statements) {
+        os << format(statement) << std::endl;
     }
-    os << std::endl;
 
-    // Don't forget to clean up the AST to prevent memory leaks
-    parser.clearTree(root);
+    // Clean up the AST to prevent memory leaks
+    for (auto& statement : statements) {
+        clearTree(statement);
+    }
 
     return 0;
 }

@@ -1,3 +1,4 @@
+
 // Include the header file "parse.h" which likely contains the declarations for the Parser class and its methods.
 #include "infixParser.h"
 #include <iostream>    
@@ -319,7 +320,7 @@ Node* InfixParser::parse(std::ostream& os) {
         if (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
             throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
-        if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
+        if (currentToken().type != TokenType::END || currentToken().value != "END") {
             throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
     } catch (const std::runtime_error& e) {
