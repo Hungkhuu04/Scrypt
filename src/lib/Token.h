@@ -26,7 +26,8 @@ enum class TokenType {
     BOOLEAN_TRUE,
     BOOLEAN_FALSE,
     NEWLINE,
-    END
+    END,
+    SEMICOLON
 
 };
 
