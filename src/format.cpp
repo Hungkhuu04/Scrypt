@@ -13,31 +13,32 @@ std::string formatDecimal(double value) {
     }
 }
 
-std::string format(Node* node, std::ostream& os = std::cout) {
+std::string format(Node* node, int indentLevel = 0 ,std::ostream& os = std::cout){
     if (!node) {
         return "";
     }
     
     std::string result;
+    std::string indent(indentLevel, ' ');
     
     switch (node->type) {
         case NodeType::NUMBER:
             result = formatDecimal(node->value);  // assuming formatDecimal is defined elsewhere
             break;
         case NodeType::ADD:
-            result = "(" + format(node->children[0], os) + " + " + format(node->children[1], os) + ")";
+            result = "(" + format(node->children[0], indentLevel, os) + " + " + format(node->children[1], indentLevel, os) + ")";
             break;
         case NodeType::SUBTRACT:
-            result = "(" + format(node->children[0], os) + " - " + format(node->children[1], os) + ")";
+            result = "(" + format(node->children[0], indentLevel, os) + " - " + format(node->children[1], indentLevel, os) + ")";
             break;
         case NodeType::MULTIPLY:
-            result = "(" + format(node->children[0], os) + " * " + format(node->children[1], os) + ")";
+            result = "(" + format(node->children[0], indentLevel, os) + " * " + format(node->children[1], indentLevel, os) + ")";
             break;
         case NodeType::DIVIDE:
-            result = "(" + format(node->children[0], os) + " / " + format(node->children[1], os) + ")";
+            result = "(" + format(node->children[0], indentLevel, os) + " / " + format(node->children[1], indentLevel, os) + ")";
             break;
         case NodeType::ASSIGN:
-            result = "(" + node->children[0]->identifier + " = " + format(node->children[1], os) + ")";
+            result = "(" + node->children[0]->identifier + " = " + format(node->children[1], indentLevel, os) + ")";
             break;
         case NodeType::IDENTIFIER:
             result = node->identifier;
@@ -47,36 +48,43 @@ std::string format(Node* node, std::ostream& os = std::cout) {
             break;
         // New node types for logical and relational operators
         case NodeType::LESS_THAN:
-            result = "(" + format(node->children[0], os) + " < " + format(node->children[1], os) + ")";
+            result = "(" + format(node->children[0], indentLevel, os) + " < " + format(node->children[1], indentLevel, os) + ")";
             break;
         case NodeType::LESS_EQUAL:
-            result = "(" + format(node->children[0], os) + " <= " + format(node->children[1], os) + ")";
+            result = "(" + format(node->children[0], indentLevel, os) + " <= " + format(node->children[1], indentLevel, os) + ")";
             break;
         case NodeType::GREATER_THAN:
-            result = "(" + format(node->children[0], os) + " > " + format(node->children[1], os) + ")";
+            result = "(" + format(node->children[0], indentLevel, os) + " > " + format(node->children[1], indentLevel, os) + ")";
             break;
         case NodeType::GREATER_EQUAL:
-            result = "(" + format(node->children[0], os) + " >= " + format(node->children[1], os) + ")";
+            result = "(" + format(node->children[0], indentLevel, os) + " >= " + format(node->children[1], indentLevel, os) + ")";
             break;
         case NodeType::EQUAL:
-            result = "(" + format(node->children[0], os) + " == " + format(node->children[1], os) + ")";
+            result = "(" + format(node->children[0], indentLevel, os) + " == " + format(node->children[1], indentLevel, os) + ")";
             break;
         case NodeType::NOT_EQUAL:
-            result = "(" + format(node->children[0], os) + " != " + format(node->children[1], os) + ")";
+            result = "(" + format(node->children[0], indentLevel, os) + " != " + format(node->children[1], indentLevel, os) + ")";
             break;
         case NodeType::LOGICAL_AND:
-            result = "(" + format(node->children[0], os) + " & " + format(node->children[1], os) + ")";
+            result = "(" + format(node->children[0], indentLevel, os) + " & " + format(node->children[1], indentLevel, os) + ")";
             break;
         case NodeType::LOGICAL_OR:
-            result = "(" + format(node->children[0], os) + " | " + format(node->children[1], os) + ")";
+            result = "(" + format(node->children[0], indentLevel, os) + " | " + format(node->children[1], indentLevel, os) + ")";
             break;
         case NodeType::LOGICAL_XOR:
-            result = "(" + format(node->children[0], os) + " ^ " + format(node->children[1], os) + ")";
+            result = "(" + format(node->children[0], indentLevel, os) + " ^ " + format(node->children[1], indentLevel, os) + ")";
             break;
         case NodeType::MODULO:
             return "(" + format(node->children[0]) + " % " + format(node->children[1]) + ")";
         case NodeType::PRINT:
-            result = "print " + format(node->children[0], os);
+            result = "print " + format(node->children[0], indentLevel, os);
+            break;
+        case NodeType::WHILE:
+            result = indent + "while (" + format(node->children[0], indentLevel, os) + ") {\n";
+            for (const auto& child : node->children[1]->children) { // Assuming second child is the block containing statements
+                result += format(child, indentLevel + 4, os) + "\n";
+            }
+            result += indent + "}";
             break;
         default:
             os << "Error: Unknown node type encountered while constructing infix string.\n";
@@ -122,7 +130,7 @@ int main() {
             }
             InfixParser parser(tokens);
             Node* root = parser.parse(os);  // Assuming parse() doesn't need an ostream parameter
-            os << format(root) << std::endl;  // Output the formatted string
+            os << format(root, 0) << std::endl;    // Output the formatted string
         } catch (const std::runtime_error& e) {
             std::cerr << e.what() << std::endl;
         } catch (...) {
