@@ -28,9 +28,7 @@ int main() {
 
     // Printing the tokens
     for (const auto& token : tokens) {
-        if(token.value != "\\n") {
-            cout << right << setw(4) << token.line << setw(5) << token.column << setw(2) << "  " << token.value << endl;
-        }
+        cout << right << setw(4) << token.line << setw(5) << token.column << setw(2) << "  " << token.value << endl;
     }
 
     return 0;

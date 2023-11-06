@@ -18,6 +18,7 @@ enum class NodeType {
     WHILE_STATEMENT,
     IF_STATEMENT,
     PRINT_STATEMENT,
+    END
 };
 
 // Structure representing a node in the AST
@@ -46,9 +47,8 @@ private:
     Node* additiveExpression(std::ostream& os); 
     Node* multiplicativeExpression(std::ostream& os);
     Node* logicalXorExpression(std::ostream& os);
-
-    Token& currentToken();
     Node* expression(std::ostream& os = std::cerr); //Arithmetic expression like + or -
+    Token& currentToken();
     Node* factor(std::ostream& os = std::cerr); // The most basic element whether it is an expression in parenthesis or numbers or variables.
 
 public:
