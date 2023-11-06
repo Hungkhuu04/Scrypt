@@ -272,42 +272,94 @@ Node* InfixParser::factor(std::ostream& os) {
     Node* node = nullptr;  // Initialize node pointer to nullptr
 
     try {
-        if (token.type == TokenType::PRINT) {
-            // This assumes that the token immediately following 'print' is the start of the expression to print
-            currentTokenIndex++; // Consume 'print' token
-            Node* printArgument = expression(os); // Parse the expression to be printed
+        switch (token.type) {
+            case TokenType::PRINT: {
+                // Scope for the printArgument variable
+                currentTokenIndex++; // Consume 'print' token
+                Node* printArgument = expression(os); // Parse the expression to be printed
 
-            node = new Node(NodeType::PRINT);
-            node->children.push_back(printArgument);
-        }else if (token.type == TokenType::NUMBER) {
-            node = new Node(NodeType::NUMBER, std::stod(token.value));
-            currentTokenIndex++;
-        } 
-        else if (token.type == TokenType::IDENTIFIER) {
-            node = new Node(NodeType::IDENTIFIER, 0, token.value);
-            currentTokenIndex++;
-        } 
-        else if (token.type == TokenType::LEFT_PAREN) {
-            unmatchedParentheses++;
-            currentTokenIndex++;
-            node = expression(os);
-            if (currentToken().type != TokenType::RIGHT_PAREN) {
-                clearTree(node); // Clear the current sub-expression
+                node = new Node(NodeType::PRINT);
+                node->children.push_back(printArgument);
+                break;
+            }
+            case TokenType::NUMBER: {
+                node = new Node(NodeType::NUMBER, std::stod(token.value));
+                currentTokenIndex++;
+                break;
+            }
+            case TokenType::IDENTIFIER: {
+                node = new Node(NodeType::IDENTIFIER, 0, token.value);
+                currentTokenIndex++;
+                break;
+            }
+            case TokenType::LEFT_PAREN: {
+                // Scope for LEFT_PAREN
+                unmatchedParentheses++;
+                currentTokenIndex++;
+                node = expression(os);
+                if (currentToken().type != TokenType::RIGHT_PAREN) {
+                    clearTree(node); // Clear the current sub-expression
+                    throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
+                }
+                unmatchedParentheses--;
+                currentTokenIndex++;
+                break;
+            }
+            case TokenType::BOOLEAN_TRUE: {
+                node = new Node(NodeType::BOOLEAN_LITERAL, 1);
+                currentTokenIndex++;
+                break;
+            }
+            case TokenType::BOOLEAN_FALSE: {
+                node = new Node(NodeType::BOOLEAN_LITERAL, 0);
+                currentTokenIndex++;
+                break;
+            }
+            case TokenType::WHILE: {
+                // Scope for WHILE handling
+                currentTokenIndex++;
+                Node* condition = expression(os); // Parse the condition expression
+
+                // Verify that a LEFT_BRACE follows the condition
+                if (currentToken().type != TokenType::LEFT_BRACE) {
+                    throw std::runtime_error("Expected '{' after 'while' condition at line " + std::to_string(currentToken().line) + ".");
+                }
+
+                currentTokenIndex++;
+                Node* body = new Node(NodeType::BLOCK); // Create a new node for the while body
+
+                // Parse the body of the while loop
+                // ... (You need to implement this part based on how your language handles blocks and statements)
+
+                node = new Node(NodeType::WHILE);
+                node->children.push_back(condition);
+                node->children.push_back(body);
+
+                // Ensure that a RIGHT_BRACE closes the block
+                if (currentToken().type != TokenType::RIGHT_BRACE) {
+                    throw std::runtime_error("Expected '}' after 'while' body at line " + std::to_string(currentToken().line) + ".");
+                }
+                currentTokenIndex++;
+                break;
+            }
+            case TokenType::LEFT_BRACE: {
+                // Scope for block handling
+                Node* block = new Node(NodeType::BLOCK);
+                // Parse the block
+                // ... (You need to implement this part based on how your language handles blocks)
+
+                // Ensure that a RIGHT_BRACE closes the block
+                if (currentToken().type != TokenType::RIGHT_BRACE) {
+                    throw std::runtime_error("Expected '}' after block at line " + std::to_string(currentToken().line) + ".");
+                }
+                currentTokenIndex++;
+                node = block;
+                break;
+            }
+            default: {
+                // Handle unexpected tokens
                 throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
             }
-            unmatchedParentheses--;
-            currentTokenIndex++;
-        }
-        else if (token.type == TokenType::BOOLEAN_TRUE) {
-            node = new Node(NodeType::BOOLEAN_LITERAL, 1);
-            currentTokenIndex++;
-        }
-        else if (token.type == TokenType::BOOLEAN_FALSE) {
-            node = new Node(NodeType::BOOLEAN_LITERAL, 0);
-            currentTokenIndex++;
-        }
-        else {
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
     } catch (...) {
         clearTree(node); // Clear up any memory allocated before re-throwing
@@ -315,6 +367,7 @@ Node* InfixParser::factor(std::ostream& os) {
     }
     return node;
 }
+
 
 
 // This function initiates the parsing process and returns the root of the AST.

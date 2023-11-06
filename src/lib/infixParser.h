@@ -17,8 +17,8 @@ enum class NodeType {
     ASSIGNMENT_STATEMENT,
     WHILE_STATEMENT,
     IF_STATEMENT,
-    PRINT_STATEMENT,
-    END
+    PRINT_STATEMENT,BLOCK,
+    END, LEFT_BRACE, RIGHT_BRACE
 };
 
 // Structure representing a node in the AST
