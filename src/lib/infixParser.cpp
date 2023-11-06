@@ -310,50 +310,24 @@ Node* InfixParser::factor(std::ostream& os) {
 
 
 // This function initiates the parsing process and returns the root of the AST.
-std::vector<Node*> InfixParser::parse(std::ostream& os) {
-    std::vector<Node*> roots;
+Node* InfixParser::parse(std::ostream& os) {
     try {
-        while (true) {
-            Node* exprRoot = nullptr;
-            try {
-                exprRoot = expression(os);  // This may throw an exception
-                roots.push_back(exprRoot);  // Only push back if expression is successfully created
-            } catch (...) {
-                // If an exception is thrown, clean up the current exprRoot before rethrowing
-                clearTree(exprRoot);
-                throw;  // Rethrow the current exception to be handled by the outer try-catch block
-            }
-
-            // Now check for NEWLINE or end of tokens
-            if (tokens.at(currentTokenIndex).type == TokenType::NEWLINE) {
-                currentTokenIndex++;  // Skip over NEWLINE
-            } else if (tokens.at(currentTokenIndex).type == TokenType::UNKNOWN) {
-                if (tokens.at(currentTokenIndex).value != "END") {
-                    throw std::runtime_error("Unexpected token at line " +
-                                             std::to_string(tokens.at(currentTokenIndex).line) + " column " +
-                                             std::to_string(tokens.at(currentTokenIndex).column) + ": " +
-                                             tokens.at(currentTokenIndex).value + "\n");
-                }
-                break;  // End of input
-            } else {
-                // If we have an unexpected token, we throw an exception
-                throw std::runtime_error("Unexpected token at line " +
-                                         std::to_string(tokens.at(currentTokenIndex).line) + " column " +
-                                         std::to_string(tokens.at(currentTokenIndex).column) + ": " +
-                                         tokens.at(currentTokenIndex).value + "\n");
-            }
+        root = expression(os);
+        if (unmatchedParentheses != 0) {
+            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
-    } catch (...) {
-        // If any exception is caught, delete all roots to prevent memory leaks
-        for (Node* node : roots) {
-            clearTree(node);
+        if (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
+            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
-        roots.clear();  // Clear the vector after deleting all nodes
-        throw;  // Rethrow the last caught exception to the caller
+        if (currentToken().type != TokenType::UNKNOWN || currentToken().value != "END") {
+            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
+        }
+    } catch (const std::runtime_error& e) {
+        clearTree(root);  // Clear the memory
+        throw;  // Re-throw the caught exception
     }
-    return roots;
+    return root;
 }
-
 
 
 // This function recursively deallocates memory used by the nodes in the AST, ensuring no memory leaks.
