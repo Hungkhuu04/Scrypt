@@ -314,39 +314,46 @@ std::vector<Node*> InfixParser::parse(std::ostream& os) {
     std::vector<Node*> roots;
     try {
         while (true) {
-            Node* exprRoot = expression(os);
-            roots.push_back(exprRoot);
+            Node* exprRoot = nullptr;
+            try {
+                exprRoot = expression(os);  // This may throw an exception
+                roots.push_back(exprRoot);  // Only push back if expression is successfully created
+            } catch (...) {
+                // If an exception is thrown, clean up the current exprRoot before rethrowing
+                clearTree(exprRoot);
+                throw;  // Rethrow the current exception to be handled by the outer try-catch block
+            }
 
-            // Assuming that 'tokens' is a member variable holding the list of tokens
+            // Now check for NEWLINE or end of tokens
             if (tokens.at(currentTokenIndex).type == TokenType::NEWLINE) {
-                // Increment the index to go to the next token after NEWLINE
-                currentTokenIndex++;
-                continue;
+                currentTokenIndex++;  // Skip over NEWLINE
             } else if (tokens.at(currentTokenIndex).type == TokenType::UNKNOWN) {
-                // Check for the end of the input
                 if (tokens.at(currentTokenIndex).value != "END") {
                     throw std::runtime_error("Unexpected token at line " +
                                              std::to_string(tokens.at(currentTokenIndex).line) + " column " +
                                              std::to_string(tokens.at(currentTokenIndex).column) + ": " +
                                              tokens.at(currentTokenIndex).value + "\n");
                 }
-                break;
+                break;  // End of input
             } else {
+                // If we have an unexpected token, we throw an exception
                 throw std::runtime_error("Unexpected token at line " +
                                          std::to_string(tokens.at(currentTokenIndex).line) + " column " +
                                          std::to_string(tokens.at(currentTokenIndex).column) + ": " +
                                          tokens.at(currentTokenIndex).value + "\n");
             }
         }
-    } catch (const std::runtime_error& e) {
+    } catch (...) {
+        // If any exception is caught, delete all roots to prevent memory leaks
         for (Node* node : roots) {
             clearTree(node);
         }
-        roots.clear();
-        throw;
+        roots.clear();  // Clear the vector after deleting all nodes
+        throw;  // Rethrow the last caught exception to the caller
     }
     return roots;
 }
+
 
 
 // This function recursively deallocates memory used by the nodes in the AST, ensuring no memory leaks.
