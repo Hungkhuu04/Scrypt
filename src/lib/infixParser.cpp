@@ -316,28 +316,28 @@ std::vector<Node*> InfixParser::parse(std::ostream& os) {
 
     try {
         while (currentToken().type != TokenType::UNKNOWN) {
-            try {
-                Node* stmt = expression(os);  // Parse a single statement
+            Node* stmt = expression(os);  // Parse a single statement
 
-                if (currentToken().type == TokenType::UNKNOWN || currentToken().line > statementLine) {
-                    statements.push_back(stmt);  // Add the statement to the list
-                    if (currentToken().type != TokenType::UNKNOWN) {
-                        statementLine = currentToken().line;
-                    }
-                } else {
-                    // An unexpected token was encountered. Throw an exception.
-                    std::ostringstream errMsg;
-                    errMsg << "Unexpected token at line " << currentToken().line
-                        << " column " << currentToken().column << ": " << currentToken().value << "\n";
-                    throw std::runtime_error(errMsg.str());
+            // If we have reached the end of input, or the line number of the current token
+            // is greater than the line number of the statement's first token, then we consider
+            // it the end of the current statement and prepare to parse the next one.
+            if (currentToken().type == TokenType::UNKNOWN || currentToken().line > statementLine) {
+                statements.push_back(stmt);  // Add the statement to the list
+                // If not at the end, set up the line for the next statement
+                if (currentToken().type != TokenType::UNKNOWN) {
+                    statementLine = currentToken().line;
                 }
-            } catch (const std::runtime_error& e) {
-                // Handle any exceptions that occur during parsing of a single statement.
+            } else {
+                // If the line number hasn't changed and we haven't reached the end of the input,
+                // then we've encountered an unexpected token.
+                std::ostringstream errMsg;
+                errMsg << "Unexpected token at line " << currentToken().line
+                       << " column " << currentToken().column << ": " << currentToken().value << "\n";
                 for (auto& stmt : statements) {  // Clear already parsed statements
                     clearTree(stmt);
+                    clearTree(root);
                 }
-                statements.clear();  // Clear the vector to avoid dangling pointers
-                throw;  // Re-throw the exception to be handled by the outer try-catch block
+                throw std::runtime_error(errMsg.str());
             }
         }
     } catch (...) {
