@@ -272,7 +272,14 @@ Node* InfixParser::factor(std::ostream& os) {
     Node* node = nullptr;  // Initialize node pointer to nullptr
 
     try {
-        if (token.type == TokenType::NUMBER) {
+        if (token.type == TokenType::PRINT) {
+            // This assumes that the token immediately following 'print' is the start of the expression to print
+            currentTokenIndex++; // Consume 'print' token
+            Node* printArgument = expression(os); // Parse the expression to be printed
+
+            node = new Node(NodeType::PRINT);
+            node->children.push_back(printArgument);
+        }else if (token.type == TokenType::NUMBER) {
             node = new Node(NodeType::NUMBER, std::stod(token.value));
             currentTokenIndex++;
         } 

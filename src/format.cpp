@@ -75,6 +75,9 @@ std::string format(Node* node, std::ostream& os = std::cout) {
             break;
         case NodeType::MODULO:
             return "(" + format(node->children[0]) + " % " + format(node->children[1]) + ")";
+        case NodeType::PRINT:
+            result = "print " + format(node->children[0], os);
+            break;
         default:
             os << "Error: Unknown node type encountered while constructing infix string.\n";
             exit(1);
