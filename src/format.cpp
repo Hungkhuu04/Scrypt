@@ -79,13 +79,24 @@ std::string format(Node* node, int indentLevel = 0 ,std::ostream& os = std::cout
         case NodeType::PRINT:
             result = "print " + format(node->children[0], indentLevel, os);
             break;
-        case NodeType::WHILE:
-            result = indent + "while (" + format(node->children[0], indentLevel, os) + ") {\n";
-            for (const auto& child : node->children[1]->children) { // Assuming second child is the block containing statements
-                result += format(child, indentLevel + 4, os) + "\n";
+        case NodeType::WHILE: {
+            result = indent + "while " + format(node->children[0], 0, os) + " {\n";
+            for (const auto& child : node->children[1]->children) { // Assuming the second child is the block containing statements
+                result += format(child, indentLevel + 1, os);
+                result += "\n";
             }
             result += indent + "}";
             break;
+        }
+        case NodeType::BLOCK: {
+            result = indent + "{\n";
+            for (const auto& child : node->children) {
+                result += format(child, indentLevel + 4, os); // You can adjust the indentation as needed
+                result += "\n";
+            }
+            result += indent + "}";
+            break;
+        }
         default:
             os << "Error: Unknown node type encountered while constructing infix string.\n";
             exit(1);
@@ -109,34 +120,31 @@ void clearTree(Node* node) {
 
 int main() {
     ostream& os = cout;
-    std::vector<std::string> expressions;
+    std::string codeBlock;
     std::string inputLine;
 
     // Read all lines until EOF is received
     while (std::getline(std::cin, inputLine)) {
-        if (!inputLine.empty()) {  // Skip empty lines
-            expressions.push_back(inputLine);
-        }
+        codeBlock += inputLine + "\n"; // Add the line to the code block
     }
 
-    // Now that we have received EOF, process each expression
-    for (const auto& expr : expressions) {
-        try {
-            Lexer lexer(expr);
-            auto tokens = lexer.tokenize();
-            // Your error handling for lexer
-            if (lexer.isSyntaxError(tokens)) {
-                throw std::runtime_error("");
-            }
-            InfixParser parser(tokens);
-            Node* root = parser.parse(os);  // Assuming parse() doesn't need an ostream parameter
-            os << format(root, 0) << std::endl;    // Output the formatted string
-        } catch (const std::runtime_error& e) {
-            std::cerr << e.what() << std::endl;
-        } catch (...) {
-            std::cerr << "An unknown exception occurred." << std::endl;
+    // Process the entire code block as a single expression (which may contain multiple statements)
+    try {
+        Lexer lexer(codeBlock);
+        auto tokens = lexer.tokenize();
+        // Your error handling for lexer
+        if (lexer.isSyntaxError(tokens)) {
+            throw std::runtime_error("");
         }
+        InfixParser parser(tokens);
+        Node* root = parser.parse(os);
+        os << format(root, 0, os) << std::endl;    // Output the formatted string
+    } catch (const std::runtime_error& e) {
+        std::cerr << e.what() << std::endl;
+    } catch (...) {
+        std::cerr << "An unknown exception occurred." << std::endl;
     }
 
     return 0;
 }
+

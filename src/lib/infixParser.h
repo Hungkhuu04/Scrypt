@@ -50,6 +50,9 @@ private:
     Node* expression(std::ostream& os = std::cerr); //Arithmetic expression like + or -
     Token& currentToken();
     Node* factor(std::ostream& os = std::cerr); // The most basic element whether it is an expression in parenthesis or numbers or variables.
+    Node* ifStatement(std::ostream& os);
+    Node* whileStatement(std::ostream& os);
+    Node* statement(std::ostream& os);
 
 public:
     InfixParser(const std::vector<Token>& tokens);

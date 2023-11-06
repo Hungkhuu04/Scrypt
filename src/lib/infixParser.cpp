@@ -315,47 +315,6 @@ Node* InfixParser::factor(std::ostream& os) {
                 currentTokenIndex++;
                 break;
             }
-            case TokenType::WHILE: {
-                // Scope for WHILE handling
-                currentTokenIndex++;
-                Node* condition = expression(os); // Parse the condition expression
-
-                // Verify that a LEFT_BRACE follows the condition
-                if (currentToken().type != TokenType::LEFT_BRACE) {
-                    throw std::runtime_error("Expected '{' after 'while' condition at line " + std::to_string(currentToken().line) + ".");
-                }
-
-                currentTokenIndex++;
-                Node* body = new Node(NodeType::BLOCK); // Create a new node for the while body
-
-                // Parse the body of the while loop
-                // ... (You need to implement this part based on how your language handles blocks and statements)
-
-                node = new Node(NodeType::WHILE);
-                node->children.push_back(condition);
-                node->children.push_back(body);
-
-                // Ensure that a RIGHT_BRACE closes the block
-                if (currentToken().type != TokenType::RIGHT_BRACE) {
-                    throw std::runtime_error("Expected '}' after 'while' body at line " + std::to_string(currentToken().line) + ".");
-                }
-                currentTokenIndex++;
-                break;
-            }
-            case TokenType::LEFT_BRACE: {
-                // Scope for block handling
-                Node* block = new Node(NodeType::BLOCK);
-                // Parse the block
-                // ... (You need to implement this part based on how your language handles blocks)
-
-                // Ensure that a RIGHT_BRACE closes the block
-                if (currentToken().type != TokenType::RIGHT_BRACE) {
-                    throw std::runtime_error("Expected '}' after block at line " + std::to_string(currentToken().line) + ".");
-                }
-                currentTokenIndex++;
-                node = block;
-                break;
-            }
             default: {
                 // Handle unexpected tokens
                 throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
@@ -371,24 +330,111 @@ Node* InfixParser::factor(std::ostream& os) {
 
 
 // This function initiates the parsing process and returns the root of the AST.
+// This function initiates the parsing process and returns the root of the AST.
 Node* InfixParser::parse(std::ostream& os) {
+    Node* rootNode = new Node(NodeType::BLOCK); // A root node to hold a sequence of statements
     try {
-        root = expression(os);
+        while (currentToken().type != TokenType::END) {
+            Node* statementNode = statement(os);
+            if (statementNode) {
+                rootNode->children.push_back(statementNode);
+            }
+
+            // Skip over semicolons or new line characters that separate statements
+            while (currentToken().type == TokenType::SEMICOLON || currentToken().type == TokenType::NEWLINE) {
+                currentTokenIndex++; // Consume the token
+            }
+        }
+
+        // After processing all statements, check for unmatched parentheses or braces
         if (unmatchedParentheses != 0) {
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
-        }
-        if (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
-        }
-        if (currentToken().type != TokenType::END || currentToken().value != "END") {
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
+            throw std::runtime_error("Unmatched parentheses in input.");
         }
     } catch (const std::runtime_error& e) {
-        throw;  // Re-throw the caught exception
+        clearTree(rootNode); // Clear the AST in case of an exception
+        throw; // Re-throw the exception
     }
-    return root;
+    return rootNode;
 }
 
+Node* InfixParser::ifStatement(std::ostream& os) {
+    // Create an if statement node
+    // Parse the condition
+    // Parse the body of the if
+    // Check for an else, and if present, parse the else part
+    return nullptr;
+}
+
+Node* InfixParser::whileStatement(std::ostream& os) {
+    // Create a while statement node
+    Node* whileNode = new Node(NodeType::WHILE);
+
+    currentTokenIndex++; // Consume the 'while' token
+
+    // Parse the condition
+    Node* condition = expression(os);
+    if (!condition) {
+        clearTree(whileNode);
+        throw std::runtime_error("Expected condition after 'while' keyword.");
+    }
+    whileNode->children.push_back(condition);
+
+    // Expect and consume the left brace '{'
+    if (currentToken().type != TokenType::LEFT_BRACE) {
+        clearTree(whileNode);
+        throw std::runtime_error("Expected '{' after condition in 'while' statement.");
+    }
+    currentTokenIndex++;
+
+    // Parse the body of the while loop
+    Node* body = new Node(NodeType::BLOCK);
+    while (currentToken().type != TokenType::RIGHT_BRACE && currentToken().type != TokenType::END) {
+        Node* stmt = statement(os);
+        if (stmt) {
+            body->children.push_back(stmt);
+        }
+        // Additional check for END to avoid an infinite loop
+        if (currentToken().type == TokenType::END) {
+            clearTree(whileNode);
+            os << "Error: Unexpected end of file. Expected '}' to close 'while' statement.\n";
+            return nullptr; // Or throw an exception based on your error handling strategy
+        }
+    }
+
+    // If the loop exited because it encountered a '}', the body is properly closed
+    if (currentToken().type == TokenType::RIGHT_BRACE) {
+        whileNode->children.push_back(body);
+        currentTokenIndex++; // Consume the '}' token
+    } else {
+        // If the loop exited because of an END token, the body wasn't properly closed
+        clearTree(whileNode);
+        throw std::runtime_error("Unexpected end of input: expected '}' to close 'while' loop.");
+    }
+
+    return whileNode;
+}
+
+
+// You may want to introduce a new function to differentiate between expressions and statements
+Node* InfixParser::statement(std::ostream& os) {
+    Token& token = currentToken();
+    Node* node = nullptr;
+
+    switch (token.type) {
+        case TokenType::IF:
+            node = ifStatement(os);
+            break;
+        case TokenType::WHILE:
+            node = whileStatement(os);
+            break;
+        // ... handle other statement types ...
+        default:
+            // If it's not a statement, it might be an expression
+            node = expression(os);
+            break;
+    }
+    return node;
+}
 
 // This function recursively deallocates memory used by the nodes in the AST, ensuring no memory leaks.
 void InfixParser::clearTree(Node*& node) {  // Changed node to a reference to a pointer
