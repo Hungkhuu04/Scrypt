@@ -25,6 +25,7 @@ enum class TokenType {
     LOGICAL_OR,
     BOOLEAN_TRUE,
     BOOLEAN_FALSE,
+    NEWLINE
 
 };
 
