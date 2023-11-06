@@ -95,50 +95,36 @@ void clearTree(Node* node) {
 }
 
 
+
 int main() {
-    std::ostream& os = std::cout;
+    ostream& os = cout;
     std::vector<std::string> expressions;
-    std::string line;
+    std::string inputLine;
 
-    // Read lines until EOF is encountered (Ctrl+D)
-    while (std::getline(std::cin, line)) {
-        // Skip empty lines
-        if (!line.empty()) {
-            expressions.push_back(line);
+    // Read all lines until EOF is received
+    while (std::getline(std::cin, inputLine)) {
+        if (!inputLine.empty()) {  // Skip empty lines
+            expressions.push_back(inputLine);
         }
     }
 
-    std::vector<Node*> statements;
+    // Now that we have received EOF, process each expression
     for (const auto& expr : expressions) {
-        Lexer lexer(expr);
-        auto tokens = lexer.tokenize();
-
-        if (lexer.isSyntaxError(tokens)) {
-            throw std::runtime_error("");
-        }
-
-        InfixParser parser(tokens);
-        Node* parsedExpr = nullptr;
         try {
-            parsedExpr = parser.parse(os);
+            Lexer lexer(expr);
+            auto tokens = lexer.tokenize();
+            // Your error handling for lexer
+            if (lexer.isSyntaxError(tokens)) {
+                throw std::runtime_error("");
+            }
+            InfixParser parser(tokens);
+            Node* root = parser.parse(os);  // Assuming parse() doesn't need an ostream parameter
+            os << format(root) << std::endl;  // Output the formatted string
         } catch (const std::runtime_error& e) {
-            os << "Parse error: " << e.what() << std::endl;
-            continue;
+            std::cerr << e.what() << std::endl;
+        } catch (...) {
+            std::cerr << "An unknown exception occurred." << std::endl;
         }
-
-        if (parsedExpr) {
-            statements.push_back(parsedExpr);
-        }
-    }
-
-    // Output formatted blocks of code
-    for (auto& statement : statements) {
-        os << format(statement) << std::endl;
-    }
-
-    // Clean up the AST to prevent memory leaks
-    for (auto& statement : statements) {
-        clearTree(statement);
     }
 
     return 0;
