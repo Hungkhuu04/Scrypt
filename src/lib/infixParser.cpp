@@ -323,7 +323,6 @@ Node* InfixParser::parse(std::ostream& os) {
             throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
     } catch (const std::runtime_error& e) {
-        clearTree(root);  // Clear the memory
         throw;  // Re-throw the caught exception
     }
     return root;
