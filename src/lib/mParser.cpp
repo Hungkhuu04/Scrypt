@@ -328,7 +328,7 @@ mNode* mParser::factor(std::ostream& os) {
 // This function initiates the parsing process and returns the root of the AST.
 mNode* mParser::parse(std::ostream& os) {
     root = new mNode(mNodeType::BLOCK); // Consider the entire program a block
-    while (currentTokenIndex < tokens.size() && currentToken().type != TokenType::END) {
+    while (currentTokenIndex < static_cast<int>(tokens.size()) && currentToken().type != TokenType::END) {
         root->children.push_back(parseStatement(os));
     }
     return root;
