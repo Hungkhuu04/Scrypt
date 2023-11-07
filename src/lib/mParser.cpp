@@ -16,7 +16,7 @@ Token& mParser::currentToken() {
 }
 
 void mParser::advance() {
-    if (currentTokenIndex < tokens.size()) {
+    if (currentTokenIndex < static_cast<int>(tokens.size())) {
         currentTokenIndex++;
     }
 }
@@ -333,6 +333,36 @@ mNode* mParser::parse(std::ostream& os) {
     }
     return root;
 }
+
+mNode* mParser::parseStatement(std::ostream& os) {
+    mNode* node = nullptr;
+
+    // Assume currentToken(), match(), and expression() functions are defined.
+    // They manage the current parsing position and parse expressions respectively.
+    Token tok = currentToken();
+
+    switch (tok.type) {
+        case TokenType::IF:
+            node = parseIfStatement(os);
+            break;
+        case TokenType::WHILE:
+            node = parseWhileStatement(os);
+            break;
+        case TokenType::PRINT:
+            node = parsePrintStatement(os);
+            break;
+        case TokenType::LEFT_BRACE:
+            node = parseBlock(os);
+            break;
+        default:
+            node = expression(os);  // Defaults to parsing an expression
+            break;
+    }
+
+    return node;
+}
+
+
 mNode* mParser::parseIfStatement(std::ostream& os) {
     // Check for 'if' token
     if (tokens[currentTokenIndex].type != TokenType::IF) {
@@ -428,33 +458,6 @@ mNode* mParser::parseBlock(std::ostream& os) {
     return blockNode;
 }
 
-mNode* mParser::parseStatement(std::ostream& os) {
-    mNode* node = nullptr;
-
-    // Assume currentToken(), match(), and expression() functions are defined.
-    // They manage the current parsing position and parse expressions respectively.
-    Token tok = currentToken();
-
-    switch (tok.type) {
-        case TokenType::IF:
-            node = parseIfStatement(os);
-            break;
-        case TokenType::WHILE:
-            node = parseWhileStatement(os);
-            break;
-        case TokenType::PRINT:
-            node = parsePrintStatement(os);
-            break;
-        case TokenType::LEFT_BRACE:
-            node = parseBlock(os);
-            break;
-        default:
-            node = expression(os);  // Defaults to parsing an expression
-            break;
-    }
-
-    return node;
-}
 
 
 // This function recursively deallocates memory used by the mnodes in the AST, ensuring no memory leaks.
