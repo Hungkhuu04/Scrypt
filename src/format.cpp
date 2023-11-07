@@ -75,7 +75,8 @@ std::string format(Node* node, int indentLevel = 0 ,std::ostream& os = std::cout
             result = "(" + format(node->children[0], indentLevel, os) + " ^ " + format(node->children[1], indentLevel, os) + ")";
             break;
         case NodeType::MODULO:
-            return "(" + format(node->children[0]) + " % " + format(node->children[1]) + ")";
+            result = "(" + format(node->children[0], indentLevel, os) + " % " + format(node->children[1], indentLevel, os) + ")";
+            break;
         case NodeType::PRINT:
             result = "print " + format(node->children[0], indentLevel, os);
             break;
