@@ -318,25 +318,6 @@ mNode* mParser::factor(std::ostream& os) {
     return mnode;
 }
 
-mNode* mParser::parse(std::ostream& os) {
-    try {
-        root = expression(os);
-        if (unmatchedParentheses != 0) {
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
-        }
-        if (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
-        }
-        if (currentToken().type != TokenType::END || currentToken().value != "END") {
-            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
-        }
-    } catch (const std::runtime_error& e) {
-        throw;  // Re-throw the caught exception
-    }
-    return root;
-}
-
-
 // This function initiates the parsing process and returns the root of the AST.
 mNode* mParser::parse(std::ostream& os) {
     mNode* rootmNode = new mNode(mNodeType::BLOCK); // A root mnode to hold a sequence of statements
