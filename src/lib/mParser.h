@@ -1,5 +1,6 @@
-#ifndef INFIX_PARSER_H
-#define INFIX_PARSER_H
+
+#ifndef M_PARSER_H
+#define M_PARSER_H
 
 #include "lex.h"
 #include <vector>
@@ -16,8 +17,9 @@ enum class NodeType {
     ASSIGNMENT_STATEMENT,
     WHILE_STATEMENT,
     IF_STATEMENT,
-    PRINT_STATEMENT,
-    END
+    PRINT_STATEMENT,BLOCK,
+    END, LEFT_BRACE, RIGHT_BRACE,
+    NEWLINE,
 };
 
 // Structure representing a node in the AST
@@ -38,6 +40,7 @@ private:
     int currentTokenIndex;
     Node* root;
     int unmatchedParentheses = 0;
+
     Node*assignmentExpression(std::ostream& os);
     Node* logicalOrExpression(std::ostream& os);
     Node* logicalAndExpression(std::ostream& os);
@@ -47,8 +50,16 @@ private:
     Node* multiplicativeExpression(std::ostream& os);
     Node* logicalXorExpression(std::ostream& os);
     Node* expression(std::ostream& os = std::cerr); //Arithmetic expression like + or -
+
     Token& currentToken();
     Node* factor(std::ostream& os = std::cerr); // The most basic element whether it is an expression in parenthesis or numbers or variables.
+
+    Node* ifStatement(std::ostream& os);
+    Node* whileStatement(std::ostream& os);
+    Node* statement(std::ostream& os);
+    Node* printStatement(std::ostream& os);
+    Node* assignmentStatement(std::ostream& os);
+    Node* parseBlock(std::ostream& os);
 
 public:
     InfixParser(const std::vector<Token>& tokens);
