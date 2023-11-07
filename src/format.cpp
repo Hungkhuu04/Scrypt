@@ -1,140 +1,98 @@
 #include "lib/lex.h"
-#include "lib/infixParser.h"
+#include "lib/mParser.h"
 #include <iostream>
 #include <string>
 using namespace std;
-std::string formatDecimal(double value) {
-    if (value == static_cast<int>(value)) {
-        return to_string(static_cast<int>(value));
-    } else {
-        ostringstream ss;
-        ss << value;
-        return ss.str();
-    }
-}
 
-std::string format(Node* node, int indentLevel = 0 ,std::ostream& os = std::cout){
-    if (!node) {
-        return "";
-    }
-    
-    std::string result;
-    std::string indent(indentLevel, ' ');
-    
-    switch (node->type) {
-        case NodeType::NUMBER:
-            result = formatDecimal(node->value);  // assuming formatDecimal is defined elsewhere
-            break;
-        case NodeType::ADD:
-            result = "(" + format(node->children[0], indentLevel, os) + " + " + format(node->children[1], indentLevel, os) + ")";
-            break;
-        case NodeType::SUBTRACT:
-            result = "(" + format(node->children[0], indentLevel, os) + " - " + format(node->children[1], indentLevel, os) + ")";
-            break;
-        case NodeType::MULTIPLY:
-            result = "(" + format(node->children[0], indentLevel, os) + " * " + format(node->children[1], indentLevel, os) + ")";
-            break;
-        case NodeType::DIVIDE:
-            result = "(" + format(node->children[0], indentLevel, os) + " / " + format(node->children[1], indentLevel, os) + ")";
-            break;
-        case NodeType::ASSIGN:
-            result = "(" + node->children[0]->identifier + " = " + format(node->children[1], indentLevel, os) + ")";
-            break;
-        case NodeType::IDENTIFIER:
-            result = node->identifier;
-            break;
-        case NodeType::BOOLEAN_LITERAL:
-            result = (node->value == 1) ? "true" : "false";
-            break;
-        // New node types for logical and relational operators
-        case NodeType::LESS_THAN:
-            result = "(" + format(node->children[0], indentLevel, os) + " < " + format(node->children[1], indentLevel, os) + ")";
-            break;
-        case NodeType::LESS_EQUAL:
-            result = "(" + format(node->children[0], indentLevel, os) + " <= " + format(node->children[1], indentLevel, os) + ")";
-            break;
-        case NodeType::GREATER_THAN:
-            result = "(" + format(node->children[0], indentLevel, os) + " > " + format(node->children[1], indentLevel, os) + ")";
-            break;
-        case NodeType::GREATER_EQUAL:
-            result = "(" + format(node->children[0], indentLevel, os) + " >= " + format(node->children[1], indentLevel, os) + ")";
-            break;
-        case NodeType::EQUAL:
-            result = "(" + format(node->children[0], indentLevel, os) + " == " + format(node->children[1], indentLevel, os) + ")";
-            break;
-        case NodeType::NOT_EQUAL:
-            result = "(" + format(node->children[0], indentLevel, os) + " != " + format(node->children[1], indentLevel, os) + ")";
-            break;
-        case NodeType::LOGICAL_AND:
-            result = "(" + format(node->children[0], indentLevel, os) + " & " + format(node->children[1], indentLevel, os) + ")";
-            break;
-        case NodeType::LOGICAL_OR:
-            result = "(" + format(node->children[0], indentLevel, os) + " | " + format(node->children[1], indentLevel, os) + ")";
-            break;
-        case NodeType::LOGICAL_XOR:
-            result = "(" + format(node->children[0], indentLevel, os) + " ^ " + format(node->children[1], indentLevel, os) + ")";
-            break;
-        case NodeType::MODULO:
-            result = "(" + format(node->children[0], indentLevel, os) + " % " + format(node->children[1], indentLevel, os) + ")";
-            break;
-        case NodeType::PRINT:
-            result = "print " + format(node->children[0], indentLevel, os);
-            break;
-        case NodeType::WHILE: {
-            result = indent + "while " + format(node->children[0], 0, os) + " {\n";
-            for (const auto& child : node->children[1]->children) { // Assuming the second child is the block containing statements
-                result += format(child, indentLevel + 1, os);
-                result += "\n";
-            }
-            result += indent + "}";
-            break;
+void printAST(mNode* node, std::ostream& os, int depth = 0) {
+    if (!node) return;
+
+    // Lambda function to print indentation
+    auto printIndent = [&os](int level) {
+        for (int i = 0; i < level; ++i) {
+            os << "    "; // 4 spaces for each level of depth
         }
+    };
+
+    switch (node->type) {
+        case mNodeType::ASSIGNMENT_STATEMENT:
+            // Handle assignment separately if needed, to include the identifier name
+            break;
+
+        case mNodeType::IF_STATEMENT:
+            printIndent(depth);
+            os << "if (";
+            printAST(node->condition, os, depth);
+            os << ") {\n";
+            printAST(node->thenBranch, os, depth + 1);
+            if (node->elseBranch) {
+                printIndent(depth);
+                os << "} else {\n";
+                printAST(node->elseBranch, os, depth + 1);
+            }
+            printIndent(depth);
+            os << "}\n";
+            break;
+
+        case mNodeType::WHILE_STATEMENT:
+            printIndent(depth);
+            os << "while (";
+            printAST(node->condition, os, depth);
+            os << ") {\n";
+            printAST(node->body, os, depth + 1);
+            printIndent(depth);
+            os << "}\n";
+            break;
+
+        case mNodeType::PRINT_STATEMENT:
+            printIndent(depth);
+            os << "print ";
+            printAST(node->children.front(), os, depth);
+            os << '\n';
+            break;
+
+        case mNodeType::BLOCK:
+            for (auto& statement : node->statements) {
+                printAST(statement, os, depth);
+            }
+            break;
+
         default:
-            os << "Error: Unknown node type encountered while constructing infix string.\n";
-            exit(1);
+            // By default, assume it is an expression node
+            os << '(';
+            for (auto& child : node->children) {
+                printAST(child, os, depth);
+            }
+            os << ')';
+            break;
     }
-    return result;
 }
-
-void clearTree(Node* node) {
-    if (node == nullptr) return;
-
-    // Recursively delete children nodes
-    for (auto& child : node->children) {
-        clearTree(child);
-    }
-
-    // Delete the current node
-    delete node;
-}
-
 
 
 int main() {
-    ostream& os = cout;
-    std::string codeBlock;
-    std::string inputLine;
+    std::ostream& out_stream = std::cout; // This is where the AST will be printed
+    std::ostream& err_stream = std::cerr; // This is where errors will be reported
 
-    // Read all lines until EOF is received
-    while (std::getline(std::cin, inputLine)) {
-        codeBlock += inputLine + "\n"; // Add the line to the code block
-    }
-
-    // Process the entire code block as a single expression (which may contain multiple statements)
     try {
-        Lexer lexer(codeBlock);
-        auto tokens = lexer.tokenize();
-        // Your error handling for lexer
-        if (lexer.isSyntaxError(tokens)) {
-            throw std::runtime_error("");
-        }
-        InfixParser parser(tokens);
-        Node* root = parser.parse(os);
-        os << format(root, 0, os) << std::endl;    // Output the formatted string
-    } catch (const std::runtime_error& e) {
-        std::cerr << e.what() << std::endl;
+        std::ostringstream buffer;
+        buffer << std::cin.rdbuf(); // Read the entire input into a string buffer
+        std::string input = buffer.str();
+
+        std::vector<Token> tokens = Lexer(input).tokenize(); // Tokenize the input
+        mParser parser(tokens); // Create a parser with the tokens
+        mNode* root = parser.parse(err_stream); // Parse the tokens into an AST, passing err_stream for error messages
+
+        printAST(root, out_stream); // Print the AST, passing out_stream for output
+
+        parser.clearTree(root); // Clean up the AST to avoid memory leaks
+    } catch (const std::exception& e) {
+        // Catch all exceptions derived from std::exception
+        err_stream << "Error: " << e.what() << '\n';
+        return 1; // Return a non-zero value to indicate an error
     } catch (...) {
-        std::cerr << "An unknown exception occurred." << std::endl;
+        // Catch all other types of exceptions
+        err_stream << "An unknown error occurred.\n";
+        return 1; // Return a non-zero value to indicate an error
     }
 
     return 0;

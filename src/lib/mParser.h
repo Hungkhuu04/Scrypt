@@ -17,7 +17,9 @@ enum class mNodeType {
     ASSIGNMENT_STATEMENT,
     WHILE_STATEMENT,
     IF_STATEMENT,
-    PRINT_STATEMENT,BLOCK,
+    PRINT_STATEMENT,
+    ELSE_STATEMENT,
+    BLOCK, 
     END, LEFT_BRACE, RIGHT_BRACE,
     NEWLINE,
 };
@@ -28,11 +30,70 @@ struct mNode {
     double value;
     bool boolValue;
     std::string identifier;
-    std::vector<mNode*> children;
-    mNode(mNodeType t, double v = 0, const std::string& id = "") 
-        : type(t), value(v), identifier(id) {}
-};
+    
+    mNode* condition;        // Used for conditional (if) and loop (while) nodes
+    mNode* thenBranch;       // Used for the 'then' part of an if statement
+    mNode* elseBranch;       // Used for the 'else' part of an if statement
+    mNode* body;
+    mNode* Lvalue;             // Used for the body of loops (while) and blocks
+    std::vector<mNode*> children; // Used for expressions and storing multiple statements in a block
+    std::vector<mNode*> statements;
 
+    // Constructors for different types of nodes
+    mNode(mNodeType t, double v = 0, bool bv = false, const std::string& id = "")
+        : type(t), value(v), boolValue(bv), identifier(id), condition(nullptr),
+          thenBranch(nullptr), elseBranch(nullptr), body(nullptr) {}
+
+    // Destructor to deallocate dynamically allocated nodes
+    ~mNode() {
+        delete condition;
+        delete thenBranch;
+        delete elseBranch;
+        delete body;
+        for (auto child : children) {
+            delete child;
+        }
+    }
+
+    // Prevent copy semantics to avoid double deletion
+    mNode(const mNode& other) = delete;
+    mNode& operator=(const mNode& other) = delete;
+
+    // Allow move semantics for ownership transfer
+    mNode(mNode&& other) noexcept
+        : type(other.type), value(other.value), boolValue(other.boolValue),
+          identifier(std::move(other.identifier)), condition(other.condition),
+          thenBranch(other.thenBranch), elseBranch(other.elseBranch), body(other.body),
+          children(std::move(other.children)) {
+        
+        other.condition = nullptr;
+        other.thenBranch = nullptr;
+        other.elseBranch = nullptr;
+        other.body = nullptr;
+    }
+
+    mNode& operator=(mNode&& other) noexcept {
+        if (this != &other) {
+            this->~mNode(); // Clean up current resources
+            
+            type = other.type;
+            value = other.value;
+            boolValue = other.boolValue;
+            identifier = std::move(other.identifier);
+            condition = other.condition;
+            thenBranch = other.thenBranch;
+            elseBranch = other.elseBranch;
+            body = other.body;
+            children = std::move(other.children);
+
+            other.condition = nullptr;
+            other.thenBranch = nullptr;
+            other.elseBranch = nullptr;
+            other.body = nullptr;
+        }
+        return *this;
+    }
+};
 
 class mParser {
 private:
@@ -41,6 +102,7 @@ private:
     mNode* root;
     int unmatchedParentheses = 0;
 
+    // All these expression functions serve to parse a singular expression.
     mNode*assignmentExpression(std::ostream& os);
     mNode* logicalOrExpression(std::ostream& os);
     mNode* logicalAndExpression(std::ostream& os);
@@ -53,13 +115,13 @@ private:
 
     Token& currentToken();
     mNode* factor(std::ostream& os = std::cerr); // The most basic element whether it is an expression in parenthesis or numbers or variables.
-
-    mNode* ifStatement(std::ostream& os);
-    mNode* whileStatement(std::ostream& os);
-    mNode* statement(std::ostream& os);
-    mNode* printStatement(std::ostream& os);
-    mNode* assignmentStatement(std::ostream& os);
+    mNode* parseIfStatement(std::ostream& os);
+    mNode* parseWhileStatement(std::ostream& os);
+    mNode* parsePrintStatement(std::ostream& os);
     mNode* parseBlock(std::ostream& os);
+    mNode* parseStatement(std::ostream& os);
+
+    void advance();
 
 public:
     mParser(const std::vector<Token>& tokens);
