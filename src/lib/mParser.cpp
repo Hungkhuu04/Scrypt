@@ -6,12 +6,12 @@
 #include <stdexcept>
 
 // Constructor for the Parser class. Initializes the tokens vector and sets the current token index to 0.
-InfixParser::InfixParser(const std::vector<Token>& tokens) 
+mParser::mParser(const std::vector<Token>& tokens) 
     : tokens(tokens), currentTokenIndex(0), root(nullptr), unmatchedParentheses(0) {}
 
 
 // Returns the current token being processed.
-Token& InfixParser::currentToken() {
+Token& mParser::currentToken() {
     return tokens[currentTokenIndex];
 }
 
@@ -19,7 +19,7 @@ Token& InfixParser::currentToken() {
 // This function parses an expression and constructs the Abstract Syntax Tree (AST).
 // It checks the current token type and adds the corresponding node to the AST.
 // If the token type is invalid, it outputs an error message.
-Node* InfixParser::expression(std::ostream& os) {
+Node* mParser::expression(std::ostream& os) {
     Node* node = nullptr;
     try {
         node = assignmentExpression(os);
@@ -31,7 +31,7 @@ Node* InfixParser::expression(std::ostream& os) {
 }
 
 
-Node* InfixParser::assignmentExpression(std::ostream& os) {
+Node* mParser::assignmentExpression(std::ostream& os) {
     Node* node = logicalOrExpression(os);
     Node* valueNode = nullptr;
 
@@ -63,7 +63,7 @@ Node* InfixParser::assignmentExpression(std::ostream& os) {
 
 
 
-Node* InfixParser::logicalOrExpression(std::ostream& os) {
+Node* mParser::logicalOrExpression(std::ostream& os) {
     Node* node = logicalXorExpression(os);
     Node* right = nullptr;
 
@@ -88,7 +88,7 @@ Node* InfixParser::logicalOrExpression(std::ostream& os) {
     return node;
 }
 
-Node* InfixParser::logicalXorExpression(std::ostream& os) {
+Node* mParser::logicalXorExpression(std::ostream& os) {
     Node* node = logicalAndExpression(os); // Start with a lower precedence expression
     Node* right = nullptr;
 
@@ -115,7 +115,7 @@ Node* InfixParser::logicalXorExpression(std::ostream& os) {
 
 
 
-Node* InfixParser::logicalAndExpression(std::ostream& os) {
+Node* mParser::logicalAndExpression(std::ostream& os) {
     Node* node = equalityExpression(os);  // Start with a lower precedence level expression
     Node* right = nullptr;
 
@@ -142,7 +142,7 @@ Node* InfixParser::logicalAndExpression(std::ostream& os) {
 }
 
 
-Node* InfixParser::equalityExpression(std::ostream& os) {
+Node* mParser::equalityExpression(std::ostream& os) {
     Node* node = relationalExpression(os);  // Start with a higher precedence level expression
     Node* right = nullptr;
 
@@ -170,7 +170,7 @@ Node* InfixParser::equalityExpression(std::ostream& os) {
 }
 
 
-Node* InfixParser::relationalExpression(std::ostream& os) {
+Node* mParser::relationalExpression(std::ostream& os) {
     Node* node = additiveExpression(os); // Start with a higher precedence level expression
     Node* right = nullptr;
 
@@ -203,7 +203,7 @@ Node* InfixParser::relationalExpression(std::ostream& os) {
 }
 
 
-Node* InfixParser::additiveExpression(std::ostream& os) {
+Node* mParser::additiveExpression(std::ostream& os) {
     Node* node = multiplicativeExpression(os); // Start with the highest precedence expressions
     Node* right = nullptr;
 
@@ -231,7 +231,7 @@ Node* InfixParser::additiveExpression(std::ostream& os) {
 }
 
 
-Node* InfixParser::multiplicativeExpression(std::ostream& os) {
+Node* mParser::multiplicativeExpression(std::ostream& os) {
     Node* node = factor(os); // Get the first operand
     Node* right = nullptr;
 
@@ -267,7 +267,7 @@ Node* InfixParser::multiplicativeExpression(std::ostream& os) {
     return node;
 }
 
-Node* InfixParser::factor(std::ostream& os) {
+Node* mParser::factor(std::ostream& os) {
     Token& token = currentToken();
     Node* node = nullptr;  // Initialize node pointer to nullptr
 
@@ -318,7 +318,7 @@ Node* InfixParser::factor(std::ostream& os) {
     return node;
 }
 
-Node* InfixParser::parse(std::ostream& os) {
+Node* mParser::parse(std::ostream& os) {
     try {
         root = expression(os);
         if (unmatchedParentheses != 0) {
@@ -338,7 +338,7 @@ Node* InfixParser::parse(std::ostream& os) {
 
 
 // This function initiates the parsing process and returns the root of the AST.
-Node* InfixParser::parse(std::ostream& os) {
+Node* mParser::parse(std::ostream& os) {
     Node* rootNode = new Node(NodeType::BLOCK); // A root node to hold a sequence of statements
     try {
         while (currentToken().type != TokenType::END) {
@@ -376,7 +376,7 @@ Node* InfixParser::parse(std::ostream& os) {
 }
 
 // You may want to introduce a new function to differentiate between expressions and statements
-Node* InfixParser::statement(std::ostream& os) {
+Node* mParser::statement(std::ostream& os) {
     Token& token = currentToken();
     Node* node = nullptr;
 
@@ -403,7 +403,7 @@ Node* InfixParser::statement(std::ostream& os) {
     return node;
 }
 
-Node* InfixParser::assignmentStatement(std::ostream& os) {
+Node* mParser::assignmentStatement(std::ostream& os) {
     // Current token should be the identifier on the left-hand side of the assignment
     Token& token = currentToken();
     if (token.type != TokenType::IDENTIFIER) {
@@ -434,7 +434,7 @@ Node* InfixParser::assignmentStatement(std::ostream& os) {
 }
 
 
-Node* InfixParser::printStatement(std::ostream& os) {
+Node* mParser::printStatement(std::ostream& os) {
     currentTokenIndex++; // Consume 'print' token
 
     Node* printNode = new Node(NodeType::PRINT);
@@ -448,7 +448,7 @@ Node* InfixParser::printStatement(std::ostream& os) {
     return printNode;
 }
 
-Node* InfixParser::ifStatement(std::ostream& os) {
+Node* mParser::ifStatement(std::ostream& os) {
     Node* ifNode = new Node(NodeType::IF);
 
     currentTokenIndex++; // Consume 'if' token
@@ -473,7 +473,7 @@ Node* InfixParser::ifStatement(std::ostream& os) {
     return ifNode;
 }
 
-Node* InfixParser::parseBlock(std::ostream& os) {
+Node* mParser::parseBlock(std::ostream& os) {
     // Expect and consume the left brace '{'
     if (currentToken().type != TokenType::LEFT_BRACE) {
         throw std::runtime_error("Expected '{' at the start of the block.");
@@ -503,7 +503,7 @@ Node* InfixParser::parseBlock(std::ostream& os) {
     return blockNode;
 }
 
-Node* InfixParser::whileStatement(std::ostream& os) {
+Node* mParser::whileStatement(std::ostream& os) {
     // Create a while statement node
     Node* whileNode = new Node(NodeType::WHILE);
 
@@ -554,7 +554,7 @@ Node* InfixParser::whileStatement(std::ostream& os) {
 
 
 // This function recursively deallocates memory used by the nodes in the AST, ensuring no memory leaks.
-void InfixParser::clearTree(Node*& node) {  // Changed node to a reference to a pointer
+void mParser::clearTree(Node*& node) {  // Changed node to a reference to a pointer
     if (!node) return;
     for (Node*& child : node->children) {
         clearTree(child);
@@ -565,6 +565,6 @@ void InfixParser::clearTree(Node*& node) {  // Changed node to a reference to a 
 
 
 // Destructor for the Parser class. It ensures that the memory used by the AST is deallocated.
-InfixParser::~InfixParser() {
+mParser::~mParser() {
     clearTree(root);
 }
