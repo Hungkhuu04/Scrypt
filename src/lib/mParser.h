@@ -34,7 +34,7 @@ struct Node {
 };
 
 
-class InfixParser {
+class mParser {
 private:
     std::vector<Token> tokens;
     int currentTokenIndex;
@@ -62,8 +62,8 @@ private:
     Node* parseBlock(std::ostream& os);
 
 public:
-    InfixParser(const std::vector<Token>& tokens);
-    ~InfixParser();
+    mParser(const std::vector<Token>& tokens);
+    ~mParser();
     Node* parse(std::ostream& os);
     void clearTree(Node*& node);
 };
