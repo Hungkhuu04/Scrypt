@@ -4,96 +4,144 @@
 #include <string>
 using namespace std;
 
-void printAST(mNode* node, std::ostream& os, int depth = 0) {
+std::string tokenValue(const mNode* node) {
+    switch (node->type) {
+        case mNodeType::NUMBER:
+            return std::to_string(node->value);
+        case mNodeType::IDENTIFIER:
+            return node->identifier;
+        case mNodeType::ADD:
+            return "+";
+        case mNodeType::SUBTRACT:
+            return "-";
+        case mNodeType::MULTIPLY:
+            return "*";
+        case mNodeType::DIVIDE:
+            return "/";
+        case mNodeType::MODULO:
+            return "%";
+        case mNodeType::LESS:
+            return "<";
+        case mNodeType::LESS_EQUAL:
+            return "<=";
+        case mNodeType::GREATER_THAN:
+            return ">";
+        case mNodeType::GREATER_EQUAL:
+            return ">=";
+        case mNodeType::EQUAL:
+            return "==";
+        case mNodeType::NOT_EQUAL:
+            return "!=";
+        case mNodeType::LOGICAL_AND:
+            return "&";
+        case mNodeType::LOGICAL_XOR:
+            return "^";
+        case mNodeType::LOGICAL_OR:
+            return "|";
+        case mNodeType::ASSIGN:
+            return "=";
+        // Add additional cases for other node types as needed
+        default:
+            return "unknown";
+    }
+}
+void formatAST(mNode* node, std::ostream& os, int depth = 0) {
     if (!node) return;
 
-    // Lambda function to print indentation
-    auto printIndent = [&os](int level) {
-        for (int i = 0; i < level; ++i) {
-            os << "    "; // 4 spaces for each level of depth
-        }
-    };
+    // Indentation for nested structures
+    std::string indent(depth * 4, ' ');
 
     switch (node->type) {
-        case mNodeType::ASSIGNMENT_STATEMENT:
-            // Handle assignment separately if needed, to include the identifier name
+        case mNodeType::ASSIGN:
+        case mNodeType::ADD:
+        case mNodeType::SUBTRACT:
+        case mNodeType::MULTIPLY:
+        case mNodeType::DIVIDE:
+        case mNodeType::MODULO:
+        case mNodeType::LESS:
+        case mNodeType::LESS_EQUAL:
+        case mNodeType::GREATER_THAN:
+        case mNodeType::GREATER_EQUAL:
+        case mNodeType::EQUAL:
+        case mNodeType::NOT_EQUAL:
+        case mNodeType::LOGICAL_AND:
+        case mNodeType::LOGICAL_OR:
+            os << indent << "(";
+            formatAST(node->children[0], os, depth + 1);
+            os << " " << tokenValue(node) << " ";
+            formatAST(node->children[1], os, depth + 1);
+            os << ")";
             break;
-
         case mNodeType::IF_STATEMENT:
-            printIndent(depth);
-            os << "if (";
-            printAST(node->condition, os, depth);
+            os << indent << "if (";
+            formatAST(node->condition, os, depth + 1);
             os << ") {\n";
-            printAST(node->thenBranch, os, depth + 1);
+            formatAST(node->thenBranch, os, depth + 1);
+            os << indent << "}";
             if (node->elseBranch) {
-                printIndent(depth);
-                os << "} else {\n";
-                printAST(node->elseBranch, os, depth + 1);
+                os << " else {\n";
+                formatAST(node->elseBranch, os, depth + 1);
+                os << indent << "}";
             }
-            printIndent(depth);
-            os << "}\n";
             break;
-
         case mNodeType::WHILE_STATEMENT:
-            printIndent(depth);
-            os << "while (";
-            printAST(node->condition, os, depth);
+            os << indent << "while (";
+            formatAST(node->condition, os, depth + 1);
             os << ") {\n";
-            printAST(node->body, os, depth + 1);
-            printIndent(depth);
-            os << "}\n";
+            formatAST(node->body, os, depth + 1);
+            os << indent << "}";
             break;
-
         case mNodeType::PRINT_STATEMENT:
-            printIndent(depth);
-            os << "print ";
-            printAST(node->children.front(), os, depth);
-            os << '\n';
+            os << indent << "print ";
+            formatAST(node->Lvalue, os, depth);
             break;
-
+        case mNodeType::NUMBER:
+        case mNodeType::IDENTIFIER:
+        case mNodeType::BOOLEAN_LITERAL:
+            os << indent <<tokenValue(node);
+            break;
         case mNodeType::BLOCK:
-            for (auto& statement : node->statements) {
-                printAST(statement, os, depth);
+            for (mNode* stmt : node->statements) {
+                formatAST(stmt, os, depth + 1);
+                os << "\n";
             }
             break;
-
         default:
-            // By default, assume it is an expression node
-            os << '(';
-            for (auto& child : node->children) {
-                printAST(child, os, depth);
-            }
-            os << ')';
+            // Handle other types or errors
             break;
     }
 }
 
 
+
 int main() {
-    std::ostream& out_stream = std::cout; // This is where the AST will be printed
-    std::ostream& err_stream = std::cerr; // This is where errors will be reported
-
-    try {
-        std::ostringstream buffer;
-        buffer << std::cin.rdbuf(); // Read the entire input into a string buffer
-        std::string input = buffer.str();
-
-        std::vector<Token> tokens = Lexer(input).tokenize(); // Tokenize the input
-        mParser parser(tokens); // Create a parser with the tokens
-        mNode* root = parser.parse(err_stream); // Parse the tokens into an AST, passing err_stream for error messages
-
-        printAST(root, out_stream); // Print the AST, passing out_stream for output
-
-        parser.clearTree(root); // Clean up the AST to avoid memory leaks
-    } catch (const std::exception& e) {
-        // Catch all exceptions derived from std::exception
-        err_stream << "Error: " << e.what() << '\n';
-        return 1; // Return a non-zero value to indicate an error
-    } catch (...) {
-        // Catch all other types of exceptions
-        err_stream << "An unknown error occurred.\n";
-        return 1; // Return a non-zero value to indicate an error
+    std::string code;
+    std::string line;
+    std::cout << "Enter your code (Ctrl+D to finish):\n";
+    while (std::getline(std::cin, line)) {
+        code += line + '\n'; // Add the line and a newline character to code
     }
+
+    // Here you need to tokenize the input. 
+    // Assuming you have a function called `lex` which does this.
+    Lexer lexer(code);
+    auto tokens = lexer.tokenize();
+    
+    // Create a parser instance with the tokens.
+    mParser parser(tokens);
+    
+    // Parse the tokens into an AST.
+    mNode* ast = nullptr;
+    try {
+        ast = parser.parse(std::cerr);
+        // Format and print the AST.
+        formatAST(ast, std::cout);
+    } catch (const std::exception& e) {
+        std::cerr << "An error occurred: " << e.what() << std::endl;
+    }
+
+    // Clean up the AST to avoid memory leaks.
+    parser.clearTree(ast);
 
     return 0;
 }
