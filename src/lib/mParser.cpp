@@ -26,252 +26,127 @@ void mParser::advance() {
 // It checks the current token type and adds the corresponding mnode to the AST.
 // If the token type is invalid, it outputs an error message.
 mNode* mParser::expression(std::ostream& os) {
-    mNode* mnode = nullptr;
-    try {
-        mnode = assignmentExpression(os);
-    } catch (...) {
-        clearTree(mnode);
-        throw;
-    }
-    return mnode;  
+    return assignmentExpression(os);
 }
-
 
 mNode* mParser::assignmentExpression(std::ostream& os) {
-    mNode* mnode = logicalOrExpression(os);
-    mNode* valuemNode = nullptr;
+    mNode* node = logicalOrExpression(os);
 
-    try {
-        Token op = currentToken();
-        if (op.type == TokenType::ASSIGN) {
-            if (mnode->type != mNodeType::IDENTIFIER) {
-                clearTree(mnode);
-                throw std::runtime_error("Unexpected token at line " + std::to_string(op.line) + " column " + std::to_string(op.column) + ": " + op.value + "\n");
-            }
-            advance();
-            valuemNode = assignmentExpression(os);  // Handle right-associative behavior
-
-            mNode* assignmNode = new mNode(mNodeType::ASSIGN);
-            assignmNode->children.push_back(mnode);
-            assignmNode->children.push_back(valuemNode);
-
-            mnode = assignmNode;
-            valuemNode = nullptr;  
-        }
-    } catch (...) {
-        clearTree(valuemNode); // valuemNode might have been partially constructed, so clean it up.
-        clearTree(mnode);  // Clean up the entire mnode tree
-        throw; // Re-throw the current exception
+    if (currentToken().type == TokenType::ASSIGN) {
+        advance();  // Consume the '='
+        mNode* assignNode = new mNode(mNodeType::ASSIGN);
+        assignNode->children.push_back(node);
+        assignNode->children.push_back(assignmentExpression(os));  // Right-hand side of the assignment
+        node = assignNode;
     }
 
-    return mnode;
+    return node;
 }
-
-
 
 mNode* mParser::logicalOrExpression(std::ostream& os) {
-    mNode* mnode = logicalXorExpression(os);
-    mNode* right = nullptr;
+    mNode* node = logicalAndExpression(os);
 
-    try {
-        while (currentToken().type == TokenType::LOGICAL_OR) {
-            advance();
-            right = logicalXorExpression(os);
-
-            mNode* newmNode = new mNode(mNodeType::LOGICAL_OR);
-            newmNode->children.push_back(mnode);
-            newmNode->children.push_back(right);
-
-            mnode = newmNode;
-            right = nullptr;
-        }
-    } catch (...) {
-        clearTree(right);
-        clearTree(mnode);
-        throw;
+    while (currentToken().type == TokenType::LOGICAL_OR) {
+        advance();  // Consume the '||'
+        mNode* orNode = new mNode(mNodeType::LOGICAL_OR);
+        orNode->children.push_back(node);
+        orNode->children.push_back(logicalAndExpression(os));
+        node = orNode;
     }
 
-    return mnode;
+    return node;
 }
-
-mNode* mParser::logicalXorExpression(std::ostream& os) {
-    mNode* mnode = logicalAndExpression(os); // Start with a lower precedence expression
-    mNode* right = nullptr;
-
-    try {
-        while (currentToken().type == TokenType::LOGICAL_XOR) {
-            advance();
-            right = logicalAndExpression(os);
-
-            mNode* newmNode = new mNode(mNodeType::LOGICAL_XOR);
-            newmNode->children.push_back(mnode);
-            newmNode->children.push_back(right);
-
-            mnode = newmNode;
-            right = nullptr;
-        }
-    } catch (...) {
-        clearTree(right); // right might have been partially constructed, so clean it up.
-        clearTree(mnode);  // Clean up the entire left side tree
-        throw; // Re-throw the current exception
-    }
-
-    return mnode;
-}
-
-
 
 mNode* mParser::logicalAndExpression(std::ostream& os) {
-    mNode* mnode = equalityExpression(os);  // Start with a lower precedence level expression
-    mNode* right = nullptr;
+    mNode* node = equalityExpression(os);
 
-    try {
-        while (currentToken().type == TokenType::LOGICAL_AND) {
-            Token op = currentToken();
-            advance(); // Consume the '&&' token
-            right = equalityExpression(os); // Parse the right-hand operand
-
-            mNode* andmNode = new mNode(mNodeType::LOGICAL_AND);
-            andmNode->children.push_back(mnode);
-            andmNode->children.push_back(right);
-
-            mnode = andmNode; // This mnode now becomes the left-hand operand for any further LOGICAL_ANDs
-            right = nullptr; // The right mnode is now managed by andmNode, clear the pointer without deleting
-        }
-    } catch (...) {
-        clearTree(right); // right might have been partially constructed, so clean it up.
-        clearTree(mnode);  // Clean up the entire left side tree
-        throw; // Re-throw the current exception
+    while (currentToken().type == TokenType::LOGICAL_AND) {
+        advance();  // Consume the '&&'
+        mNode* andNode = new mNode(mNodeType::LOGICAL_AND);
+        andNode->children.push_back(node);
+        andNode->children.push_back(equalityExpression(os));
+        node = andNode;
     }
 
-    return mnode;
+    return node;
 }
-
 
 mNode* mParser::equalityExpression(std::ostream& os) {
-    mNode* mnode = relationalExpression(os);  // Start with a higher precedence level expression
-    mNode* right = nullptr;
+    mNode* node = relationalExpression(os);
 
-    try {
-        while (currentToken().type == TokenType::EQUAL || currentToken().type == TokenType::NOT_EQUAL) {
-            Token op = currentToken();
-            advance(); // Consume the equality/inequality token
-
-            right = relationalExpression(os);
-
-            mNode* equalitymNode = new mNode(op.type == TokenType::EQUAL ? mNodeType::EQUAL : mNodeType::NOT_EQUAL);
-            equalitymNode->children.push_back(mnode);
-            equalitymNode->children.push_back(right);
-
-            mnode = equalitymNode; // This mnode now becomes the left-hand operand for any further equality operations
-            right = nullptr; // Prevents deleting right in case of an exception
-        }
-    } catch (...) {
-        clearTree(right); // right might have been partially constructed, so clean it up.
-        clearTree(mnode);  // Clean up the entire left side tree
-        throw; // Re-throw the current exception
+    while (currentToken().type == TokenType::EQUAL || currentToken().type == TokenType::NOT_EQUAL) {
+        TokenType operatorType = currentToken().type;
+        advance();  // Consume '==' or '!='
+        mNode* eqNode = new mNode(operatorType == TokenType::EQUAL ? mNodeType::EQUAL : mNodeType::NOT_EQUAL);
+        eqNode->children.push_back(node);
+        eqNode->children.push_back(relationalExpression(os));
+        node = eqNode;
     }
 
-    return mnode;
+    return node;
 }
-
 
 mNode* mParser::relationalExpression(std::ostream& os) {
-    mNode* mnode = additiveExpression(os); // Start with a higher precedence level expression
-    mNode* right = nullptr;
+    mNode* node = additiveExpression(os);
 
-    try {
-        while (currentToken().type == TokenType::LESS || currentToken().type == TokenType::LESS_EQUAL ||
-               currentToken().type == TokenType::GREATER || currentToken().type == TokenType::GREATER_EQUAL) {
-            Token op = currentToken();
-            advance(); // Consume the relational token
-
-            right = additiveExpression(os);
-
-            mNode* relationalmNode = new mNode(
-                op.type == TokenType::LESS ? mNodeType::LESS_THAN :
-                op.type == TokenType::LESS_EQUAL ? mNodeType::LESS_EQUAL :
-                op.type == TokenType::GREATER ? mNodeType::GREATER_THAN :
-                mNodeType::GREATER_EQUAL); // The last condition must be GREATER_EQUAL
-            relationalmNode->children.push_back(mnode);
-            relationalmNode->children.push_back(right);
-
-            mnode = relationalmNode; // This mnode now becomes the left-hand operand for any further relational operations
-            right = nullptr; // Prevents deleting right in case of an exception
-        }
-    } catch (...) {
-        clearTree(right); // right might have been partially constructed, so clean it up.
-        clearTree(mnode);  // Clean up the entire left side tree
-        throw; // Re-throw the current exception
+    while (currentToken().type == TokenType::LESS || currentToken().type == TokenType::LESS_EQUAL ||
+           currentToken().type == TokenType::GREATER || currentToken().type == TokenType::GREATER_EQUAL) {
+        TokenType operatorType = currentToken().type;
+        advance();  // Consume '<', '<=', '>', '>='
+        mNode* relNode = new mNode(
+            operatorType == TokenType::LESS ? mNodeType::LESS :
+            operatorType == TokenType::LESS_EQUAL ? mNodeType::LESS_EQUAL :
+            operatorType == TokenType::GREATER ? mNodeType::GREATER_THAN :
+            mNodeType::GREATER_EQUAL
+        );
+        relNode->children.push_back(node);
+        relNode->children.push_back(additiveExpression(os));
+        node = relNode;
     }
 
-    return mnode;
+    return node;
 }
-
 
 mNode* mParser::additiveExpression(std::ostream& os) {
-    mNode* mnode = multiplicativeExpression(os); // Start with the highest precedence expressions
-    mNode* right = nullptr;
+    mNode* node = multiplicativeExpression(os);
 
-    try {
-        while (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
-            Token op = currentToken();
-            advance(); // Consume the operator token
-
-            right = multiplicativeExpression(os); // Parse the next multiplicative expression
-
-            mNode* additivemNode = new mNode(op.type == TokenType::ADD ? mNodeType::ADD : mNodeType::SUBTRACT);
-            additivemNode->children.push_back(mnode);
-            additivemNode->children.push_back(right);
-
-            mnode = additivemNode; // Update mnode to the newly created one for subsequent loops
-            right = nullptr; // Reset right to nullptr to avoid deletion in case of an exception
-        }
-    } catch (...) {
-        clearTree(right); // Clean up the right child if it was created
-        clearTree(mnode); // Clean up everything else
-        throw; // Re-throw the exception to be handled further up the stack
+    while (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
+        TokenType operatorType = currentToken().type;
+        advance();  // Consume '+' or '-'
+        mNode* addNode = new mNode(operatorType == TokenType::ADD ? mNodeType::ADD : mNodeType::SUBTRACT);
+        addNode->children.push_back(node);
+        addNode->children.push_back(multiplicativeExpression(os));
+        node = addNode;
     }
 
-    return mnode; // Return the root of the constructed subtree for additive expressions
+    return node;
 }
-
-
 mNode* mParser::multiplicativeExpression(std::ostream& os) {
-    mNode* mnode = factor(os); // Get the first operand
-    mNode* right = nullptr;
+    mNode* node = factor(os);
 
-    try {
-        while (currentToken().type == TokenType::MULTIPLY || currentToken().type == TokenType::DIVIDE || currentToken().type == TokenType::MODULO) {
-            Token op = currentToken();
-            advance(); // Move past the operator token
+    while (currentToken().type == TokenType::MULTIPLY || 
+           currentToken().type == TokenType::DIVIDE || 
+           currentToken().type == TokenType::MODULO) {
+        TokenType operatorType = currentToken().type;
+        advance();  // Consume '*', '/' or '%'
 
-            right = factor(os); // Get the next factor (operand)
+        mNode* newNode = new mNode(
+            operatorType == TokenType::MULTIPLY ? mNodeType::MULTIPLY :
+            operatorType == TokenType::DIVIDE ? mNodeType::DIVIDE :
+            mNodeType::MODULO
+        );
 
-            mNodeType newmNodeType; // Determine mnode type based on token type
-            if (op.type == TokenType::MULTIPLY) {
-                newmNodeType = mNodeType::MULTIPLY;
-            } else if (op.type == TokenType::DIVIDE) {
-                newmNodeType = mNodeType::DIVIDE;
-            } else { // Must be TokenType::MODULO
-                newmNodeType = mNodeType::MODULO;
-            }
+        newNode->children.push_back(node); // The existing node becomes the left operand
+        newNode->children.push_back(factor(os)); // Right operand
 
-            mNode* newmNode = new mNode(newmNodeType);
-            newmNode->children.push_back(mnode);
-            newmNode->children.push_back(right);
-
-            mnode = newmNode; // The new mnode becomes the current mnode for the next iteration
-            right = nullptr; // Reset right to nullptr to prevent deletion in case of an exception
-        }
-    } catch (...) {
-        clearTree(right); // Clean up right if it's been allocated
-        clearTree(mnode); // Clean up the entire left side
-        throw; // Re-throw the exception
+        node = newNode; // Update the current node to the new compound node
     }
 
-    return mnode;
+    return node;
 }
+
+// The factor(os) function is assumed to be the next part of your expression hierarchy.
+
 
 mNode* mParser::factor(std::ostream& os) {
     Token& token = currentToken();
@@ -290,39 +165,31 @@ mNode* mParser::factor(std::ostream& os) {
                 break;
             }
             case TokenType::LEFT_PAREN: {
-                // Scope for LEFT_PAREN
-                unmatchedParentheses++;
-                advance();
-                mnode = expression(os);
+                advance();  // Consume the '('
+                mnode = expression(os);  // Parse the expression within the parentheses
                 if (currentToken().type != TokenType::RIGHT_PAREN) {
-                    clearTree(mnode); // Clear the current sub-expression
-                    throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
+                    throw std::runtime_error("Expected ')' after expression");
                 }
-                unmatchedParentheses--;
-                advance();
+                advance();  // Consume the ')'
                 break;
             }
-            case TokenType::BOOLEAN_TRUE: {
-                mnode = new mNode(mNodeType::BOOLEAN_LITERAL, 1);
-                advance();
-                break;
-            }
+            case TokenType::BOOLEAN_TRUE:
             case TokenType::BOOLEAN_FALSE: {
-                mnode = new mNode(mNodeType::BOOLEAN_LITERAL, 0);
+                mnode = new mNode(mNodeType::BOOLEAN_LITERAL, token.type == TokenType::BOOLEAN_TRUE);
                 advance();
                 break;
             }
             default: {
-                // Handle unexpected tokens
-                throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
+                throw std::runtime_error("Unexpected token: " + token.value);
             }
         }
     } catch (...) {
-        clearTree(mnode); // Clear up any memory allocated before re-throwing
+        delete mnode;
         throw;  // Re-throw the exception to be handled further up the call stack
     }
     return mnode;
 }
+
 
 
 // This function initiates the parsing process and returns the root of the AST.
