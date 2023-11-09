@@ -1,147 +1,137 @@
-#include "lib/lex.h"
+#include "lib/ASTNodes.h"
 #include "lib/mParser.h"
+#include "lib/lex.h"
 #include <iostream>
 #include <string>
-using namespace std;
+#include <sstream>
 
-std::string tokenValue(const mNode* node) {
-    switch (node->type) {
-        case mNodeType::NUMBER:
-            return std::to_string(node->value);
-        case mNodeType::IDENTIFIER:
-            return node->identifier;
-        case mNodeType::ADD:
-            return "+";
-        case mNodeType::SUBTRACT:
-            return "-";
-        case mNodeType::MULTIPLY:
-            return "*";
-        case mNodeType::DIVIDE:
-            return "/";
-        case mNodeType::MODULO:
-            return "%";
-        case mNodeType::LESS:
-            return "<";
-        case mNodeType::LESS_EQUAL:
-            return "<=";
-        case mNodeType::GREATER_THAN:
-            return ">";
-        case mNodeType::GREATER_EQUAL:
-            return ">=";
-        case mNodeType::EQUAL:
-            return "==";
-        case mNodeType::NOT_EQUAL:
-            return "!=";
-        case mNodeType::LOGICAL_AND:
-            return "&";
-        case mNodeType::LOGICAL_XOR:
-            return "^";
-        case mNodeType::LOGICAL_OR:
-            return "|";
-        case mNodeType::ASSIGN:
-            return "=";
-        // Add additional cases for other node types as needed
-        default:
-            return "unknown";
-    }
-}
-void formatAST(mNode* node, std::ostream& os, int depth = 0) {
-    if (!node) return;
-
-    // Indentation for nested structures
-    std::string indent(depth * 4, ' ');
-
-    switch (node->type) {
-        case mNodeType::ASSIGN:
-        case mNodeType::ADD:
-        case mNodeType::SUBTRACT:
-        case mNodeType::MULTIPLY:
-        case mNodeType::DIVIDE:
-        case mNodeType::MODULO:
-        case mNodeType::LESS:
-        case mNodeType::LESS_EQUAL:
-        case mNodeType::GREATER_THAN:
-        case mNodeType::GREATER_EQUAL:
-        case mNodeType::EQUAL:
-        case mNodeType::NOT_EQUAL:
-        case mNodeType::LOGICAL_AND:
-        case mNodeType::LOGICAL_OR:
-            os << indent << "(";
-            formatAST(node->children[0], os, depth + 1);
-            os << " " << tokenValue(node) << " ";
-            formatAST(node->children[1], os, depth + 1);
-            os << ")";
-            break;
-        case mNodeType::IF_STATEMENT:
-            os << indent << "if (";
-            formatAST(node->condition, os, depth + 1);
-            os << ") {\n";
-            formatAST(node->thenBranch, os, depth + 1);
-            os << indent << "}";
-            if (node->elseBranch) {
-                os << " else {\n";
-                formatAST(node->elseBranch, os, depth + 1);
-                os << indent << "}";
-            }
-            break;
-        case mNodeType::WHILE_STATEMENT:
-            os << indent << "while (";
-            formatAST(node->condition, os, depth + 1);
-            os << ") {\n";
-            formatAST(node->body, os, depth + 1);
-            os << indent << "}";
-            break;
-        case mNodeType::PRINT_STATEMENT:
-            os << indent << "print ";
-            formatAST(node->Lvalue, os, depth);
-            break;
-        case mNodeType::NUMBER:
-        case mNodeType::IDENTIFIER:
-        case mNodeType::BOOLEAN_LITERAL:
-            os << indent <<tokenValue(node);
-            break;
-        case mNodeType::BLOCK:
-            for (mNode* stmt : node->statements) {
-                formatAST(stmt, os, depth + 1);
-                os << "\n";
-            }
-            break;
-        default:
-            // Handle other types or errors
-            break;
-    }
+//  function to create an indentation string
+std::string indentString(int indentLevel) {
+    return std::string(indentLevel * 4, ' '); // 4 spaces per indent level
 }
 
 
+// Formatter functions
+std::string formatAST(const std::unique_ptr<ASTNode>& node, int indent = 0);
+std::string formatBinaryOpNode(const BinaryOpNode* node, int indent) {
+    std::stringstream ss;
+    
+    ss << '(' << formatAST(node->left, 0);  
+    ss << ' ' << node->op.value << ' ';    
+    ss << formatAST(node->right, 0) << ')'; 
+    return ss.str();
+}
 
+
+std::string formatNumberNode(const NumberNode* node, int indent) {
+    return indentString(indent) + node->value.value;
+}
+
+std::string formatBooleanNode(const BooleanNode* node, int indent) {
+    return indentString(indent) + node->value.value;
+}
+
+std::string formatVariableNode(const VariableNode* node, int indent) {
+    return indentString(indent) + node->identifier.value;
+}
+
+std::string formatIfNode(const IfNode* node, int indent) {
+    std::stringstream ss;
+    ss << indentString(indent) << "if ";
+    ss << formatAST(node->condition, 0);
+    ss << " {\n";
+    ss << formatAST(node->trueBranch, indent + 1);
+    if (node->falseBranch) {
+        ss << "\n" << indentString(indent) << "} else {\n";
+        ss << formatAST(node->falseBranch, indent + 1);
+    }
+    ss << "\n" << indentString(indent) << "}";
+    return ss.str();
+}
+
+std::string formatAssignmentNode(const AssignmentNode* node, int indent) {
+    std::stringstream ss;
+    ss << indentString(indent) << '(' << node->identifier.value;
+    ss << " = " << formatAST(node->expression, 0) << ')';
+    return ss.str();
+}
+
+
+std::string formatWhileNode(const WhileNode* node, int indent) {
+    std::stringstream ss;
+    ss << indentString(indent) << "while " << formatAST(node->condition, 0) << " {\n";
+    ss << formatAST(node->body, indent + 1);
+    ss << "\n" << indentString(indent) << "}";
+    return ss.str();
+}
+
+std::string formatPrintNode(const PrintNode* node, int indent) {
+    std::stringstream ss;
+    ss << indentString(indent) << "print " << formatAST(node->expression, 0);
+    return ss.str();
+}
+
+std::string formatBlockNode(const BlockNode* node, int indent) {
+    std::stringstream ss;
+    for (const auto& stmt : node->statements) {
+        ss << formatAST(stmt, indent) << "\n";
+    }
+    std::string blockString = ss.str();
+    if (!node->statements.empty()) {
+        blockString.pop_back();
+    }
+    return blockString;
+}
+
+// Formatting function for each AST node type
+std::string formatAST(const std::unique_ptr<ASTNode>& node, int indent) {
+    if (!node) return "";
+
+    switch (node->getType()) {
+        case ASTNode::Type::BinaryOpNode:
+            return formatBinaryOpNode(static_cast<const BinaryOpNode*>(node.get()), indent);
+        case ASTNode::Type::NumberNode:
+            return formatNumberNode(static_cast<const NumberNode*>(node.get()), indent);
+        case ASTNode::Type::BooleanNode:
+            return formatBooleanNode(static_cast<const BooleanNode*>(node.get()), indent);
+        case ASTNode::Type::VariableNode:
+            return formatVariableNode(static_cast<const VariableNode*>(node.get()), indent);
+        case ASTNode::Type::AssignmentNode:
+            return formatAssignmentNode(static_cast<const AssignmentNode*>(node.get()), indent);
+        case ASTNode::Type::PrintNode:
+            return formatPrintNode(static_cast<const PrintNode*>(node.get()), indent);
+        case ASTNode::Type::IfNode:
+            return formatIfNode(static_cast<const IfNode*>(node.get()), indent);
+        case ASTNode::Type::WhileNode:
+            return formatWhileNode(static_cast<const WhileNode*>(node.get()), indent);
+        case ASTNode::Type::BlockNode:
+            return formatBlockNode(static_cast<const BlockNode*>(node.get()), indent);
+        default:
+            return "/* Unknown node type */";
+    }
+}
+
+
+
+// Code to handle input, parse it into an AST, and then call formatAST on the root...
+// This loop will continue until EOF (Ctrl+D or Ctrl+Z followed by Enter)
 int main() {
-    std::string code;
+    
     std::string line;
-    std::cout << "Enter your code (Ctrl+D to finish):\n";
+    std::string inputCode;
     while (std::getline(std::cin, line)) {
-        code += line + '\n'; // Add the line and a newline character to code
+        inputCode += line + "\n";
     }
 
-    // Here you need to tokenize the input. 
-    // Assuming you have a function called `lex` which does this.
-    Lexer lexer(code);
+    Lexer lexer(inputCode);
     auto tokens = lexer.tokenize();
-    
-    // Create a parser instance with the tokens.
-    mParser parser(tokens);
-    
-    // Parse the tokens into an AST.
-    mNode* ast = nullptr;
-    try {
-        ast = parser.parse(std::cerr);
-        // Format and print the AST.
-        formatAST(ast, std::cout);
-    } catch (const std::exception& e) {
-        std::cerr << "An error occurred: " << e.what() << std::endl;
-    }
 
-    // Clean up the AST to avoid memory leaks.
-    parser.clearTree(ast);
+    Parser parser(tokens);
+    std::unique_ptr<ASTNode> ast = parser.parse();
+
+    std::string formattedCode = formatAST(ast);
+
+    std::cout << formattedCode << std::endl;
 
     return 0;
 }

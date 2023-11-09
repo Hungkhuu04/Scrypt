@@ -123,8 +123,11 @@ std::vector<Token> Lexer::tokenize() {
     std::vector<Token> tokens;
     while (inputStream.peek() != EOF) {
         char c = inputStream.peek();
-        if (isspace(c)) {
+        if (isspace(c) && c != '\n') {
             consume(); // consume all whitespaces except newline
+        } else if (c == '\n') {
+            tokens.push_back({TokenType::NEWLINE, "\\n", line, col}); // create a newline token
+            consume();
         } else if (c == '(') {
             tokens.push_back({TokenType::LEFT_PAREN, "(", line, col});
             consume();

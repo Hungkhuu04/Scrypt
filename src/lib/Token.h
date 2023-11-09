@@ -38,6 +38,9 @@ struct Token {
     std::string value;
     int line;
     int column;
+
+     Token(TokenType type, std::string value, int line, int column)
+        : type(type), value(std::move(value)), line(line), column(column) {}
 };
 
 #endif

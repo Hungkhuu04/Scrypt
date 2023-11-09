@@ -1,19 +1,18 @@
 
-// Include the header file "parse.h" which likely contains the declarations for the Parser class and its methods.
 #include "infixParser.h"
 #include <iostream>    
 #include <string>      
 #include <stdexcept>
 
-// Constructor for the Parser class. Initializes the tokens vector and sets the current token index to 0.
 InfixParser::InfixParser(const std::vector<Token>& tokens) 
     : tokens(tokens), currentTokenIndex(0), root(nullptr), unmatchedParentheses(0) {}
 
 
-// Returns the current token being processed.
+
 Token& InfixParser::currentToken() {
     return tokens[currentTokenIndex];
 }
+
 
 
 // This function parses an expression and constructs the Abstract Syntax Tree (AST).
@@ -53,9 +52,9 @@ Node* InfixParser::assignmentExpression(std::ostream& os) {
             valueNode = nullptr;  
         }
     } catch (...) {
-        clearTree(valueNode); // valueNode might have been partially constructed, so clean it up.
-        clearTree(node);  // Clean up the entire node tree
-        throw; // Re-throw the current exception
+        clearTree(valueNode); 
+        clearTree(node);  
+        throw; 
     }
 
     return node;
@@ -89,7 +88,7 @@ Node* InfixParser::logicalOrExpression(std::ostream& os) {
 }
 
 Node* InfixParser::logicalXorExpression(std::ostream& os) {
-    Node* node = logicalAndExpression(os); // Start with a lower precedence expression
+    Node* node = logicalAndExpression(os); 
     Node* right = nullptr;
 
     try {
@@ -105,9 +104,9 @@ Node* InfixParser::logicalXorExpression(std::ostream& os) {
             right = nullptr;
         }
     } catch (...) {
-        clearTree(right); // right might have been partially constructed, so clean it up.
-        clearTree(node);  // Clean up the entire left side tree
-        throw; // Re-throw the current exception
+        clearTree(right); 
+        clearTree(node);  
+        throw; 
     }
 
     return node;
@@ -116,26 +115,26 @@ Node* InfixParser::logicalXorExpression(std::ostream& os) {
 
 
 Node* InfixParser::logicalAndExpression(std::ostream& os) {
-    Node* node = equalityExpression(os);  // Start with a lower precedence level expression
+    Node* node = equalityExpression(os);  
     Node* right = nullptr;
 
     try {
         while (currentToken().type == TokenType::LOGICAL_AND) {
             Token op = currentToken();
-            currentTokenIndex++; // Consume the '&&' token
-            right = equalityExpression(os); // Parse the right-hand operand
+            currentTokenIndex++;
+            right = equalityExpression(os); 
 
             Node* andNode = new Node(NodeType::LOGICAL_AND);
             andNode->children.push_back(node);
             andNode->children.push_back(right);
 
-            node = andNode; // This node now becomes the left-hand operand for any further LOGICAL_ANDs
-            right = nullptr; // The right node is now managed by andNode, clear the pointer without deleting
+            node = andNode; 
+            right = nullptr; 
         }
     } catch (...) {
-        clearTree(right); // right might have been partially constructed, so clean it up.
-        clearTree(node);  // Clean up the entire left side tree
-        throw; // Re-throw the current exception
+        clearTree(right); 
+        clearTree(node);  
+        throw; 
     }
 
     return node;
@@ -143,13 +142,13 @@ Node* InfixParser::logicalAndExpression(std::ostream& os) {
 
 
 Node* InfixParser::equalityExpression(std::ostream& os) {
-    Node* node = relationalExpression(os);  // Start with a higher precedence level expression
+    Node* node = relationalExpression(os); 
     Node* right = nullptr;
 
     try {
         while (currentToken().type == TokenType::EQUAL || currentToken().type == TokenType::NOT_EQUAL) {
             Token op = currentToken();
-            currentTokenIndex++; // Consume the equality/inequality token
+            currentTokenIndex++; 
 
             right = relationalExpression(os);
 
@@ -157,13 +156,13 @@ Node* InfixParser::equalityExpression(std::ostream& os) {
             equalityNode->children.push_back(node);
             equalityNode->children.push_back(right);
 
-            node = equalityNode; // This node now becomes the left-hand operand for any further equality operations
-            right = nullptr; // Prevents deleting right in case of an exception
+            node = equalityNode; 
+            right = nullptr; 
         }
     } catch (...) {
-        clearTree(right); // right might have been partially constructed, so clean it up.
-        clearTree(node);  // Clean up the entire left side tree
-        throw; // Re-throw the current exception
+        clearTree(right); 
+        clearTree(node);  
+        throw; 
     }
 
     return node;

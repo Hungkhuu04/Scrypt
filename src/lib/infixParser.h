@@ -46,9 +46,9 @@ private:
     Node* additiveExpression(std::ostream& os); 
     Node* multiplicativeExpression(std::ostream& os);
     Node* logicalXorExpression(std::ostream& os);
-    Node* expression(std::ostream& os = std::cerr); //Arithmetic expression like + or -
+    Node* expression(std::ostream& os = std::cerr); 
     Token& currentToken();
-    Node* factor(std::ostream& os = std::cerr); // The most basic element whether it is an expression in parenthesis or numbers or variables.
+    Node* factor(std::ostream& os = std::cerr); 
 
 public:
     InfixParser(const std::vector<Token>& tokens);
