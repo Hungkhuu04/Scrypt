@@ -39,16 +39,17 @@ void formatIfNode(std::ostream& os, const IfNode* node, int indent) {
     os << " {\n";
     formatAST(os, node->trueBranch, indent + 1);
     if (node->falseBranch) {
-        os << "\n" << indentString(indent) << "} else {\n";
+        os << "\n" << indentString(indent) << "}\n" << indentString(indent) << "else {\n";
         formatAST(os, node->falseBranch, indent + 1);
     }
     os << "\n" << indentString(indent) << "}";
 }
 
 void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent) {
-    os << indentString(indent) << node->identifier.value;
+    os << indentString(indent) << "(" << node->identifier.value;
     os << " = ";
     formatAST(os, node->expression, 0);
+    os << ")";
 }
 
 void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
