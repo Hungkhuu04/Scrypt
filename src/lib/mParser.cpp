@@ -1,344 +1,389 @@
-
-// Include the header file "parse.h" which likely contains the declarations for the Parser class and its methods.
 #include "mParser.h"
-#include <iostream>    
-#include <string>      
-#include <stdexcept>
+#include <iostream>
 
-// Constructor for the Parser class. Initializes the tokens vector and sets the current token index to 0.
-mParser::mParser(const std::vector<Token>& tokens) 
-    : tokens(tokens), currentTokenIndex(0), root(nullptr), unmatchedParentheses(0) {}
+// Constructor implementation
+Parser::Parser(const std::vector<Token> &tokens)
+    : tokens(tokens), current(0) {}
 
+// Parse entry function
+std::unique_ptr<ASTNode> Parser::parse()
+{
+    
+    std::vector<std::unique_ptr<ASTNode>> statements;
 
-// Returns the current token being processed.
-Token& mParser::currentToken() {
-    return tokens[currentTokenIndex];
-}
-
-void mParser::advance() {
-    if (currentTokenIndex < static_cast<int>(tokens.size())) {
-        currentTokenIndex++;
-    }
-}
-
-
-// This function parses an expression and constructs the Abstract Syntax Tree (AST).
-// It checks the current token type and adds the corresponding mnode to the AST.
-// If the token type is invalid, it outputs an error message.
-mNode* mParser::expression(std::ostream& os) {
-    return assignmentExpression(os);
-}
-
-mNode* mParser::assignmentExpression(std::ostream& os) {
-    mNode* node = logicalOrExpression(os);
-
-    if (currentToken().type == TokenType::ASSIGN) {
-        advance();  // Consume the '='
-        mNode* assignNode = new mNode(mNodeType::ASSIGN);
-        assignNode->children.push_back(node);
-        assignNode->children.push_back(assignmentExpression(os));  // Right-hand side of the assignment
-        node = assignNode;
-    }
-
-    return node;
-}
-
-mNode* mParser::logicalOrExpression(std::ostream& os) {
-    mNode* node = logicalAndExpression(os);
-
-    while (currentToken().type == TokenType::LOGICAL_OR) {
-        advance();  // Consume the '||'
-        mNode* orNode = new mNode(mNodeType::LOGICAL_OR);
-        orNode->children.push_back(node);
-        orNode->children.push_back(logicalAndExpression(os));
-        node = orNode;
-    }
-
-    return node;
-}
-
-mNode* mParser::logicalAndExpression(std::ostream& os) {
-    mNode* node = equalityExpression(os);
-
-    while (currentToken().type == TokenType::LOGICAL_AND) {
-        advance();  // Consume the '&&'
-        mNode* andNode = new mNode(mNodeType::LOGICAL_AND);
-        andNode->children.push_back(node);
-        andNode->children.push_back(equalityExpression(os));
-        node = andNode;
-    }
-
-    return node;
-}
-
-mNode* mParser::equalityExpression(std::ostream& os) {
-    mNode* node = relationalExpression(os);
-
-    while (currentToken().type == TokenType::EQUAL || currentToken().type == TokenType::NOT_EQUAL) {
-        TokenType operatorType = currentToken().type;
-        advance();  // Consume '==' or '!='
-        mNode* eqNode = new mNode(operatorType == TokenType::EQUAL ? mNodeType::EQUAL : mNodeType::NOT_EQUAL);
-        eqNode->children.push_back(node);
-        eqNode->children.push_back(relationalExpression(os));
-        node = eqNode;
-    }
-
-    return node;
-}
-
-mNode* mParser::relationalExpression(std::ostream& os) {
-    mNode* node = additiveExpression(os);
-
-    while (currentToken().type == TokenType::LESS || currentToken().type == TokenType::LESS_EQUAL ||
-           currentToken().type == TokenType::GREATER || currentToken().type == TokenType::GREATER_EQUAL) {
-        TokenType operatorType = currentToken().type;
-        advance();  // Consume '<', '<=', '>', '>='
-        mNode* relNode = new mNode(
-            operatorType == TokenType::LESS ? mNodeType::LESS :
-            operatorType == TokenType::LESS_EQUAL ? mNodeType::LESS_EQUAL :
-            operatorType == TokenType::GREATER ? mNodeType::GREATER_THAN :
-            mNodeType::GREATER_EQUAL
-        );
-        relNode->children.push_back(node);
-        relNode->children.push_back(additiveExpression(os));
-        node = relNode;
-    }
-
-    return node;
-}
-
-mNode* mParser::additiveExpression(std::ostream& os) {
-    mNode* node = multiplicativeExpression(os);
-
-    while (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
-        TokenType operatorType = currentToken().type;
-        advance();  // Consume '+' or '-'
-        mNode* addNode = new mNode(operatorType == TokenType::ADD ? mNodeType::ADD : mNodeType::SUBTRACT);
-        addNode->children.push_back(node);
-        addNode->children.push_back(multiplicativeExpression(os));
-        node = addNode;
-    }
-
-    return node;
-}
-mNode* mParser::multiplicativeExpression(std::ostream& os) {
-    mNode* node = factor(os);
-
-    while (currentToken().type == TokenType::MULTIPLY || 
-           currentToken().type == TokenType::DIVIDE || 
-           currentToken().type == TokenType::MODULO) {
-        TokenType operatorType = currentToken().type;
-        advance();  // Consume '*', '/' or '%'
-
-        mNode* newNode = new mNode(
-            operatorType == TokenType::MULTIPLY ? mNodeType::MULTIPLY :
-            operatorType == TokenType::DIVIDE ? mNodeType::DIVIDE :
-            mNodeType::MODULO
-        );
-
-        newNode->children.push_back(node); // The existing node becomes the left operand
-        newNode->children.push_back(factor(os)); // Right operand
-
-        node = newNode; // Update the current node to the new compound node
-    }
-
-    return node;
-}
-
-// The factor(os) function is assumed to be the next part of your expression hierarchy.
-
-
-mNode* mParser::factor(std::ostream& os) {
-    Token& token = currentToken();
-    mNode* mnode = nullptr;  // Initialize mnode pointer to nullptr
-
-    try {
-        switch (token.type) {
-            case TokenType::NUMBER: {
-                mnode = new mNode(mNodeType::NUMBER, std::stod(token.value));
-                advance();
-                break;
-            }
-            case TokenType::IDENTIFIER: {
-                mnode = new mNode(mNodeType::IDENTIFIER, 0, false, token.value);
-                advance();
-                break;
-            }
-            case TokenType::LEFT_PAREN: {
-                advance();  // Consume the '('
-                mnode = expression(os);  // Parse the expression within the parentheses
-                if (currentToken().type != TokenType::RIGHT_PAREN) {
-                    throw std::runtime_error("Expected ')' after expression");
-                }
-                advance();  // Consume the ')'
-                break;
-            }
-            case TokenType::BOOLEAN_TRUE:
-            case TokenType::BOOLEAN_FALSE: {
-                mnode = new mNode(mNodeType::BOOLEAN_LITERAL, token.type == TokenType::BOOLEAN_TRUE);
-                advance();
-                break;
-            }
-            default: {
-                throw std::runtime_error("Unexpected token: " + token.value);
-            }
+   
+    while (!isAtEnd())
+    {
+        try
+        {
+            
+            statements.push_back(parseStatement());
         }
-    } catch (...) {
-        delete mnode;
-        throw;  // Re-throw the exception to be handled further up the call stack
+        catch (const ParseError &error)
+        {
+    
+            synchronize();
+        }
     }
-    return mnode;
+
+    return std::make_unique<BlockNode>(std::move(statements));
+}
+
+// Implementations of parsing functions for each rule
+std::unique_ptr<ASTNode> Parser::parseStatement()
+{
+    std::unique_ptr<ASTNode> stmt;   
+    if (match(TokenType::IF))
+    {
+        stmt = parseIfStatement();
+    }
+    else if (match(TokenType::WHILE))
+    {
+        stmt = parseWhileStatement();
+    }
+    else if (match(TokenType::PRINT))
+    {
+        stmt = parsePrintStatement();
+    }
+    else if (match(TokenType::LEFT_BRACE))
+    {
+        stmt = parseBlock();
+    }
+    else
+    {
+        
+        stmt = parseExpressionStatement();
+    }
+    return stmt;
+
+}
+std::unique_ptr<ASTNode> Parser::parseIfStatement()
+{
+    
+    auto condition = parseExpression();
+    
+    auto trueBranch = parseBlock();
+    
+    std::unique_ptr<ASTNode> elseBranch = nullptr;
+    if (match(TokenType::ELSE))
+    {
+        while (match(TokenType::NEWLINE)) {
+           
+        }
+       
+        
+        if (check(TokenType::IF))
+        {
+            advance();
+            elseBranch = parseIfStatement();
+        }
+        else
+        {
+            elseBranch = parseBlock();
+        }
+
+    }
+    return std::make_unique<IfNode>(std::move(condition), std::move(trueBranch), std::move(elseBranch));
+}
+
+std::unique_ptr<ASTNode> Parser::parseWhileStatement()
+{
+    
+    while (match(TokenType::NEWLINE))
+    {
+        // Just consuming the newline
+    }
+
+    auto condition = parseExpression(); 
+
+   
+    while (match(TokenType::NEWLINE))
+    {
+        // Just consuming the newline
+    }
+
+    
+    auto body = parseBlock();
+
+    return std::make_unique<WhileNode>(std::move(condition), std::move(body));
+}
+
+std::unique_ptr<ASTNode> Parser::parsePrintStatement()
+{
+    auto expression = parseExpression();
+    while (match(TokenType::NEWLINE))
+    {
+        
+    }
+    
+    return std::make_unique<PrintNode>(std::move(expression));
+}
+
+std::unique_ptr<ASTNode> Parser::parseBlock()
+{
+    consume(TokenType::LEFT_BRACE, "Expect '{' before block.");
+    std::vector<std::unique_ptr<ASTNode>> statements;
+
+    while (!check(TokenType::RIGHT_BRACE) && !isAtEnd())
+    {
+        while (match(TokenType::NEWLINE))
+        {
+            
+        }
+        statements.push_back(parseStatement());
+        
+    }
+
+    consume(TokenType::RIGHT_BRACE, "Expect '}' after block.");
+    while (match(TokenType::NEWLINE))
+    {
+            
+    }
+    
+    return std::make_unique<BlockNode>(std::move(statements));
+}
+
+std::unique_ptr<ASTNode> Parser::parseExpressionStatement()
+{
+    auto expression = parseExpression();
+
+   
+    while (match(TokenType::NEWLINE)) {
+            // Just consuming the newline
+    }
+
+    return expression;
+}
+
+std::unique_ptr<ASTNode> Parser::parseExpression()
+{
+    return parseAssignment();
+}
+
+std::unique_ptr<ASTNode> Parser::parseAssignment()
+{
+    auto node = parseLogicalOr();
+    if (match(TokenType::ASSIGN))
+    {
+        Token equals = previous();
+        auto value = parseAssignment();
+        if (node->getType() != ASTNode::Type::VariableNode)
+        {
+            throw errorAt(equals, "");
+        }
+        auto variable = static_cast<VariableNode *>(node.get());
+        return std::make_unique<AssignmentNode>(variable->identifier, std::move(value));
+    }
+    return node;
+}
+
+std::unique_ptr<ASTNode> Parser::parseLogicalOr()
+{
+    auto node = parseLogicalAnd();
+    while (match(TokenType::LOGICAL_OR))
+    {
+        Token op = previous();
+        auto right = parseLogicalAnd();
+        node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+    }
+    return node;
+}
+
+std::unique_ptr<ASTNode> Parser::parseLogicalAnd()
+{
+    auto node = parseEquality();
+    while (match(TokenType::LOGICAL_AND))
+    {
+        Token op = previous();
+        auto right = parseEquality();
+        node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+    }
+    return node;
+}
+
+std::unique_ptr<ASTNode> Parser::parseEquality()
+{
+    auto node = parseComparison();
+    while (match(TokenType::EQUAL) || match(TokenType::NOT_EQUAL))
+    {
+        Token op = previous();
+        auto right = parseComparison();
+        node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+    }
+    return node;
+}
+
+std::unique_ptr<ASTNode> Parser::parseComparison()
+{
+    auto node = parseAddition();
+    while (match(TokenType::LESS) || match(TokenType::LESS_EQUAL) ||
+           match(TokenType::GREATER) || match(TokenType::GREATER_EQUAL))
+    {
+        Token op = previous();
+        auto right = parseAddition();
+        node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+    }
+    return node;
+}
+
+std::unique_ptr<ASTNode> Parser::parseAddition()
+{
+    auto node = parseMultiplication();
+    while (match(TokenType::ADD) || match(TokenType::SUBTRACT))
+    {
+        Token op = previous();
+        auto right = parseMultiplication();
+        node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+    }
+    return node;
+}
+
+std::unique_ptr<ASTNode> Parser::parseMultiplication()
+{
+    auto node = parsePrimary();
+    while (match(TokenType::MULTIPLY) || match(TokenType::DIVIDE) || match(TokenType::MODULO))
+    {
+        Token op = previous();
+        auto right = parsePrimary();
+        node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+    }
+    return node;
+}
+
+
+std::unique_ptr<ASTNode> Parser::parsePrimary()
+{
+    if (match(TokenType::NUMBER))
+    {
+        
+        return std::make_unique<NumberNode>(previous());
+    }
+    else if (match(TokenType::LEFT_PAREN))
+    {
+       
+        auto expr = parseExpression();
+        consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.");
+        while (match(TokenType::NEWLINE)) {
+        }
+        return expr;
+    }
+    else if (match(TokenType::IDENTIFIER))
+    {
+        
+        return std::make_unique<VariableNode>(previous());
+    }
+    else if (match(TokenType::BOOLEAN_TRUE))
+    {
+        
+        return std::make_unique<BooleanNode>(previous());
+    }
+    else if (match(TokenType::BOOLEAN_FALSE))
+    {
+        
+        return std::make_unique<BooleanNode>(previous());
+    }
+    
+    throw errorAtCurrent("");
 }
 
 
 
-// This function initiates the parsing process and returns the root of the AST.
-mNode* mParser::parse(std::ostream& os) {
-    root = new mNode(mNodeType::BLOCK); // Consider the entire program a block
-    while (currentTokenIndex < static_cast<int>(tokens.size()) && currentToken().type != TokenType::END) {
-        root->children.push_back(parseStatement(os));
+const Token &Parser::peek() const
+{
+    if (isAtEnd())
+    {
+        static const Token eofToken(TokenType::END, "", -1, -1); 
+        return eofToken;
     }
-    return root;
+    return tokens[current];
 }
 
-mNode* mParser::parseStatement(std::ostream& os) {
-    mNode* node = nullptr;
-
-    // Assume currentToken(), match(), and expression() functions are defined.
-    // They manage the current parsing position and parse expressions respectively.
-    Token tok = currentToken();
-
-    switch (tok.type) {
+void Parser::synchronize()
+{
+    advance();
+    while (!isAtEnd())
+    {
+        if (previous().type == TokenType::NEWLINE)
+            return;
+        switch (peek().type)
+        {
+        
         case TokenType::IF:
-            node = parseIfStatement(os);
-            break;
         case TokenType::WHILE:
-            node = parseWhileStatement(os);
-            break;
         case TokenType::PRINT:
-            node = parsePrintStatement(os);
-            break;
-        case TokenType::LEFT_BRACE:
-            node = parseBlock(os);
-            break;
+            return;
         default:
-            node = expression(os);  // Defaults to parsing an expression
-            break;
-    }
-
-    return node;
-}
-
-
-mNode* mParser::parseIfStatement(std::ostream& os) {
-    // Check for 'if' token
-    if (tokens[currentTokenIndex].type != TokenType::IF) {
-        // Handle parse error: Expected 'if'
-    }
-    advance(); // Move past 'if'
-
-    mNode* ifNode = new mNode(mNodeType::IF_STATEMENT);
-    
-    // Parse the condition expression
-    ifNode->condition = expression(os);
-
-    // Check for '{' token
-    if (tokens[currentTokenIndex].type != TokenType::LEFT_BRACE) {
-        // Handle parse error: Expected '{'
-    }
-    advance(); // Move past '{'
-
-    // Parse the braced block
-    ifNode->thenBranch = parseBlock(os);
-
-    // Check for optional 'else'
-    if (tokens[currentTokenIndex].type == TokenType::ELSE) {
-        advance(); // Move past 'else'
-
-        // Check if we have another 'if' or a braced block
-        if (tokens[currentTokenIndex].type == TokenType::IF) {
-            ifNode->elseBranch = parseIfStatement(os);
-        } else if (tokens[currentTokenIndex].type == TokenType::LEFT_BRACE) {
-            ifNode->elseBranch = parseBlock(os);
-        } else {
-            // Handle parse error: Expected 'if' or '{'
+            advance();
         }
     }
-
-    return ifNode;
 }
 
-mNode* mParser::parseWhileStatement(std::ostream& os) {
-    // Check for 'while' token
-    if (tokens[currentTokenIndex].type != TokenType::WHILE) {
-        // Handle parse error: Expected 'while'
+bool Parser::match(TokenType type)
+{
+    if (check(type))
+    {
+        advance();
+        return true;
     }
-    advance(); // Move past 'while'
+    return false;
+}
 
-    mNode* whileNode = new mNode(mNodeType::WHILE_STATEMENT);
+Token Parser::previous()
+{
+    return tokens.at(current - 1);
+}
+
+Token Parser::consume(TokenType type, const std::string &message)
+{
+    if (check(type))
+        return advance();
+
+    throw errorAtCurrent(message);
+}
+
+
+bool Parser::check(TokenType type) const
+{
+    if (isAtEnd())
+        return false;
+    return tokens.at(current).type == type;
+}
+
+
+Token Parser::advance()
+{
+    if (!isAtEnd())
+        current++;
+
     
-    // Parse the condition expression
-    whileNode->condition = expression(os);
+    Token token = previous();
 
-    // Check for '{' token
-    if (tokens[currentTokenIndex].type != TokenType::LEFT_BRACE) {
-        // Handle parse error: Expected '{'
-    }
-    advance(); // Move past '{'
-
-    // Parse the braced block
-    whileNode->body = parseBlock(os);
-
-    return whileNode;
-}
-
-mNode* mParser::parsePrintStatement(std::ostream& os) {
-    // Check for 'print' token
-    if (tokens[currentTokenIndex].type != TokenType::PRINT) {
-        // Handle parse error: Expected 'print'
-    }
-    advance(); // Move past 'print'
-
-    mNode* printNode = new mNode(mNodeType::PRINT_STATEMENT);
     
-    // Parse the expression to be printed
-    printNode->Lvalue = expression(os);
-
-    return printNode;
-}
-
-mNode* mParser::parseBlock(std::ostream& os) {
-    // Check for '{' token
-    if (tokens[currentTokenIndex].type != TokenType::LEFT_BRACE) {
-        // Handle parse error: Expected '{'
-    }
-    advance(); // Move past '{'
-
-    mNode* blockNode = new mNode(mNodeType::BLOCK);
-
-    while (tokens[currentTokenIndex].type != TokenType::RIGHT_BRACE) {
-        blockNode->statements.push_back(parseStatement(os));
-    }
-
-    advance(); // Move past '}'
-    
-    return blockNode;
+    return token;
 }
 
 
-
-// This function recursively deallocates memory used by the mnodes in the AST, ensuring no memory leaks.
-void mParser::clearTree(mNode*& mnode) {  // Changed mnode to a reference to a pointer
-    if (!mnode) return;
-    for (mNode*& child : mnode->children) {
-        clearTree(child);
-    }
-    delete mnode;
-    mnode = nullptr; 
+bool Parser::isAtEnd() const
+{
+    return current >= tokens.size() || tokens.at(current).type == TokenType::END;
 }
 
 
-// Destructor for the Parser class. It ensures that the memory used by the AST is deallocated.
-mParser::~mParser() {
-    clearTree(root);
+void Parser::error(const Token &token, const std::string &message) {
+    report(token.line, token.column, token.value, message);
 }
+
+ParseError Parser::report(int line, int column, const std::string &tokenValue, const std::string &message) {
+    std::cerr << "Unexpected token at line " << line << " column " << column << " : " << tokenValue << std::endl;
+    return ParseError(message);
+}
+
+ParseError Parser::errorAtCurrent(const std::string &message) {
+    return errorAt(peek(), message);
+}
+
+ParseError Parser::errorAt(const Token &token, const std::string &message) {
+    error(token, message);
+    return ParseError(message);
+}
+
