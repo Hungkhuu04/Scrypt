@@ -3,120 +3,118 @@
 #include "lib/lex.h"
 #include <iostream>
 #include <string>
-#include <sstream>
+#include <ostream>
 
-//  function to create an indentation string
+// Utility function to create an indentation string
 std::string indentString(int indentLevel) {
     return std::string(indentLevel * 4, ' '); // 4 spaces per indent level
 }
 
+// Forward declarations with the new signature including std::ostream
+void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent = 0);
 
-// Formatter functions
-std::string formatAST(const std::unique_ptr<ASTNode>& node, int indent = 0);
-std::string formatBinaryOpNode(const BinaryOpNode* node, int indent) {
-    std::stringstream ss;
-    
-    ss << '(' << formatAST(node->left, 0);  
-    ss << ' ' << node->op.value << ' ';    
-    ss << formatAST(node->right, 0) << ')'; 
-    return ss.str();
+void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent) {
+    os << '(';
+    formatAST(os, node->left, 0);  
+    os << ' ' << node->op.value << ' ';    
+    formatAST(os, node->right, 0);
+    os << ')';
 }
 
-
-std::string formatNumberNode(const NumberNode* node, int indent) {
-    return indentString(indent) + node->value.value;
+void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
+    os << indentString(indent) << node->value.value;
 }
 
-std::string formatBooleanNode(const BooleanNode* node, int indent) {
-    return indentString(indent) + node->value.value;
+void formatBooleanNode(std::ostream& os, const BooleanNode* node, int indent) {
+    os << indentString(indent) << node->value.value;
 }
 
-std::string formatVariableNode(const VariableNode* node, int indent) {
-    return indentString(indent) + node->identifier.value;
+void formatVariableNode(std::ostream& os, const VariableNode* node, int indent) {
+    os << indentString(indent) << node->identifier.value;
 }
 
-std::string formatIfNode(const IfNode* node, int indent) {
-    std::stringstream ss;
-    ss << indentString(indent) << "if ";
-    ss << formatAST(node->condition, 0);
-    ss << " {\n";
-    ss << formatAST(node->trueBranch, indent + 1);
+void formatIfNode(std::ostream& os, const IfNode* node, int indent) {
+    os << indentString(indent) << "if ";
+    formatAST(os, node->condition, 0);
+    os << " {\n";
+    formatAST(os, node->trueBranch, indent + 1);
     if (node->falseBranch) {
-        ss << "\n" << indentString(indent) << "} else {\n";
-        ss << formatAST(node->falseBranch, indent + 1);
+        os << "\n" << indentString(indent) << "} else {\n";
+        formatAST(os, node->falseBranch, indent + 1);
     }
-    ss << "\n" << indentString(indent) << "}";
-    return ss.str();
+    os << "\n" << indentString(indent) << "}";
 }
 
-std::string formatAssignmentNode(const AssignmentNode* node, int indent) {
-    std::stringstream ss;
-    ss << indentString(indent) << '(' << node->identifier.value;
-    ss << " = " << formatAST(node->expression, 0) << ')';
-    return ss.str();
+void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent) {
+    os << indentString(indent) << node->identifier.value;
+    os << " = ";
+    formatAST(os, node->expression, 0);
 }
 
-
-std::string formatWhileNode(const WhileNode* node, int indent) {
-    std::stringstream ss;
-    ss << indentString(indent) << "while " << formatAST(node->condition, 0) << " {\n";
-    ss << formatAST(node->body, indent + 1);
-    ss << "\n" << indentString(indent) << "}";
-    return ss.str();
+void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
+    os << indentString(indent) << "while ";
+    formatAST(os, node->condition, 0);
+    os << " {\n";
+    formatAST(os, node->body, indent + 1);
+    os << "\n" << indentString(indent) << "}";
 }
 
-std::string formatPrintNode(const PrintNode* node, int indent) {
-    std::stringstream ss;
-    ss << indentString(indent) << "print " << formatAST(node->expression, 0);
-    return ss.str();
+void formatPrintNode(std::ostream& os, const PrintNode* node, int indent) {
+    os << indentString(indent) << "print ";
+    formatAST(os, node->expression, 0);
 }
 
-std::string formatBlockNode(const BlockNode* node, int indent) {
-    std::stringstream ss;
+void formatBlockNode(std::ostream& os, const BlockNode* node, int indent) {
+    bool isFirstStatement = true;
     for (const auto& stmt : node->statements) {
-        ss << formatAST(stmt, indent) << "\n";
+        if (!isFirstStatement) {
+            os << "\n";
+        }
+        formatAST(os, stmt, indent);
+        isFirstStatement = false;
     }
-    std::string blockString = ss.str();
-    if (!node->statements.empty()) {
-        blockString.pop_back();
-    }
-    return blockString;
 }
 
-// Formatting function for each AST node type
-std::string formatAST(const std::unique_ptr<ASTNode>& node, int indent) {
-    if (!node) return "";
+
+void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent) {
+    if (!node) return;
 
     switch (node->getType()) {
         case ASTNode::Type::BinaryOpNode:
-            return formatBinaryOpNode(static_cast<const BinaryOpNode*>(node.get()), indent);
+            formatBinaryOpNode(os, static_cast<const BinaryOpNode*>(node.get()), indent);
+            break;
         case ASTNode::Type::NumberNode:
-            return formatNumberNode(static_cast<const NumberNode*>(node.get()), indent);
+            formatNumberNode(os, static_cast<const NumberNode*>(node.get()), indent);
+            break;
         case ASTNode::Type::BooleanNode:
-            return formatBooleanNode(static_cast<const BooleanNode*>(node.get()), indent);
+            formatBooleanNode(os, static_cast<const BooleanNode*>(node.get()), indent);
+            break;
         case ASTNode::Type::VariableNode:
-            return formatVariableNode(static_cast<const VariableNode*>(node.get()), indent);
+            formatVariableNode(os, static_cast<const VariableNode*>(node.get()), indent);
+            break;
         case ASTNode::Type::AssignmentNode:
-            return formatAssignmentNode(static_cast<const AssignmentNode*>(node.get()), indent);
+            formatAssignmentNode(os, static_cast<const AssignmentNode*>(node.get()), indent);
+            break;
         case ASTNode::Type::PrintNode:
-            return formatPrintNode(static_cast<const PrintNode*>(node.get()), indent);
+            formatPrintNode(os, static_cast<const PrintNode*>(node.get()), indent);
+            break;
         case ASTNode::Type::IfNode:
-            return formatIfNode(static_cast<const IfNode*>(node.get()), indent);
+            formatIfNode(os, static_cast<const IfNode*>(node.get()), indent);
+            break;
         case ASTNode::Type::WhileNode:
-            return formatWhileNode(static_cast<const WhileNode*>(node.get()), indent);
+            formatWhileNode(os, static_cast<const WhileNode*>(node.get()), indent);
+            break;
         case ASTNode::Type::BlockNode:
-            return formatBlockNode(static_cast<const BlockNode*>(node.get()), indent);
+            formatBlockNode(os, static_cast<const BlockNode*>(node.get()), indent);
+            break;
         default:
-            return "/* Unknown node type */";
+            os << indentString(indent) << "/* Unknown node type */";
+            break;
     }
 }
 
-
-
-// Code to handle input, parse it into an AST, and then call formatAST on the root...
-// This loop will continue until EOF (Ctrl+D or Ctrl+Z followed by Enter)
 int main() {
-    
+    std::ostream& os = std::cout;
     std::string line;
     std::string inputCode;
     while (std::getline(std::cin, line)) {
@@ -129,9 +127,8 @@ int main() {
     Parser parser(tokens);
     std::unique_ptr<ASTNode> ast = parser.parse();
 
-    std::string formattedCode = formatAST(ast);
-
-    std::cout << formattedCode << std::endl;
+    formatAST(std::cout, ast);
+    os << std::endl;
 
     return 0;
 }
