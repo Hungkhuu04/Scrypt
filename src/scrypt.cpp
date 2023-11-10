@@ -82,7 +82,7 @@ void evaluateBlock(const BlockNode* blockNode) {
                 evaluateBlock(static_cast<const BlockNode*>(stmt.get()));
                 break;
             default:
-                throw std::runtime_error("Runtime error: condition is not a bool.");
+                throw std::runtime_error("Unknown Node Type");
         }
     }
 }
@@ -95,18 +95,35 @@ void evaluateIf(ASTNode* node) {
         throw std::runtime_error("Non-if node passed to evaluateIf");
     }
 
-    bool condition = evaluateExpression(ifNode->condition.get()).asBool();
-    if (condition) {
+    Value conditionValue = evaluateExpression(ifNode->condition.get());
+    if (conditionValue.type != Value::Type::Bool) {
+        throw std::runtime_error("Runtime error: condition is not a bool.");
+    }
+
+    if (conditionValue.asBool()) {
         evaluateBlock(static_cast<const BlockNode*>(ifNode->trueBranch.get()));
     } else if (ifNode->falseBranch) {
-        evaluateBlock(static_cast<const BlockNode*>(ifNode->falseBranch.get()));
+        ASTNode* elseBranchNode = ifNode->falseBranch.get();
+        if (elseBranchNode->getType() == ASTNode::Type::IfNode) {
+            evaluateIf(elseBranchNode);
+        } else {
+            evaluateBlock(static_cast<const BlockNode*>(elseBranchNode));
+        }
     }
 }
 
 
 // Evaluate the while node
 void evaluateWhile(const WhileNode* node) {
-    while (evaluateExpression(node->condition.get()).asBool()) {
+    while (true) {
+        Value condValue = evaluateExpression(node->condition.get());
+
+        if (condValue.type != Value::Type::Bool) {
+            throw std::runtime_error("Runtime error: condition is not a bool.");
+        }
+
+        if (!condValue.asBool()) break;
+
         const BlockNode* blockNode = dynamic_cast<const BlockNode*>(node->body.get());
         if (!blockNode) {
             throw std::runtime_error("Non-block node passed to evaluateWhile");
@@ -114,6 +131,7 @@ void evaluateWhile(const WhileNode* node) {
         evaluateBlock(blockNode);
     }
 }
+
 
 // Evaluate the print node
 void evaluatePrint(const PrintNode* node) {
@@ -190,7 +208,7 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode) {
 
     Value value = evaluateExpression(assignmentNode->expression.get());
     variables[assignmentNode->identifier.value] = value;
-    return value; // Return the value being assigned
+    return value;
 }
 
 int main() {
