@@ -1,3 +1,4 @@
+
 #include "mParser.h"
 #include <iostream>
 #include <ostream>
@@ -17,6 +18,7 @@ std::unique_ptr<ASTNode> Parser::parse() {
                 statements.push_back(std::move(stmt));
             }
         } catch (const std::runtime_error& error) {
+            throw error;
             synchronize();  // Recover from the error.
         }
     }
@@ -28,11 +30,7 @@ std::unique_ptr<ASTNode> Parser::parse() {
 // Implementations of parsing functions for each rule
 std::unique_ptr<ASTNode> Parser::parseStatement()
 {
-    try {
-    std::unique_ptr<ASTNode> stmt;
-    if (match(TokenType::IF)) {
-        stmt = parseIfStatement();
-    } 
+    std::unique_ptr<ASTNode> stmt;   
     if (match(TokenType::IF))
     {
         stmt = parseIfStatement();
@@ -55,9 +53,6 @@ std::unique_ptr<ASTNode> Parser::parseStatement()
         stmt = parseExpressionStatement();
     }
     return stmt;
-    } catch (const std::runtime_error& e) {
-        throw;
-    }
 
 }
 std::unique_ptr<ASTNode> Parser::parseIfStatement()
@@ -157,12 +152,9 @@ std::unique_ptr<ASTNode> Parser::parseExpressionStatement()
     return expression;
 }
 
-std::unique_ptr<ASTNode> Parser::parseExpression() {
-    try {
-        return parseAssignment();
-    } catch (const std::runtime_error& e) {
-        throw;
-    }
+std::unique_ptr<ASTNode> Parser::parseExpression()
+{
+    return parseAssignment();
 }
 
 std::unique_ptr<ASTNode> Parser::parseAssignment()
@@ -258,8 +250,9 @@ std::unique_ptr<ASTNode> Parser::parseMultiplication()
 
 std::unique_ptr<ASTNode> Parser::parsePrimary()
 {
-    try {
-    if (match(TokenType::NUMBER)) {
+    if (match(TokenType::NUMBER))
+    {
+        
         return std::make_unique<NumberNode>(previous());
     }
     else if (match(TokenType::LEFT_PAREN))
@@ -288,21 +281,17 @@ std::unique_ptr<ASTNode> Parser::parsePrimary()
     }
     
     throw errorAtCurrent("");
-    }
-    catch (...) {
-        throw;
-    }
-    }
+}
 
 
 
-    const Token &Parser::peek() const
+const Token &Parser::peek() const
+{
+    if (isAtEnd())
     {
-        if (isAtEnd())
-        {
-            static const Token eofToken(TokenType::END, "END", tokens[current].line, tokens[current].column); 
-            return eofToken;
-        }
+        static const Token eofToken(TokenType::END, "END", tokens[current].line, tokens[current].column); 
+        return eofToken;
+    }
     return tokens[current];
 }
 
