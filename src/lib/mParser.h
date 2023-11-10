@@ -61,10 +61,7 @@ private:
     void synchronize();
 
     
-    void error(const std::string& message);
-    ParseError errorAtCurrent(const std::string& message);
-    ParseError errorAt(const std::string& message);
-    ParseError report(const std::string &message);
+    ParseError error(const std::string &message);
 };
 
 #endif // PARSER_H

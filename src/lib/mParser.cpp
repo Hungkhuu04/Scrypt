@@ -167,7 +167,7 @@ std::unique_ptr<ASTNode> Parser::parseAssignment()
         auto value = parseAssignment();
         if (node->getType() != ASTNode::Type::VariableNode)
         {
-            throw errorAtCurrent("");
+            throw error("");
         }
         auto variable = static_cast<VariableNode *>(node.get());
         return std::make_unique<AssignmentNode>(variable->identifier, std::move(value));
@@ -280,8 +280,7 @@ std::unique_ptr<ASTNode> Parser::parsePrimary()
         
         return std::make_unique<BooleanNode>(previous());
     }
-    
-    throw errorAtCurrent("");
+    throw error("");
 }
 
 
@@ -336,7 +335,7 @@ Token Parser::consume(TokenType type, const std::string &message)
     if (check(type))
         return advance();
 
-    throw errorAtCurrent(message);
+    throw error(message);
 }
 
 
@@ -366,21 +365,6 @@ bool Parser::isAtEnd() const
     return current >= tokens.size() || tokens.at(current).type == TokenType::END;
 }
 
-
-void Parser::error(const std::string &message) {
-    report(message);
-}
-
-ParseError Parser::report(const std::string &message) {
+ParseError Parser::error(const std::string &message) {
     throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
-}
-
-
-ParseError Parser::errorAtCurrent(const std::string &message) {
-    return errorAt(message);
-}
-
-ParseError Parser::errorAt(const std::string &message) {
-    error(message);
-    return ParseError(message);
 }
