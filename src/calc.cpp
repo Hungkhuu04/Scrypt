@@ -257,7 +257,6 @@ int main() {
         try {
             Lexer lexer(inputLine);
             auto tokens = lexer.tokenize();
-            // Your error handling for lexer
             if (lexer.isSyntaxError(tokens)) {
                 throw std::runtime_error("");
             }

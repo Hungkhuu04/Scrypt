@@ -6,11 +6,13 @@
 #include <vector>
 #include <memory>
 #include "mParserError.h"
+#include<ostream>
+#include<iostream>
 
 class Parser {
 public:
    
-    explicit Parser(const std::vector<Token>& tokens);
+    Parser(const std::vector<Token> &tokens, std::ostream& errorOut = std::cerr);
 
     
     std::unique_ptr<ASTNode> parse();
@@ -18,6 +20,7 @@ public:
 private:
     const std::vector<Token>& tokens; 
     size_t current; 
+    std::ostream& errorOutput;
 
     
   
@@ -62,7 +65,7 @@ private:
     void error(const Token& token, const std::string& message);
     ParseError errorAtCurrent(const std::string& message);
     ParseError errorAt(const Token& token, const std::string& message);
-    static ParseError report(int line, int column, const std::string &tokenValue, const std::string &message);
+    ParseError report(int line, int column, const std::string &tokenValue, const std::string &message);
 };
 
 #endif // PARSER_H
