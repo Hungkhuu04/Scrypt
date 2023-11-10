@@ -15,6 +15,7 @@ std::string indentString(int indentLevel) {
 // function to format the AST
 void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent = 0);
 
+// function to format operation types
 void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent) {
     os << '(';
     formatAST(os, node->left, 0);  
@@ -23,6 +24,7 @@ void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent) 
     os << ')';
 }
 
+// function to format numbers (especially doubles)
 void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
     double value = std::stod(node->value.value);
     if (std::floor(value) == value) {
@@ -38,14 +40,18 @@ void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
         os << indentString(indent) << str;
     }
 }
+
+// function to format Booleans
 void formatBooleanNode(std::ostream& os, const BooleanNode* node, int indent) {
     os << indentString(indent) << node->value.value;
 }
 
+// function to format Variables
 void formatVariableNode(std::ostream& os, const VariableNode* node, int indent) {
     os << indentString(indent) << node->identifier.value;
 }
 
+// function to format if nodes
 void formatIfNode(std::ostream& os, const IfNode* node, int indent) {
     os << indentString(indent) << "if ";
     formatAST(os, node->condition, 0);
@@ -58,6 +64,7 @@ void formatIfNode(std::ostream& os, const IfNode* node, int indent) {
     os << "\n" << indentString(indent) << "}";
 }
 
+// function to format assignment nodes
 void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent) {
     os << indentString(indent) << "(" << node->identifier.value;
     os << " = ";
@@ -65,6 +72,7 @@ void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int inde
     os << ")";
 }
 
+// function to format while nodes
 void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
     os << indentString(indent) << "while ";
     formatAST(os, node->condition, 0);
@@ -73,11 +81,13 @@ void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
     os << "\n" << indentString(indent) << "}";
 }
 
+// function to format print nodes
 void formatPrintNode(std::ostream& os, const PrintNode* node, int indent) {
     os << indentString(indent) << "print ";
     formatAST(os, node->expression, 0);
 }
 
+// function to format block nodes
 void formatBlockNode(std::ostream& os, const BlockNode* node, int indent) {
     bool isFirstStatement = true;
     for (const auto& stmt : node->statements) {
@@ -89,7 +99,7 @@ void formatBlockNode(std::ostream& os, const BlockNode* node, int indent) {
     }
 }
 
-
+// main format function
 void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent) {
     if (!node) return;
 

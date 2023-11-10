@@ -9,7 +9,7 @@
 
 enum class TokenType {
     IF, WHILE, PRINT, ELSE,
-    LEFT_BRACE, RIGHT_BRACE,// curly braces { , }
+    LEFT_BRACE, RIGHT_BRACE,
     LEFT_PAREN, RIGHT_PAREN,
     ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULO,
     NUMBER,

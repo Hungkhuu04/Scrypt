@@ -61,9 +61,9 @@ std::string evaluate(Node* node, std::unordered_map<std::string, double>& variab
                 }
             case NodeType::IDENTIFIER:
                 {
-                    if (node->identifier == "true" || node->identifier == "t") { // Add "t" here
+                    if (node->identifier == "true" || node->identifier == "t") { 
                         return "true";
-                    } else if (node->identifier == "false" || node->identifier == "f") { // Add "f" here
+                    } else if (node->identifier == "false" || node->identifier == "f") { 
                         return "false";
                     }
                     auto it = variables.find(node->identifier);
@@ -101,24 +101,22 @@ std::string evaluate(Node* node, std::unordered_map<std::string, double>& variab
             case NodeType::EQUAL:
                 left = evaluate(node->children[0], variables);
                 right = evaluate(node->children[1], variables);
-                // If either side is a boolean string ("true" or "false")
                 if (left == "true" || left == "false") {
                     return (left == (right == "1" ? "true" : (right == "0" ? "false" : right))) ? "true" : "false";
                 } else if (right == "true" || right == "false") {
                     return (right == (left == "1" ? "true" : (left == "0" ? "false" : left))) ? "true" : "false";
-                } else { // Both are numbers
+                } else {
                     return (std::stod(left) == std::stod(right)) ? "true" : "false";
                 }
 
             case NodeType::NOT_EQUAL:
                 left = evaluate(node->children[0], variables);
                 right = evaluate(node->children[1], variables);
-                // If either side is a boolean string ("true" or "false")
                 if (left == "true" || left == "false") {
                     return (left != (right == "1" ? "true" : (right == "0" ? "false" : right))) ? "true" : "false";
                 } else if (right == "true" || right == "false") {
                     return (right != (left == "1" ? "true" : (left == "0" ? "false" : left))) ? "true" : "false";
-                } else { // Both are numbers
+                } else {
                     return (std::stod(left) != std::stod(right)) ? "true" : "false";
                 }
             case NodeType::LOGICAL_AND:
@@ -126,12 +124,9 @@ std::string evaluate(Node* node, std::unordered_map<std::string, double>& variab
             case NodeType::LOGICAL_XOR:
                 left = evaluate(node->children[0], variables);
                 right = evaluate(node->children[1], variables);
-                
-                // Check if one is boolean and the other is a number
                 if ((isBooleanString(left) && !isBooleanString(right)) || (!isBooleanString(left) && isBooleanString(right))) {
                     throw std::runtime_error("Runtime error: invalid operand type.\n");
                 }
-                // Check if operands are either true, false, or valid numbers.
                 if (!((left == "true" || left == "false" || isNumber(left)) &&
                     (right == "true" || right == "false" || isNumber(right)))) {
                     throw std::runtime_error("Runtime error: invalid operand type.\n");
@@ -149,7 +144,6 @@ std::string evaluate(Node* node, std::unordered_map<std::string, double>& variab
                 if ((isBooleanString(left) && !isBooleanString(right)) || (!isBooleanString(left) && isBooleanString(right))) {
                     throw std::runtime_error("Runtime error: invalid operand type.\n");
                 }
-                // Check if operands are either true, false, or valid numbers.
                 if (!((left == "true" || left == "false" || isNumber(left)) &&
                     (right == "true" || right == "false" || isNumber(right)))) {
                     throw std::runtime_error("Runtime error: invalid operand type.\n");
@@ -185,7 +179,7 @@ std::string infixString(Node* node, std::ostream& os = std::cout) {
     
     switch (node->type) {
         case NodeType::NUMBER:
-            result = formatDecimal(node->value);  // assuming formatDecimal is defined elsewhere
+            result = formatDecimal(node->value);
             break;
         case NodeType::ADD:
             result = "(" + infixString(node->children[0], os) + " + " + infixString(node->children[1], os) + ")";
@@ -208,7 +202,6 @@ std::string infixString(Node* node, std::ostream& os = std::cout) {
         case NodeType::BOOLEAN_LITERAL:
             result = (node->value == 1) ? "true" : "false";
             break;
-        // New node types for logical and relational operators
         case NodeType::LESS_THAN:
             result = "(" + infixString(node->children[0], os) + " < " + infixString(node->children[1], os) + ")";
             break;
