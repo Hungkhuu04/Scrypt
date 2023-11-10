@@ -3,7 +3,7 @@
 #include <iostream>
 #include <ostream>
 
-// Constructor implementation
+// Constructor
 Parser::Parser(const std::vector<Token> &tokens)
         : tokens(tokens), current(0) {}
 
@@ -18,8 +18,8 @@ std::unique_ptr<ASTNode> Parser::parse() {
                 statements.push_back(std::move(stmt));
             }
         } catch (const std::runtime_error& error) {
-            synchronize();  // Recover from the error.
-            throw; // Rethrow the error for further handling
+            synchronize();
+            throw;
         }
     }
 
@@ -27,7 +27,7 @@ std::unique_ptr<ASTNode> Parser::parse() {
 }
 
 
-// Implementations of parsing functions for each rule
+// Parse function for each rule
 std::unique_ptr<ASTNode> Parser::parseStatement()
 {
     std::unique_ptr<ASTNode> stmt;   
@@ -56,6 +56,7 @@ std::unique_ptr<ASTNode> Parser::parseStatement()
 
 }
 
+// 
 std::unique_ptr<ASTNode> Parser::parseIfStatement()
 {
     
@@ -175,77 +176,92 @@ std::unique_ptr<ASTNode> Parser::parseAssignment()
     return node;
 }
 
-std::unique_ptr<ASTNode> Parser::parseLogicalOr()
-{
-    auto node = parseLogicalAnd();
-    while (match(TokenType::LOGICAL_OR))
-    {
-        Token op = previous();
-        auto right = parseLogicalAnd();
-        node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+std::unique_ptr<ASTNode> Parser::parseLogicalOr() {
+    try {
+        auto node = parseLogicalAnd();
+        while (match(TokenType::LOGICAL_OR)) {
+            Token op = previous();
+            auto right = parseLogicalAnd();
+            node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+        }
+        return node;
+    } catch (const std::runtime_error& e) {
+        throw; // Rethrow the exception for further handling
     }
-    return node;
 }
 
-std::unique_ptr<ASTNode> Parser::parseLogicalAnd()
-{
-    auto node = parseEquality();
-    while (match(TokenType::LOGICAL_AND))
-    {
-        Token op = previous();
-        auto right = parseEquality();
-        node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+std::unique_ptr<ASTNode> Parser::parseLogicalAnd() {
+    try {
+        auto node = parseEquality();
+        while (match(TokenType::LOGICAL_AND)) {
+            Token op = previous();
+            auto right = parseEquality();
+            node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+        }
+        return node;
+    } catch (const std::runtime_error& e) {
+        throw;
     }
-    return node;
-}
-
-std::unique_ptr<ASTNode> Parser::parseEquality()
-{
-    auto node = parseComparison();
-    while (match(TokenType::EQUAL) || match(TokenType::NOT_EQUAL))
-    {
-        Token op = previous();
-        auto right = parseComparison();
-        node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
-    }
-    return node;
 }
 
 
-std::unique_ptr<ASTNode> Parser::parseAddition()
-{
-    auto node = parseMultiplication();
-    while (match(TokenType::ADD) || match(TokenType::SUBTRACT))
-    {
-        Token op = previous();
-        auto right = parseMultiplication();
-        node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+std::unique_ptr<ASTNode> Parser::parseEquality() {
+    try {
+        auto node = parseComparison();
+        while (match(TokenType::EQUAL) || match(TokenType::NOT_EQUAL)) {
+            Token op = previous();
+            auto right = parseComparison();
+            node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+        }
+        return node;
+    } catch (const std::runtime_error& e) {
+        throw;
     }
-    return node;
-}
-std::unique_ptr<ASTNode> Parser::parseComparison()
-{
-    auto node = parseAddition();
-    while (match(TokenType::LESS) || match(TokenType::LESS_EQUAL) ||
-           match(TokenType::GREATER) || match(TokenType::GREATER_EQUAL))
-    {
-        Token op = previous();
-        auto right = parseAddition();
-        node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
-    }
-    return node;
 }
 
-std::unique_ptr<ASTNode> Parser::parseMultiplication()
-{
-    auto node = parsePrimary();
-    while (match(TokenType::MULTIPLY) || match(TokenType::DIVIDE) || match(TokenType::MODULO))
-    {
-        Token op = previous();
-        auto right = parsePrimary();
-        node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+
+
+std::unique_ptr<ASTNode> Parser::parseAddition() {
+    try {
+        auto node = parseMultiplication();
+        while (match(TokenType::ADD) || match(TokenType::SUBTRACT)) {
+            Token op = previous();
+            auto right = parseMultiplication();
+            node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+        }
+        return node;
+    } catch (const std::runtime_error& e) {
+        throw;
     }
-    return node;
+}
+
+std::unique_ptr<ASTNode> Parser::parseComparison() {
+    try {
+        auto node = parseAddition();
+        while (match(TokenType::LESS) || match(TokenType::LESS_EQUAL) ||
+               match(TokenType::GREATER) || match(TokenType::GREATER_EQUAL)) {
+            Token op = previous();
+            auto right = parseAddition();
+            node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+        }
+        return node;
+    } catch (const std::runtime_error& e) {
+        throw;
+    }
+}
+
+std::unique_ptr<ASTNode> Parser::parseMultiplication() {
+    try {
+        auto node = parsePrimary();
+        while (match(TokenType::MULTIPLY) || match(TokenType::DIVIDE) || match(TokenType::MODULO)) {
+            Token op = previous();
+            auto right = parsePrimary();
+            node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+        }
+        return node;
+    } catch (const std::runtime_error& e) {
+        throw;
+    }
 }
 
 

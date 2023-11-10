@@ -36,7 +36,6 @@ Value tokenToValue(const Token& token) {
 }
 
 // Evaluate the expression node
-// Evaluate the expression node
 Value evaluateExpression(const ASTNode* node) {
     if (!node) {
         throw std::runtime_error("Null expression node");
@@ -159,6 +158,7 @@ void evaluatePrint(const PrintNode* node) {
     }
 }
 
+// Evaluate Operations
 Value evaluateBinaryOperation(const BinaryOpNode* node) {
     Value left = evaluateExpression(node->left.get());
     Value right = evaluateExpression(node->right.get());
@@ -207,7 +207,7 @@ Value evaluateBinaryOperation(const BinaryOpNode* node) {
     }
 }
 
-// Function to evaluate variable access
+// Evaluate variables
 Value evaluateVariable(const VariableNode* node) {
     auto iter = variables.find(node->identifier.value);
     if (iter != variables.end()) {
@@ -217,6 +217,7 @@ Value evaluateVariable(const VariableNode* node) {
     }
 }
 
+// Evaluate Assignments
 Value evaluateAssignment(const AssignmentNode* assignmentNode) {
     if (!assignmentNode) {
         throw std::runtime_error("Null assignment node passed to evaluateAssignment");
