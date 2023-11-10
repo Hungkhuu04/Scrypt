@@ -170,7 +170,7 @@ std::unique_ptr<ASTNode> Parser::parseAssignment()
         auto value = parseAssignment();
         if (node->getType() != ASTNode::Type::VariableNode)
         {
-            throw errorAt(equals, "");
+            throw errorAtCurrent("");
         }
         auto variable = static_cast<VariableNode *>(node.get());
         return std::make_unique<AssignmentNode>(variable->identifier, std::move(value));
