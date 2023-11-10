@@ -17,7 +17,7 @@ std::unique_ptr<ASTNode> Parser::parse() {
             if (stmt != nullptr) {
                 statements.push_back(std::move(stmt));
             }
-        } catch (const std::runtime_error& error) {
+        } catch (...) {
             synchronize();
             throw;
         }
@@ -56,7 +56,7 @@ std::unique_ptr<ASTNode> Parser::parseStatement()
 
 }
 
-// 
+// Parses if statements & blocks
 std::unique_ptr<ASTNode> Parser::parseIfStatement()
 {
     
@@ -85,6 +85,7 @@ std::unique_ptr<ASTNode> Parser::parseIfStatement()
     return std::make_unique<IfNode>(std::move(condition), std::move(trueBranch), std::move(elseBranch));
 }
 
+// parses while statements and blocks
 std::unique_ptr<ASTNode> Parser::parseWhileStatement()
 {
     
@@ -107,17 +108,19 @@ std::unique_ptr<ASTNode> Parser::parseWhileStatement()
     return std::make_unique<WhileNode>(std::move(condition), std::move(body));
 }
 
+// parses print statements
 std::unique_ptr<ASTNode> Parser::parsePrintStatement()
 {
     auto expression = parseExpression();
     while (match(TokenType::NEWLINE))
     {
-        
+        // consuming the newline
     }
     
     return std::make_unique<PrintNode>(std::move(expression));
 }
 
+// parses block nodes
 std::unique_ptr<ASTNode> Parser::parseBlock()
 {
     consume(TokenType::LEFT_BRACE);
@@ -127,7 +130,7 @@ std::unique_ptr<ASTNode> Parser::parseBlock()
     {
         while (match(TokenType::NEWLINE))
         {
-            
+            // consuming the newline
         }
         statements.push_back(parseStatement());
         
@@ -136,12 +139,13 @@ std::unique_ptr<ASTNode> Parser::parseBlock()
     consume(TokenType::RIGHT_BRACE);
     while (match(TokenType::NEWLINE))
     {
-            
+        // consuming the newline
     }
     
     return std::make_unique<BlockNode>(std::move(statements));
 }
 
+// main parse for expression statements (NOT BLOCKS)
 std::unique_ptr<ASTNode> Parser::parseExpressionStatement()
 {
     auto expression = parseExpression();
@@ -154,11 +158,13 @@ std::unique_ptr<ASTNode> Parser::parseExpressionStatement()
     return expression;
 }
 
+// parse for all expressions
 std::unique_ptr<ASTNode> Parser::parseExpression()
 {
     return parseAssignment();
 }
 
+// parses assignment
 std::unique_ptr<ASTNode> Parser::parseAssignment()
 {
     auto node = parseLogicalOr();
@@ -176,6 +182,10 @@ std::unique_ptr<ASTNode> Parser::parseAssignment()
     return node;
 }
 
+
+/* From here to parse primary, each function parses each type of logical operation or expresion. 
+It is coded to use precedence from track A
+*/
 std::unique_ptr<ASTNode> Parser::parseLogicalOr() {
     try {
         auto node = parseLogicalAnd();
@@ -185,8 +195,8 @@ std::unique_ptr<ASTNode> Parser::parseLogicalOr() {
             node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
         }
         return node;
-    } catch (const std::runtime_error& e) {
-        throw; // Rethrow the exception for further handling
+    } catch (...) {
+        throw;
     }
 }
 
@@ -199,7 +209,7 @@ std::unique_ptr<ASTNode> Parser::parseLogicalAnd() {
             node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
         }
         return node;
-    } catch (const std::runtime_error& e) {
+    } catch (...) {
         throw;
     }
 }
@@ -214,7 +224,7 @@ std::unique_ptr<ASTNode> Parser::parseEquality() {
             node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
         }
         return node;
-    } catch (const std::runtime_error& e) {
+    } catch (...) {
         throw;
     }
 }
@@ -230,7 +240,7 @@ std::unique_ptr<ASTNode> Parser::parseAddition() {
             node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
         }
         return node;
-    } catch (const std::runtime_error& e) {
+    } catch (...) {
         throw;
     }
 }
@@ -245,7 +255,7 @@ std::unique_ptr<ASTNode> Parser::parseComparison() {
             node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
         }
         return node;
-    } catch (const std::runtime_error& e) {
+    } catch (...) {
         throw;
     }
 }
@@ -259,7 +269,7 @@ std::unique_ptr<ASTNode> Parser::parseMultiplication() {
             node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
         }
         return node;
-    } catch (const std::runtime_error& e) {
+    } catch (...) {
         throw;
     }
 }
@@ -282,7 +292,7 @@ std::unique_ptr<ASTNode> Parser::parsePrimary() {
         } else if (match(TokenType::BOOLEAN_FALSE)) {
             return std::make_unique<BooleanNode>(previous());
         }
-    } catch (const std::runtime_error& e) {
+    } catch (...) {
         throw error();
     }
     throw error();

@@ -81,27 +81,26 @@ Token Lexer::number() {
 Token Lexer::op() {
     int startCol = col;
     char op1 = consume();
-    char op2 = inputStream.peek(); // Peek the next character for two-character operators
+    char op2 = inputStream.peek(); 
     
-    // Two-character operators
     if (op1 == '<' && op2 == '=') {
-        consume(); // consume '='
+        consume(); 
         return {TokenType::LESS_EQUAL, "<=", line, startCol};
     }
     if (op1 == '>' && op2 == '=') {
-        consume(); // consume '='
+        consume();
         return {TokenType::GREATER_EQUAL, ">=", line, startCol};
     }
     if (op1 == '=' && op2 == '=') {
-        consume(); // consume '='
+        consume(); 
         return {TokenType::EQUAL, "==", line, startCol};
     }
     if (op1 == '!' && op2 == '=') {
-        consume(); // consume '='
+        consume(); 
         return {TokenType::NOT_EQUAL, "!=", line, startCol};
     }
 
-    // Single-character operators
+
     switch (op1) {
         case '+': return {TokenType::ADD, "+", line, startCol};
         case '-': return {TokenType::SUBTRACT, "-", line, startCol};
@@ -123,11 +122,8 @@ std::vector<Token> Lexer::tokenize() {
     std::vector<Token> tokens;
     while (inputStream.peek() != EOF) {
         char c = inputStream.peek();
-        if (isspace(c) /*&& c != '\n'*/) {
-            consume(); // consume all whitespaces except newline
-        /*} else if (c == '\n') {
-            tokens.push_back({TokenType::NEWLINE, "\\n", line, col}); // create a newline token
-            consume();*/
+        if (isspace(c)) {
+            consume();
         } else if (c == '(') {
             tokens.push_back({TokenType::LEFT_PAREN, "(", line, col});
             consume();
@@ -135,7 +131,6 @@ std::vector<Token> Lexer::tokenize() {
             tokens.push_back({TokenType::RIGHT_PAREN, ")", line, col});
             consume();
         } 
-        // NEW: Support for curly braces
         else if (c == '{') {
             tokens.push_back({TokenType::LEFT_BRACE, "{", line, col});
             consume();
@@ -165,7 +160,6 @@ std::vector<Token> Lexer::tokenize() {
                     tokens.push_back({TokenType::BOOLEAN_FALSE, identifier, line, identifierStartCol});
                 }
             } 
-            // NEW: Support for if, while, print
             else if (identifier == "if") {
                 tokens.push_back({TokenType::IF, identifier, line, identifierStartCol});
             } else if (identifier == "while") {
