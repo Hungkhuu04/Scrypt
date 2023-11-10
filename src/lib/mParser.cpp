@@ -7,7 +7,7 @@
 Parser::Parser(const std::vector<Token> &tokens)
         : tokens(tokens), current(0) {}
 
-
+// Parse the tokens and return the root node of the AST
 std::unique_ptr<ASTNode> Parser::parse() {
     std::vector<std::unique_ptr<ASTNode>> statements;
 
@@ -55,6 +55,7 @@ std::unique_ptr<ASTNode> Parser::parseStatement()
     return stmt;
 
 }
+
 std::unique_ptr<ASTNode> Parser::parseIfStatement()
 {
     
