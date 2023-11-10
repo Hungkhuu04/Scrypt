@@ -249,39 +249,29 @@ std::unique_ptr<ASTNode> Parser::parseMultiplication()
 }
 
 
-std::unique_ptr<ASTNode> Parser::parsePrimary()
-{
-    if (match(TokenType::NUMBER))
-    {
-        
-        return std::make_unique<NumberNode>(previous());
-    }
-    else if (match(TokenType::LEFT_PAREN))
-    {
-       
-        auto expr = parseExpression();
-        consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.");
-        while (match(TokenType::NEWLINE)) {
+std::unique_ptr<ASTNode> Parser::parsePrimary() {
+    try {
+        if (match(TokenType::NUMBER)) {
+            return std::make_unique<NumberNode>(previous());
+        } else if (match(TokenType::LEFT_PAREN)) {
+            auto expr = parseExpression();
+            consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.");
+            while (match(TokenType::NEWLINE)) {
+            }
+            return expr;
+        } else if (match(TokenType::IDENTIFIER)) {
+            return std::make_unique<VariableNode>(previous());
+        } else if (match(TokenType::BOOLEAN_TRUE)) {
+            return std::make_unique<BooleanNode>(previous());
+        } else if (match(TokenType::BOOLEAN_FALSE)) {
+            return std::make_unique<BooleanNode>(previous());
         }
-        return expr;
+        throw error("");
+    } catch (const std::runtime_error& e) {
+        throw;
     }
-    else if (match(TokenType::IDENTIFIER))
-    {
-        
-        return std::make_unique<VariableNode>(previous());
-    }
-    else if (match(TokenType::BOOLEAN_TRUE))
-    {
-        
-        return std::make_unique<BooleanNode>(previous());
-    }
-    else if (match(TokenType::BOOLEAN_FALSE))
-    {
-        
-        return std::make_unique<BooleanNode>(previous());
-    }
-    throw error("");
 }
+
 
 
 

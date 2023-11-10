@@ -119,8 +119,6 @@ void evaluateIf(ASTNode* node) {
     }
 }
 
-
-// Evaluate the while node
 // Evaluate the while node
 void evaluateWhile(const WhileNode* node) {
     if (!node) {
