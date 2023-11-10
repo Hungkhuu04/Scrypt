@@ -1,9 +1,10 @@
 #include "mParser.h"
 #include <iostream>
+#include <ostream>
 
 // Constructor implementation
-Parser::Parser(const std::vector<Token> &tokens)
-    : tokens(tokens), current(0) {}
+Parser::Parser(const std::vector<Token> &tokens, std::ostream& errorOut)
+        : tokens(tokens), current(0), errorOutput(errorOut) {}
 
 // Parse entry function
 std::unique_ptr<ASTNode> Parser::parse()
@@ -292,7 +293,7 @@ const Token &Parser::peek() const
 {
     if (isAtEnd())
     {
-        static const Token eofToken(TokenType::END, "", -1, -1); 
+        static const Token eofToken(TokenType::END, "END", tokens[current].line, tokens[current].column); 
         return eofToken;
     }
     return tokens[current];
@@ -374,7 +375,7 @@ void Parser::error(const Token &token, const std::string &message) {
 }
 
 ParseError Parser::report(int line, int column, const std::string &tokenValue, const std::string &message) {
-    std::cerr << "Unexpected token at line " << line << " column " << column << " : " << tokenValue << std::endl;
+    errorOutput << "Unexpected token at line " << line << " column " << column << " : " << tokenValue << "\n";
     return ParseError(message);
 }
 

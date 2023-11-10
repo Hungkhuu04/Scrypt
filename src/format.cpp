@@ -4,6 +4,8 @@
 #include <iostream>
 #include <string>
 #include <ostream>
+#include <cmath>
+#include <iomanip>
 
 // Utility function to create an indentation string
 std::string indentString(int indentLevel) {
@@ -22,9 +24,21 @@ void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent) 
 }
 
 void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
-    os << indentString(indent) << node->value.value;
+    // Try to convert the number to a double and then check if it's an integer
+    double value = std::stod(node->value.value);
+    if (std::floor(value) == value) {
+        os << indentString(indent) << static_cast<long>(value);
+    } else {
+        std::ostringstream tempStream;
+        tempStream << std::fixed << std::setprecision(2) << value;
+        std::string str = tempStream.str();
+        str.erase(str.find_last_not_of('0') + 1, std::string::npos); // Remove trailing zeros
+        if (str.back() == '.') {
+            str.pop_back(); // Remove trailing dot if it's there
+        }
+        os << indentString(indent) << str;
+    }
 }
-
 void formatBooleanNode(std::ostream& os, const BooleanNode* node, int indent) {
     os << indentString(indent) << node->value.value;
 }
@@ -124,10 +138,15 @@ int main() {
 
     Lexer lexer(inputCode);
     auto tokens = lexer.tokenize();
-
+    if (lexer.isSyntaxError(tokens)) {
+        throw std::runtime_error("");
+    }
     Parser parser(tokens);
-    std::unique_ptr<ASTNode> ast = parser.parse();
-
+    std::unique_ptr<ASTNode> ast;
+    try {
+        ast = parser.parse();
+    } catch (const ParseError& error) {
+    }
     formatAST(std::cout, ast);
     os << std::endl;
 
