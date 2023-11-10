@@ -4,6 +4,8 @@
 #include <string>      
 #include <stdexcept>
 
+// Most of the functionality is the same of mParser
+
 InfixParser::InfixParser(const std::vector<Token>& tokens) 
     : tokens(tokens), currentTokenIndex(0), root(nullptr), unmatchedParentheses(0) {}
 

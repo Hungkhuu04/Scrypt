@@ -90,7 +90,7 @@ void evaluateBlock(const BlockNode* blockNode) {
                     throw std::runtime_error("Unknown Node Type");
             }
         }
-    } catch (const std::runtime_error& e) {
+    } catch (...) {
         throw;
     }
 }
@@ -141,7 +141,7 @@ void evaluateWhile(const WhileNode* node) {
             }
             evaluateBlock(blockNode);
         }
-    } catch (const std::runtime_error& e) {
+    } catch (...) {
         throw;
     }
 }
