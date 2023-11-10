@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <string>
 
-// A simple parse error exception type that contains an error message
+
 class ParseError : public std::runtime_error {
 public:
     

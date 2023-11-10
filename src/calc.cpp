@@ -253,18 +253,19 @@ int main() {
         if (inputLine.empty()) {
             continue;
         }
-        std::unordered_map<std::string, double> tempVariables = variables; // Create a temporary copy
+        std::unordered_map<std::string, double> tempVariables = variables;
         try {
             Lexer lexer(inputLine);
             auto tokens = lexer.tokenize();
+
             if (lexer.isSyntaxError(tokens)) {
                 throw std::runtime_error("");
             }
             InfixParser parser(tokens);
             Node* root = parser.parse(os);
             os << infixString(root, os) << endl;
-            string result = evaluate(root, tempVariables); // Evaluate using the temporary copy
-            variables = tempVariables; // Update the original variables if successful
+            string result = evaluate(root, tempVariables); 
+            variables = tempVariables; 
             os << result << endl;
 
         } catch (const std::runtime_error& e) {

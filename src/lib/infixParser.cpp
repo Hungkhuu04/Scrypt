@@ -170,14 +170,14 @@ Node* InfixParser::equalityExpression(std::ostream& os) {
 
 
 Node* InfixParser::relationalExpression(std::ostream& os) {
-    Node* node = additiveExpression(os); // Start with a higher precedence level expression
+    Node* node = additiveExpression(os); 
     Node* right = nullptr;
 
     try {
         while (currentToken().type == TokenType::LESS || currentToken().type == TokenType::LESS_EQUAL ||
                currentToken().type == TokenType::GREATER || currentToken().type == TokenType::GREATER_EQUAL) {
             Token op = currentToken();
-            currentTokenIndex++; // Consume the relational token
+            currentTokenIndex++; 
 
             right = additiveExpression(os);
 
@@ -185,17 +185,17 @@ Node* InfixParser::relationalExpression(std::ostream& os) {
                 op.type == TokenType::LESS ? NodeType::LESS_THAN :
                 op.type == TokenType::LESS_EQUAL ? NodeType::LESS_EQUAL :
                 op.type == TokenType::GREATER ? NodeType::GREATER_THAN :
-                NodeType::GREATER_EQUAL); // The last condition must be GREATER_EQUAL
+                NodeType::GREATER_EQUAL);
             relationalNode->children.push_back(node);
             relationalNode->children.push_back(right);
 
-            node = relationalNode; // This node now becomes the left-hand operand for any further relational operations
-            right = nullptr; // Prevents deleting right in case of an exception
+            node = relationalNode;
+            right = nullptr; 
         }
     } catch (...) {
-        clearTree(right); // right might have been partially constructed, so clean it up.
-        clearTree(node);  // Clean up the entire left side tree
-        throw; // Re-throw the current exception
+        clearTree(right); 
+        clearTree(node); 
+        throw; 
     }
 
     return node;
@@ -203,50 +203,49 @@ Node* InfixParser::relationalExpression(std::ostream& os) {
 
 
 Node* InfixParser::additiveExpression(std::ostream& os) {
-    Node* node = multiplicativeExpression(os); // Start with the highest precedence expressions
+    Node* node = multiplicativeExpression(os);
     Node* right = nullptr;
 
     try {
         while (currentToken().type == TokenType::ADD || currentToken().type == TokenType::SUBTRACT) {
             Token op = currentToken();
-            currentTokenIndex++; // Consume the operator token
+            currentTokenIndex++; 
 
-            right = multiplicativeExpression(os); // Parse the next multiplicative expression
+            right = multiplicativeExpression(os); 
 
             Node* additiveNode = new Node(op.type == TokenType::ADD ? NodeType::ADD : NodeType::SUBTRACT);
             additiveNode->children.push_back(node);
             additiveNode->children.push_back(right);
 
-            node = additiveNode; // Update node to the newly created one for subsequent loops
-            right = nullptr; // Reset right to nullptr to avoid deletion in case of an exception
+            node = additiveNode; 
+            right = nullptr; 
         }
     } catch (...) {
-        clearTree(right); // Clean up the right child if it was created
-        clearTree(node); // Clean up everything else
-        throw; // Re-throw the exception to be handled further up the stack
+        clearTree(right); 
+        clearTree(node);
+        throw; 
     }
 
-    return node; // Return the root of the constructed subtree for additive expressions
+    return node;
 }
 
 
 Node* InfixParser::multiplicativeExpression(std::ostream& os) {
-    Node* node = factor(os); // Get the first operand
+    Node* node = factor(os); 
     Node* right = nullptr;
 
     try {
         while (currentToken().type == TokenType::MULTIPLY || currentToken().type == TokenType::DIVIDE || currentToken().type == TokenType::MODULO) {
             Token op = currentToken();
-            currentTokenIndex++; // Move past the operator token
+            currentTokenIndex++; 
+            right = factor(os); 
 
-            right = factor(os); // Get the next factor (operand)
-
-            NodeType newNodeType; // Determine node type based on token type
+            NodeType newNodeType; 
             if (op.type == TokenType::MULTIPLY) {
                 newNodeType = NodeType::MULTIPLY;
             } else if (op.type == TokenType::DIVIDE) {
                 newNodeType = NodeType::DIVIDE;
-            } else { // Must be TokenType::MODULO
+            } else { 
                 newNodeType = NodeType::MODULO;
             }
 
@@ -254,13 +253,13 @@ Node* InfixParser::multiplicativeExpression(std::ostream& os) {
             newNode->children.push_back(node);
             newNode->children.push_back(right);
 
-            node = newNode; // The new node becomes the current node for the next iteration
-            right = nullptr; // Reset right to nullptr to prevent deletion in case of an exception
+            node = newNode; 
+            right = nullptr; 
         }
     } catch (...) {
-        clearTree(right); // Clean up right if it's been allocated
-        clearTree(node); // Clean up the entire left side
-        throw; // Re-throw the exception
+        clearTree(right);
+        clearTree(node); 
+        throw; 
     }
 
     return node;
@@ -268,7 +267,7 @@ Node* InfixParser::multiplicativeExpression(std::ostream& os) {
 
 Node* InfixParser::factor(std::ostream& os) {
     Token& token = currentToken();
-    Node* node = nullptr;  // Initialize node pointer to nullptr
+    Node* node = nullptr;  
 
     try {
         if (token.type == TokenType::NUMBER) {
@@ -284,7 +283,7 @@ Node* InfixParser::factor(std::ostream& os) {
             currentTokenIndex++;
             node = expression(os);
             if (currentToken().type != TokenType::RIGHT_PAREN) {
-                clearTree(node); // Clear the current sub-expression
+                clearTree(node); 
                 throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
             }
             unmatchedParentheses--;
@@ -302,8 +301,8 @@ Node* InfixParser::factor(std::ostream& os) {
             throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
     } catch (...) {
-        clearTree(node); // Clear up any memory allocated before re-throwing
-        throw;  // Re-throw the exception to be handled further up the call stack
+        clearTree(node);
+        throw;  
     }
     return node;
 }
@@ -323,14 +322,14 @@ Node* InfixParser::parse(std::ostream& os) {
             throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken().line) + " column " + std::to_string(currentToken().column) + ": " + currentToken().value + "\n");
         }
     } catch (const std::runtime_error& e) {
-        throw;  // Re-throw the caught exception
+        throw;  
     }
     return root;
 }
 
 
 // This function recursively deallocates memory used by the nodes in the AST, ensuring no memory leaks.
-void InfixParser::clearTree(Node*& node) {  // Changed node to a reference to a pointer
+void InfixParser::clearTree(Node*& node) { 
     if (!node) return;
     for (Node*& child : node->children) {
         clearTree(child);

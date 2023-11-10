@@ -7,12 +7,12 @@
 #include <cmath>
 #include <iomanip>
 
-// Utility function to create an indentation string
+// function to create an indentation string
 std::string indentString(int indentLevel) {
     return std::string(indentLevel * 4, ' '); // 4 spaces per indent level
 }
 
-// Forward declarations with the new signature including std::ostream
+// function to format the AST
 void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent = 0);
 
 void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent) {
@@ -24,7 +24,6 @@ void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent) 
 }
 
 void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
-    // Try to convert the number to a double and then check if it's an integer
     double value = std::stod(node->value.value);
     if (std::floor(value) == value) {
         os << indentString(indent) << static_cast<long>(value);
@@ -32,9 +31,9 @@ void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
         std::ostringstream tempStream;
         tempStream << std::fixed << std::setprecision(2) << value;
         std::string str = tempStream.str();
-        str.erase(str.find_last_not_of('0') + 1, std::string::npos); // Remove trailing zeros
+        str.erase(str.find_last_not_of('0') + 1, std::string::npos); 
         if (str.back() == '.') {
-            str.pop_back(); // Remove trailing dot if it's there
+            str.pop_back(); 
         }
         os << indentString(indent) << str;
     }

@@ -6,7 +6,7 @@
 Parser::Parser(const std::vector<Token> &tokens)
         : tokens(tokens), current(0) {}
 
-// Parse entry function
+
 std::unique_ptr<ASTNode> Parser::parse()
 {
     
@@ -92,7 +92,7 @@ std::unique_ptr<ASTNode> Parser::parseWhileStatement()
     
     while (match(TokenType::NEWLINE))
     {
-        // Just consuming the newline
+        //  consuming the newline
     }
 
     auto condition = parseExpression(); 
@@ -100,7 +100,7 @@ std::unique_ptr<ASTNode> Parser::parseWhileStatement()
    
     while (match(TokenType::NEWLINE))
     {
-        // Just consuming the newline
+        //  consuming the newline
     }
 
     
@@ -150,7 +150,7 @@ std::unique_ptr<ASTNode> Parser::parseExpressionStatement()
 
    
     while (match(TokenType::NEWLINE)) {
-            // Just consuming the newline
+            //  consuming the newline
     }
 
     return expression;
