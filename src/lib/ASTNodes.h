@@ -6,6 +6,23 @@
 #include <vector>
 #include <string>
 
+class Value {
+public:
+    enum class Type { Int, Bool } type;
+
+    Value() : type(Type::Int), intValue(0) {}
+    Value(int value) : type(Type::Int), intValue(value) {}
+    Value(bool value) : type(Type::Bool), boolValue(value) {}
+    int asInt() const;
+    bool asBool() const;
+
+private:
+    union {
+        int intValue;
+        bool boolValue;
+    };
+};
+
 
 struct ASTNode {
     enum class Type {
