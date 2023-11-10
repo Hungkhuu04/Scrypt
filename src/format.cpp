@@ -139,14 +139,13 @@ int main() {
     Lexer lexer(inputCode);
     auto tokens = lexer.tokenize();
     if (lexer.isSyntaxError(tokens)) {
-        throw std::runtime_error("");
     }
     Parser parser(tokens);
     std::unique_ptr<ASTNode> ast;
     try {
         ast = parser.parse();
     } catch (const std::runtime_error& e) {
-            os << e.what();
+        os << e.what();
     }
     formatAST(std::cout, ast);
     os << std::endl;
