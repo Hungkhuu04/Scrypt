@@ -63,30 +63,37 @@ void evaluateBlock(const BlockNode* blockNode) {
         throw std::runtime_error("Null block node passed to evaluateBlock");
     }
     
-    for (const auto& stmt : blockNode->statements) {
-        switch (stmt->getType()) {
-            case ASTNode::Type::IfNode:
-                evaluateIf(stmt.get());
-                break;
+    try {
+        for (const auto& stmt : blockNode->statements) {
+            switch (stmt->getType()) {
+                case ASTNode::Type::IfNode:
+                    evaluateIf(stmt.get());
+                    break;
 
-            case ASTNode::Type::WhileNode:
-                evaluateWhile(static_cast<const WhileNode*>(stmt.get()));
-                break;
-            case ASTNode::Type::PrintNode:
-                evaluatePrint(static_cast<const PrintNode*>(stmt.get()));
-                break;
-            case ASTNode::Type::AssignmentNode:
-                evaluateAssignment(static_cast<const AssignmentNode*>(stmt.get()));
-                break;
-            case ASTNode::Type::BlockNode:
-                evaluateBlock(static_cast<const BlockNode*>(stmt.get()));
-                break;
-            default:
-                throw std::runtime_error("Unknown Node Type");
+                case ASTNode::Type::WhileNode:
+                    evaluateWhile(static_cast<const WhileNode*>(stmt.get()));
+                    break;
+
+                case ASTNode::Type::PrintNode:
+                    evaluatePrint(static_cast<const PrintNode*>(stmt.get()));
+                    break;
+
+                case ASTNode::Type::AssignmentNode:
+                    evaluateAssignment(static_cast<const AssignmentNode*>(stmt.get()));
+                    break;
+
+                case ASTNode::Type::BlockNode:
+                    evaluateBlock(static_cast<const BlockNode*>(stmt.get()));
+                    break;
+
+                default:
+                    throw std::runtime_error("Unknown Node Type");
+            }
         }
+    } catch (const std::runtime_error& e) {
+        throw;
     }
 }
-
 
 // Evaluate the if node
 void evaluateIf(ASTNode* node) {
@@ -98,7 +105,6 @@ void evaluateIf(ASTNode* node) {
     Value conditionValue = evaluateExpression(ifNode->condition.get());
     if (conditionValue.type != Value::Type::Bool) {
         throw std::runtime_error("Runtime error: condition is not a bool.");
-        exit(3);
     }
 
     if (conditionValue.asBool()) {
@@ -115,23 +121,33 @@ void evaluateIf(ASTNode* node) {
 
 
 // Evaluate the while node
+// Evaluate the while node
 void evaluateWhile(const WhileNode* node) {
-    while (true) {
-        Value condValue = evaluateExpression(node->condition.get());
+    if (!node) {
+        throw std::runtime_error("Null while node passed to evaluateWhile");
+    }
 
-        if (condValue.type != Value::Type::Bool) {
-            throw std::runtime_error("Runtime error: condition is not a bool.");
+    try {
+        while (true) {
+            Value condValue = evaluateExpression(node->condition.get());
+
+            if (condValue.type != Value::Type::Bool) {
+                throw std::runtime_error("Runtime error: condition is not a bool.");
+            }
+
+            if (!condValue.asBool()) break;
+
+            const BlockNode* blockNode = dynamic_cast<const BlockNode*>(node->body.get());
+            if (!blockNode) {
+                throw std::runtime_error("Non-block node passed to evaluateWhile");
+            }
+            evaluateBlock(blockNode);
         }
-
-        if (!condValue.asBool()) break;
-
-        const BlockNode* blockNode = dynamic_cast<const BlockNode*>(node->body.get());
-        if (!blockNode) {
-            throw std::runtime_error("Non-block node passed to evaluateWhile");
-        }
-        evaluateBlock(blockNode);
+    } catch (const std::runtime_error& e) {
+        throw;
     }
 }
+
 
 
 // Evaluate the print node
