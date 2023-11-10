@@ -37,25 +37,30 @@ Value tokenToValue(const Token& token) {
 
 // Evaluate the expression node
 Value evaluateExpression(const ASTNode* node) {
-    if (!node) {
-        throw std::runtime_error("Null expression node");
-    }
+    try {
+        if (!node) {
+            throw std::runtime_error("Null expression node");
+        }
 
-    switch (node->getType()) {
-        case ASTNode::Type::NumberNode:
-            return Value(std::stod(static_cast<const NumberNode*>(node)->value.value));
-        case ASTNode::Type::BooleanNode:
-            return Value(static_cast<const BooleanNode*>(node)->value.type == TokenType::BOOLEAN_TRUE);
-        case ASTNode::Type::VariableNode:
-            return evaluateVariable(static_cast<const VariableNode*>(node));
-        case ASTNode::Type::BinaryOpNode:
-            return evaluateBinaryOperation(static_cast<const BinaryOpNode*>(node));
-        case ASTNode::Type::AssignmentNode:
-            return evaluateAssignment(static_cast<const AssignmentNode*>(node));
-        default:
-            throw std::runtime_error("Unknown expression node type");
+        switch (node->getType()) {
+            case ASTNode::Type::NumberNode:
+                return Value(std::stod(static_cast<const NumberNode*>(node)->value.value));
+            case ASTNode::Type::BooleanNode:
+                return Value(static_cast<const BooleanNode*>(node)->value.type == TokenType::BOOLEAN_TRUE);
+            case ASTNode::Type::VariableNode:
+                return evaluateVariable(static_cast<const VariableNode*>(node));
+            case ASTNode::Type::BinaryOpNode:
+                return evaluateBinaryOperation(static_cast<const BinaryOpNode*>(node));
+            case ASTNode::Type::AssignmentNode:
+                return evaluateAssignment(static_cast<const AssignmentNode*>(node));
+            default:
+                throw std::runtime_error("Unknown expression node type");
+        }
+    } catch (...) {
+        throw std::runtime_error("Unknown error occurred in evaluateExpression");
     }
 }
+
 
 // Evaluate the block node
 void evaluateBlock(const BlockNode* blockNode) {
@@ -97,25 +102,29 @@ void evaluateBlock(const BlockNode* blockNode) {
 
 // Evaluate the if node
 void evaluateIf(ASTNode* node) {
-    IfNode* ifNode = dynamic_cast<IfNode*>(node);
-    if (!ifNode) {
-        throw std::runtime_error("Non-if node passed to evaluateIf");
-    }
-
-    Value conditionValue = evaluateExpression(ifNode->condition.get());
-    if (conditionValue.type != Value::Type::Bool) {
-        throw std::runtime_error("Runtime error: condition is not a bool.");
-    }
-
-    if (conditionValue.asBool()) {
-        evaluateBlock(static_cast<const BlockNode*>(ifNode->trueBranch.get()));
-    } else if (ifNode->falseBranch) {
-        ASTNode* elseBranchNode = ifNode->falseBranch.get();
-        if (elseBranchNode->getType() == ASTNode::Type::IfNode) {
-            evaluateIf(elseBranchNode);
-        } else {
-            evaluateBlock(static_cast<const BlockNode*>(elseBranchNode));
+    try {
+        IfNode* ifNode = dynamic_cast<IfNode*>(node);
+        if (!ifNode) {
+            throw std::runtime_error("Non-if node passed to evaluateIf");
         }
+
+        Value conditionValue = evaluateExpression(ifNode->condition.get());
+        if (conditionValue.type != Value::Type::Bool) {
+            throw std::runtime_error("Runtime error: condition is not a bool.");
+        }
+
+        if (conditionValue.asBool()) {
+            evaluateBlock(static_cast<const BlockNode*>(ifNode->trueBranch.get()));
+        } else if (ifNode->falseBranch) {
+            ASTNode* elseBranchNode = ifNode->falseBranch.get();
+            if (elseBranchNode->getType() == ASTNode::Type::IfNode) {
+                evaluateIf(elseBranchNode);
+            } else {
+                evaluateBlock(static_cast<const BlockNode*>(elseBranchNode));
+            }
+        }
+    } catch (...) {
+        throw std::runtime_error("Unknown error occurred in evaluateIf");
     }
 }
 
@@ -160,6 +169,7 @@ void evaluatePrint(const PrintNode* node) {
 
 // Evaluate Operations
 Value evaluateBinaryOperation(const BinaryOpNode* node) {
+    try {
     Value left = evaluateExpression(node->left.get());
     Value right = evaluateExpression(node->right.get());
 
@@ -205,27 +215,38 @@ Value evaluateBinaryOperation(const BinaryOpNode* node) {
         default:
             throw std::runtime_error("Unsupported binary operator.");
     }
+    } catch (...) {
+        throw std::runtime_error("Unknown error occurred in evaluateBinaryOperation");
+    }
 }
 
 // Evaluate variables
 Value evaluateVariable(const VariableNode* node) {
-    auto iter = variables.find(node->identifier.value);
-    if (iter != variables.end()) {
-        return iter->second;
-    } else {
-        throw std::runtime_error("Variable not defined: " + node->identifier.value);
+    try {
+        auto iter = variables.find(node->identifier.value);
+        if (iter != variables.end()) {
+            return iter->second;
+        } else {
+            throw std::runtime_error("Variable not defined: " + node->identifier.value);
+        }
+    } catch (...) {
+        throw std::runtime_error("Unknown error occurred in evaluateVariable");
     }
 }
 
 // Evaluate Assignments
 Value evaluateAssignment(const AssignmentNode* assignmentNode) {
-    if (!assignmentNode) {
-        throw std::runtime_error("Null assignment node passed to evaluateAssignment");
-    }
+    try {
+        if (!assignmentNode) {
+            throw std::runtime_error("Null assignment node passed to evaluateAssignment");
+        }
 
-    Value value = evaluateExpression(assignmentNode->expression.get());
-    variables[assignmentNode->identifier.value] = value;
-    return value;
+        Value value = evaluateExpression(assignmentNode->expression.get());
+        variables[assignmentNode->identifier.value] = value;
+        return value;
+    } catch (...) {
+        throw std::runtime_error("Unknown error occurred in evaluateAssignment");
+    }
 }
 
 int main() {
