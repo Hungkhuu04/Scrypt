@@ -121,7 +121,6 @@ void evaluateWhile(const WhileNode* node) {
 
         if (condValue.type != Value::Type::Bool) {
             throw std::runtime_error("Runtime error: condition is not a bool.");
-            exit(3);
         }
 
         if (!condValue.asBool()) break;
@@ -233,12 +232,16 @@ int main() {
         if (ast->getType() == ASTNode::Type::BlockNode) {
             evaluateBlock(static_cast<const BlockNode*>(ast.get()));
         } else {
-            throw std::runtime_error("");
+            throw std::runtime_error("Invalid AST node type");
         }
 
     } catch (const std::runtime_error& e) {
         os << e.what() << std::endl;
-        exit(2);
+        if (std::string(e.what()) == "Runtime error: condition is not a bool.") {
+            exit(3);
+        } else {
+            exit(2);
+        }
     }
     return 0;
 }

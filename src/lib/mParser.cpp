@@ -7,28 +7,24 @@ Parser::Parser(const std::vector<Token> &tokens)
         : tokens(tokens), current(0) {}
 
 
-std::unique_ptr<ASTNode> Parser::parse()
-{
-    
+std::unique_ptr<ASTNode> Parser::parse() {
     std::vector<std::unique_ptr<ASTNode>> statements;
 
-   
-    while (!isAtEnd())
-    {
-        try
-        {
-            
-            statements.push_back(parseStatement());
-        }
-        catch (const ParseError &error)
-        {
-    
-            synchronize();
+    while (!isAtEnd()) {
+        try {
+            std::unique_ptr<ASTNode> stmt = parseStatement();
+            if (stmt != nullptr) {
+                statements.push_back(std::move(stmt));
+            }
+        } catch (const std::runtime_error& error) {
+            throw error;
+            synchronize();  // Recover from the error.
         }
     }
 
     return std::make_unique<BlockNode>(std::move(statements));
 }
+
 
 // Implementations of parsing functions for each rule
 std::unique_ptr<ASTNode> Parser::parseStatement()
@@ -213,18 +209,6 @@ std::unique_ptr<ASTNode> Parser::parseEquality()
     return node;
 }
 
-std::unique_ptr<ASTNode> Parser::parseComparison()
-{
-    auto node = parseAddition();
-    while (match(TokenType::LESS) || match(TokenType::LESS_EQUAL) ||
-           match(TokenType::GREATER) || match(TokenType::GREATER_EQUAL))
-    {
-        Token op = previous();
-        auto right = parseAddition();
-        node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
-    }
-    return node;
-}
 
 std::unique_ptr<ASTNode> Parser::parseAddition()
 {
@@ -233,6 +217,18 @@ std::unique_ptr<ASTNode> Parser::parseAddition()
     {
         Token op = previous();
         auto right = parseMultiplication();
+        node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
+    }
+    return node;
+}
+std::unique_ptr<ASTNode> Parser::parseComparison()
+{
+    auto node = parseAddition();
+    while (match(TokenType::LESS) || match(TokenType::LESS_EQUAL) ||
+           match(TokenType::GREATER) || match(TokenType::GREATER_EQUAL))
+    {
+        Token op = previous();
+        auto right = parseAddition();
         node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
     }
     return node;
