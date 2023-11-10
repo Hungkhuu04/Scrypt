@@ -68,11 +68,9 @@ std::unique_ptr<ASTNode> Parser::parseIfStatement()
     std::unique_ptr<ASTNode> elseBranch = nullptr;
     if (match(TokenType::ELSE))
     {
-        while (match(TokenType::NEWLINE)) {
-           
+        while (match(TokenType::NEWLINE)) {  
         }
        
-        
         if (check(TokenType::IF))
         {
             advance();
