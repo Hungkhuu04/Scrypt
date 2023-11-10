@@ -18,8 +18,8 @@ std::unique_ptr<ASTNode> Parser::parse() {
                 statements.push_back(std::move(stmt));
             }
         } catch (const std::runtime_error& error) {
-            throw error;
             synchronize();  // Recover from the error.
+            throw; // Rethrow the error for further handling
         }
     }
 
@@ -371,9 +371,9 @@ void Parser::error(const std::string &message) {
 }
 
 ParseError Parser::report(const std::string &message) {
-    throw std::runtime_error( "Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
-    return ParseError(message);
+    throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
 }
+
 
 ParseError Parser::errorAtCurrent(const std::string &message) {
     return errorAt(message);
