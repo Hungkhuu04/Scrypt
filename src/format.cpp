@@ -148,6 +148,7 @@ int main() {
         os << std::endl;
     } catch (const std::runtime_error& e) {
         os << e.what() << std::endl;
+        exit(2);
     }
     return 0;
 }
