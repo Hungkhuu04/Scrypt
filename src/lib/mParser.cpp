@@ -119,7 +119,7 @@ std::unique_ptr<ASTNode> Parser::parsePrintStatement()
 
 std::unique_ptr<ASTNode> Parser::parseBlock()
 {
-    consume(TokenType::LEFT_BRACE, "Expect '{' before block.");
+    consume(TokenType::LEFT_BRACE);
     std::vector<std::unique_ptr<ASTNode>> statements;
 
     while (!check(TokenType::RIGHT_BRACE) && !isAtEnd())
@@ -132,7 +132,7 @@ std::unique_ptr<ASTNode> Parser::parseBlock()
         
     }
 
-    consume(TokenType::RIGHT_BRACE, "Expect '}' after block.");
+    consume(TokenType::RIGHT_BRACE);
     while (match(TokenType::NEWLINE))
     {
             
@@ -167,7 +167,7 @@ std::unique_ptr<ASTNode> Parser::parseAssignment()
         auto value = parseAssignment();
         if (node->getType() != ASTNode::Type::VariableNode)
         {
-            throw error("");
+            throw error();
         }
         auto variable = static_cast<VariableNode *>(node.get());
         return std::make_unique<AssignmentNode>(variable->identifier, std::move(value));
@@ -255,7 +255,7 @@ std::unique_ptr<ASTNode> Parser::parsePrimary() {
             return std::make_unique<NumberNode>(previous());
         } else if (match(TokenType::LEFT_PAREN)) {
             auto expr = parseExpression();
-            consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.");
+            consume(TokenType::RIGHT_PAREN);
             while (match(TokenType::NEWLINE)) {
             }
             return expr;
@@ -266,10 +266,10 @@ std::unique_ptr<ASTNode> Parser::parsePrimary() {
         } else if (match(TokenType::BOOLEAN_FALSE)) {
             return std::make_unique<BooleanNode>(previous());
         }
-        throw error("");
     } catch (const std::runtime_error& e) {
-        throw;
+        throw error();
     }
+    throw error();
 }
 
 
@@ -320,12 +320,11 @@ Token Parser::previous()
     return tokens.at(current - 1);
 }
 
-Token Parser::consume(TokenType type, const std::string &message)
+Token Parser::consume(TokenType type)
 {
-    if (check(type))
+    if (check(type)) 
         return advance();
-
-    throw error(message);
+    throw error();
 }
 
 
@@ -355,6 +354,6 @@ bool Parser::isAtEnd() const
     return current >= tokens.size() || tokens.at(current).type == TokenType::END;
 }
 
-ParseError Parser::error(const std::string &message) {
+ParseError Parser::error() {
     throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
 }
