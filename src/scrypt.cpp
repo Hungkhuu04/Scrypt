@@ -21,6 +21,7 @@ Value evaluateVariable(const VariableNode* node);
 Value evaluateAssignment(const AssignmentNode* assignmentNode);
 Value tokenToValue(const Token& token);
 
+// Checks for Boolean True and False
 Value tokenToValue(const Token& token) {
     switch (token.type) {
         case TokenType::NUMBER:
