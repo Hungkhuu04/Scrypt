@@ -98,6 +98,7 @@ void evaluateIf(ASTNode* node) {
     Value conditionValue = evaluateExpression(ifNode->condition.get());
     if (conditionValue.type != Value::Type::Bool) {
         throw std::runtime_error("Runtime error: condition is not a bool.");
+        exit(3);
     }
 
     if (conditionValue.asBool()) {
@@ -120,6 +121,7 @@ void evaluateWhile(const WhileNode* node) {
 
         if (condValue.type != Value::Type::Bool) {
             throw std::runtime_error("Runtime error: condition is not a bool.");
+            exit(3);
         }
 
         if (!condValue.asBool()) break;

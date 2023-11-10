@@ -71,6 +71,7 @@ std::unique_ptr<ASTNode> Parser::parseIfStatement()
         while (match(TokenType::NEWLINE)) {  
         }
        
+
         if (check(TokenType::IF))
         {
             advance();
@@ -368,20 +369,20 @@ bool Parser::isAtEnd() const
 }
 
 
-void Parser::error(const Token &token, const std::string &message) {
-    report(token.line, token.column, token.value, message);
+void Parser::error(const std::string &message) {
+    report(message);
 }
 
-ParseError Parser::report(int line, int column, const std::string &tokenValue, const std::string &message) {
-    throw std::runtime_error( "Unexpected token at line " + std::to_string(line) + " column " + std::to_string(column) + ": " + tokenValue);
+ParseError Parser::report(const std::string &message) {
+    throw std::runtime_error( "Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
     return ParseError(message);
 }
 
 ParseError Parser::errorAtCurrent(const std::string &message) {
-    return errorAt(peek(), message);
+    return errorAt(message);
 }
 
-ParseError Parser::errorAt(const Token &token, const std::string &message) {
-    error(token, message);
+ParseError Parser::errorAt(const std::string &message) {
+    error(message);
     return ParseError(message);
 }
