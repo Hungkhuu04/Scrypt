@@ -214,7 +214,6 @@ std::unique_ptr<ASTNode> Parser::parseLogicalAnd() {
     }
 }
 
-
 std::unique_ptr<ASTNode> Parser::parseEquality() {
     try {
         auto node = parseComparison();
@@ -365,7 +364,7 @@ bool Parser::check(TokenType type) const
     return tokens.at(current).type == type;
 }
 
-
+//Advances to the next token
 Token Parser::advance()
 {
     if (!isAtEnd())
@@ -378,12 +377,13 @@ Token Parser::advance()
     return token;
 }
 
-
+//Checks if the parser has reached the end of the tokens.
 bool Parser::isAtEnd() const
 {
     return current >= tokens.size() || tokens.at(current).type == TokenType::END;
 }
 
+//Throws a runtime error indicating an unexpected token.
 ParseError Parser::error() {
     throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
 }
