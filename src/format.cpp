@@ -158,6 +158,9 @@ int main() {
     } catch (const std::runtime_error& e) {
         os << e.what() << std::endl;
         exit(2);
+    } catch (...){
+        os << "Unknown error" << std::endl;
+        exit(2);
     }
     return 0;
 }
