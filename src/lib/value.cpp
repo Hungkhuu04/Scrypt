@@ -1,9 +1,9 @@
 #include "ASTNodes.h"
 #include <stdexcept>
 
-int Value::asInt() const {
-    if (type != Type::Int) throw std::runtime_error("Not an integer value.");
-    return intValue;
+double Value::asDouble() const {
+    if (type != Type::Double) throw std::runtime_error("Not a double value.");
+    return doubleValue;
 }
 
 bool Value::asBool() const {

@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
-
+#include <cmath>
 
 std::unordered_map<std::string, Value> variables;
 Value evaluateExpression(const ASTNode* node);
@@ -18,13 +18,13 @@ void evaluateWhile(const WhileNode* node);
 void evaluatePrint(const PrintNode* node);
 Value evaluateBinaryOperation(const BinaryOpNode* node);
 Value evaluateVariable(const VariableNode* node);
-void evaluateAssignment(const AssignmentNode* assignmentNode);
+Value evaluateAssignment(const AssignmentNode* assignmentNode);
 Value tokenToValue(const Token& token);
 
 Value tokenToValue(const Token& token) {
     switch (token.type) {
         case TokenType::NUMBER:
-            return Value(std::stoi(token.value));
+            return Value(std::stod(token.value));
         case TokenType::BOOLEAN_TRUE:
             return Value(true);
         case TokenType::BOOLEAN_FALSE:
@@ -35,6 +35,7 @@ Value tokenToValue(const Token& token) {
 }
 
 // Evaluate the expression node
+// Evaluate the expression node
 Value evaluateExpression(const ASTNode* node) {
     if (!node) {
         throw std::runtime_error("Null expression node");
@@ -42,17 +43,20 @@ Value evaluateExpression(const ASTNode* node) {
 
     switch (node->getType()) {
         case ASTNode::Type::NumberNode:
-            return Value(std::stoi(static_cast<const NumberNode*>(node)->value.value));
+            return Value(std::stod(static_cast<const NumberNode*>(node)->value.value));
         case ASTNode::Type::BooleanNode:
             return Value(static_cast<const BooleanNode*>(node)->value.type == TokenType::BOOLEAN_TRUE);
         case ASTNode::Type::VariableNode:
             return evaluateVariable(static_cast<const VariableNode*>(node));
         case ASTNode::Type::BinaryOpNode:
             return evaluateBinaryOperation(static_cast<const BinaryOpNode*>(node));
+        case ASTNode::Type::AssignmentNode:
+            return evaluateAssignment(static_cast<const AssignmentNode*>(node));
         default:
             throw std::runtime_error("Unknown expression node type");
     }
 }
+
 // Evaluate the block node
 void evaluateBlock(const BlockNode* blockNode) {
     if (!blockNode) {
@@ -114,8 +118,8 @@ void evaluateWhile(const WhileNode* node) {
 // Evaluate the print node
 void evaluatePrint(const PrintNode* node) {
     Value value = evaluateExpression(node->expression.get());
-    if (value.type == Value::Type::Int) {
-        std::cout << value.asInt() << std::endl;
+    if (value.type == Value::Type::Double) {
+        std::cout << value.asDouble() << std::endl;
     } else if (value.type == Value::Type::Bool) {
         std::cout << std::boolalpha << value.asBool() << std::endl;
     }
@@ -126,39 +130,39 @@ Value evaluateBinaryOperation(const BinaryOpNode* node) {
     Value right = evaluateExpression(node->right.get());
 
     // Ensure both operands are integers for arithmetic operations
-    if (left.type != Value::Type::Int || right.type != Value::Type::Int) {
+    if (left.type != Value::Type::Double || right.type != Value::Type::Double) {
         throw std::runtime_error("Arithmetic operations require integer operands.");
     }
 
     switch (node->op.type) {
         case TokenType::ADD:
-            return Value(left.asInt() + right.asInt());
+            return Value(left.asDouble() + right.asDouble());
         case TokenType::SUBTRACT:
-            return Value(left.asInt() - right.asInt());
+            return Value(left.asDouble() - right.asDouble());
         case TokenType::MULTIPLY:
-            return Value(left.asInt() * right.asInt());
+            return Value(left.asDouble() * right.asDouble());
         case TokenType::DIVIDE:
-            if (right.asInt() == 0) {
+            if (right.asDouble() == 0) {
                 throw std::runtime_error("Division by zero.");
             }
-            return Value(left.asInt() / right.asInt());
+            return Value(left.asDouble() / right.asDouble());
         case TokenType::MODULO:
-            if (right.asInt() == 0) {
+            if (right.asDouble() == 0) {
                 throw std::runtime_error("Modulo by zero.");
             }
-            return Value(left.asInt() % right.asInt());
+            return Value(fmod(left.asDouble(), right.asDouble()));
         case TokenType::LESS:
-            return Value(left.asInt() < right.asInt());
+            return Value(left.asDouble() < right.asDouble());
         case TokenType::LESS_EQUAL:
-            return Value(left.asInt() <= right.asInt());
+            return Value(left.asDouble() <= right.asDouble());
         case TokenType::GREATER:
-            return Value(left.asInt() > right.asInt());
+            return Value(left.asDouble() > right.asDouble());
         case TokenType::GREATER_EQUAL:
-            return Value(left.asInt() >= right.asInt());
+            return Value(left.asDouble() >= right.asDouble());
         case TokenType::EQUAL:
-            return Value(left.asInt() == right.asInt());
+            return Value(left.asDouble() == right.asDouble());
         case TokenType::NOT_EQUAL:
-            return Value(left.asInt() != right.asInt());
+            return Value(left.asDouble() != right.asDouble());
         case TokenType::LOGICAL_AND:
             return Value(left.asBool() && right.asBool());
         case TokenType::LOGICAL_OR:
@@ -180,19 +184,16 @@ Value evaluateVariable(const VariableNode* node) {
     }
 }
 
-void evaluateAssignment(const AssignmentNode* assignmentNode) {
+Value evaluateAssignment(const AssignmentNode* assignmentNode) {
     if (!assignmentNode) {
         throw std::runtime_error("Null assignment node passed to evaluateAssignment");
     }
 
     Value value = evaluateExpression(assignmentNode->expression.get());
-
-    if (variables.find(assignmentNode->identifier.value) == variables.end()) {
-        variables.insert({assignmentNode->identifier.value, value});
-    } else {
-        variables[assignmentNode->identifier.value] = value;
-    }
+    variables[assignmentNode->identifier.value] = value;
+    return value; // Return the value being assigned
 }
+
 int main() {
     std::ostream& os = std::cout;
     std::string line;
@@ -205,7 +206,7 @@ int main() {
         Lexer lexer(inputCode);
         auto tokens = lexer.tokenize();
         if (lexer.isSyntaxError(tokens)) {
-            throw std::runtime_error("");
+            exit(1);
         }
         Parser parser(tokens);
         auto ast = parser.parse();
@@ -218,6 +219,7 @@ int main() {
 
     } catch (const std::runtime_error& e) {
         os << e.what();
+        exit(2);
     }
     return 0;
 }

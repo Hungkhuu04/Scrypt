@@ -8,19 +8,20 @@
 
 class Value {
 public:
-    enum class Type { Int, Bool } type;
-
-    Value() : type(Type::Int), intValue(0) {}
-    Value(int value) : type(Type::Int), intValue(value) {}
+    enum class Type { Double, Bool } type;
+    Value() : type(Type::Double), doubleValue(0) {}
+    Value(double value) : type(Type::Double), doubleValue(value) {}
     Value(bool value) : type(Type::Bool), boolValue(value) {}
-    int asInt() const;
-    bool asBool() const;
 
+    double asDouble() const; 
+    bool asBool() const;
 private:
     union {
-        int intValue;
+        double doubleValue;
         bool boolValue;
     };
+
+
 };
 
 
