@@ -50,7 +50,7 @@ private:
     std::unique_ptr<ASTNode> parsePrimary();
 
    
-    Token consume(TokenType type, const std::string& message);
+    Token consume(TokenType type);
     bool match(TokenType type);
     bool match(const std::initializer_list<TokenType>& types);
     bool check(TokenType type) const;
@@ -61,7 +61,7 @@ private:
     void synchronize();
 
     
-    ParseError error(const std::string &message);
+    ParseError error();
 };
 
 #endif // PARSER_H
