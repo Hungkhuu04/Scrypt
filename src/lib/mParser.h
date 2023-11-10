@@ -12,7 +12,7 @@
 class Parser {
 public:
    
-    Parser(const std::vector<Token> &tokens, std::ostream& errorOut = std::cerr);
+    Parser(const std::vector<Token> &tokens);
 
     
     std::unique_ptr<ASTNode> parse();
@@ -20,7 +20,6 @@ public:
 private:
     const std::vector<Token>& tokens; 
     size_t current; 
-    std::ostream& errorOutput;
 
     
   

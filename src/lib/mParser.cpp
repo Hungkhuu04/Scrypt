@@ -3,8 +3,8 @@
 #include <ostream>
 
 // Constructor implementation
-Parser::Parser(const std::vector<Token> &tokens, std::ostream& errorOut)
-        : tokens(tokens), current(0), errorOutput(errorOut) {}
+Parser::Parser(const std::vector<Token> &tokens)
+        : tokens(tokens), current(0) {}
 
 // Parse entry function
 std::unique_ptr<ASTNode> Parser::parse()
@@ -387,4 +387,3 @@ ParseError Parser::errorAt(const Token &token, const std::string &message) {
     error(token, message);
     return ParseError(message);
 }
-
