@@ -375,7 +375,7 @@ void Parser::error(const Token &token, const std::string &message) {
 }
 
 ParseError Parser::report(int line, int column, const std::string &tokenValue, const std::string &message) {
-    throw std::runtime_error( "Unexpected token at line " + std::to_string(line) + " column " + std::to_string(column) + " : " + tokenValue + "\n");
+    throw std::runtime_error( "Unexpected token at line " + std::to_string(line) + " column " + std::to_string(column) + ": " + tokenValue + "\n");
     return ParseError(message);
 }
 
