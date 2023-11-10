@@ -300,7 +300,7 @@ std::unique_ptr<ASTNode> Parser::parsePrimary() {
 
 
 
-
+//Retrieves the current token without advancing the parser
 const Token &Parser::peek() const
 {
     if (isAtEnd())
@@ -311,6 +311,7 @@ const Token &Parser::peek() const
     return tokens[current];
 }
 
+// Advances the parser until a stopping point of a newline
 void Parser::synchronize()
 {
     advance();
@@ -331,6 +332,7 @@ void Parser::synchronize()
     }
 }
 
+//Checks and advances if the current token matches the given type
 bool Parser::match(TokenType type)
 {
     if (check(type))
@@ -341,6 +343,7 @@ bool Parser::match(TokenType type)
     return false;
 }
 
+//Retrieves the previous token just before the current one.
 Token Parser::previous()
 {
     return tokens.at(current - 1);
