@@ -42,7 +42,7 @@ Node* InfixParser::assignmentExpression(std::ostream& os) {
                 throw std::runtime_error("Unexpected token at line " + std::to_string(op.line) + " column " + std::to_string(op.column) + ": " + op.value + "\n");
             }
             currentTokenIndex++;
-            valueNode = assignmentExpression(os);  // Handle right-associative behavior
+            valueNode = assignmentExpression(os);
 
             Node* assignNode = new Node(NodeType::ASSIGN);
             assignNode->children.push_back(node);
