@@ -145,7 +145,8 @@ int main() {
     std::unique_ptr<ASTNode> ast;
     try {
         ast = parser.parse();
-    } catch (const ParseError& error) {
+    } catch (const std::runtime_error& e) {
+            os << e.what();
     }
     formatAST(std::cout, ast);
     os << std::endl;
