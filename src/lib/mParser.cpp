@@ -343,12 +343,13 @@ bool Parser::match(TokenType type)
     return false;
 }
 
-//Retrieves the previous token just before the current one.
+//Retrieves the previous token
 Token Parser::previous()
 {
     return tokens.at(current - 1);
 }
 
+//Consumes a token of the given type
 Token Parser::consume(TokenType type)
 {
     if (check(type)) 
@@ -356,7 +357,7 @@ Token Parser::consume(TokenType type)
     throw error();
 }
 
-
+//Checks if the current token is of the given type.
 bool Parser::check(TokenType type) const
 {
     if (isAtEnd())
