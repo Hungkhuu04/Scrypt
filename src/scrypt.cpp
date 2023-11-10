@@ -258,6 +258,9 @@ int main() {
         } else {
             exit(2);
         }
+    } catch (...){
+        os << "Unknown error" << std::endl;
+        exit(2);
     }
     return 0;
 }
