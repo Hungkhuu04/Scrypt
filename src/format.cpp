@@ -135,20 +135,19 @@ int main() {
     while (std::getline(std::cin, line)) {
         inputCode += line + "\n";
     }
-
-    Lexer lexer(inputCode);
-    auto tokens = lexer.tokenize();
-    if (lexer.isSyntaxError(tokens)) {
-    }
-    Parser parser(tokens);
-    std::unique_ptr<ASTNode> ast;
     try {
+        Lexer lexer(inputCode);
+        auto tokens = lexer.tokenize();
+        if (lexer.isSyntaxError(tokens)) {
+            throw std::runtime_error("");
+        }
+        Parser parser(tokens);
+        std::unique_ptr<ASTNode> ast;
         ast = parser.parse();
+        formatAST(std::cout, ast);
+        os << std::endl;
     } catch (const std::runtime_error& e) {
         os << e.what();
     }
-    formatAST(std::cout, ast);
-    os << std::endl;
-
     return 0;
 }
