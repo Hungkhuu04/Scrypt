@@ -82,7 +82,7 @@ void evaluateBlock(const BlockNode* blockNode) {
                 evaluateBlock(static_cast<const BlockNode*>(stmt.get()));
                 break;
             default:
-                throw std::runtime_error("Unsupported AST node type in block");
+                throw std::runtime_error("Runtime error: condition is not a bool.");
         }
     }
 }
@@ -129,9 +129,8 @@ Value evaluateBinaryOperation(const BinaryOpNode* node) {
     Value left = evaluateExpression(node->left.get());
     Value right = evaluateExpression(node->right.get());
 
-    // Ensure both operands are integers for arithmetic operations
-    if (left.type != Value::Type::Double || right.type != Value::Type::Double) {
-        throw std::runtime_error("Arithmetic operations require integer operands.");
+    if (left.type != right.type) {
+        throw std::runtime_error("Type mismatch in binary operation.");
     }
 
     switch (node->op.type) {
@@ -218,7 +217,7 @@ int main() {
         }
 
     } catch (const std::runtime_error& e) {
-        os << e.what();
+        os << e.what() << std::endl;
         exit(2);
     }
     return 0;
