@@ -61,10 +61,10 @@ private:
     void synchronize();
 
     
-    void error(const Token& token, const std::string& message);
+    void error(const std::string& message);
     ParseError errorAtCurrent(const std::string& message);
-    ParseError errorAt(const Token& token, const std::string& message);
-    ParseError report(int line, int column, const std::string &tokenValue, const std::string &message);
+    ParseError errorAt(const std::string& message);
+    ParseError report(const std::string &message);
 };
 
 #endif // PARSER_H
