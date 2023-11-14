@@ -112,9 +112,9 @@ std::unique_ptr<ASTNode> Parser::parseWhileStatement()
 std::unique_ptr<ASTNode> Parser::parsePrintStatement()
 {
     auto expression = parseExpression();
-    while (match(TokenType::NEWLINE))
-    {
-        // consuming the newline
+
+    if (!match(TokenType::SEMICOLON)) {
+        throw std::runtime_error("Expected ';' after print statement");
     }
     
     return std::make_unique<PrintNode>(std::move(expression));
@@ -151,8 +151,8 @@ std::unique_ptr<ASTNode> Parser::parseExpressionStatement()
     auto expression = parseExpression();
 
    
-    while (match(TokenType::NEWLINE)) {
-            //  consuming the newline
+    if (!match(TokenType::SEMICOLON)) {
+        throw std::runtime_error("Expected ';' after expression");
     }
 
     return expression;
@@ -165,17 +165,16 @@ std::unique_ptr<ASTNode> Parser::parseExpression()
 }
 
 // parses assignment
-std::unique_ptr<ASTNode> Parser::parseAssignment()
-{
+std::unique_ptr<ASTNode> Parser::parseAssignment() {
     auto node = parseLogicalOr();
-    if (match(TokenType::ASSIGN))
-    {
+    if (match(TokenType::ASSIGN)) {
         Token equals = previous();
         auto value = parseAssignment();
-        if (node->getType() != ASTNode::Type::VariableNode)
-        {
-            throw error();
+        
+        if (node->getType() != ASTNode::Type::VariableNode) {
+            throw std::runtime_error("Runtime error: invalid assignee.");
         }
+        
         auto variable = static_cast<VariableNode *>(node.get());
         return std::make_unique<AssignmentNode>(variable->identifier, std::move(value));
     }
@@ -220,6 +219,16 @@ std::unique_ptr<ASTNode> Parser::parseEquality() {
         while (match(TokenType::EQUAL) || match(TokenType::NOT_EQUAL)) {
             Token op = previous();
             auto right = parseComparison();
+
+            if (op.type == TokenType::EQUAL || op.type == TokenType::NOT_EQUAL) {
+                if (node->getType() != right->getType()) {
+                    // For '==' and '!=', if types are different, they are not equal
+                    Token booleanToken = op.type == TokenType::EQUAL ? Token(TokenType::BOOLEAN_FALSE, "false", op.line, op.column) 
+                                                                     : Token(TokenType::BOOLEAN_TRUE, "true", op.line, op.column);
+                    return std::make_unique<BooleanNode>(booleanToken);
+                }
+            }
+
             node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
         }
         return node;
@@ -227,6 +236,7 @@ std::unique_ptr<ASTNode> Parser::parseEquality() {
         throw;
     }
 }
+
 
 
 
