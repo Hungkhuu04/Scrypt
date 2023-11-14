@@ -116,7 +116,6 @@ std::unique_ptr<ASTNode> Parser::parsePrintStatement()
     {
         // consuming the newline
     }
-    
     return std::make_unique<PrintNode>(std::move(expression));
 }
 
