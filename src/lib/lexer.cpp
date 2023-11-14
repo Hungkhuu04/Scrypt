@@ -143,6 +143,12 @@ std::vector<Token> Lexer::tokenize() {
         } else if (c == ',') {
             tokens.push_back({TokenType::COMMA, ",", line, col});
             consume();
+        } else if (c == '[') {
+            tokens.push_back({TokenType::LBRACK, "[", line, col});
+            consume();
+        } else if (c == ']') {
+            tokens.push_back({TokenType::RBRACK, "]", line, col});
+            consume();
         } else if (isDigit(c)) {
             Token numToken = number();
             if (numToken.type == TokenType::UNKNOWN) {
