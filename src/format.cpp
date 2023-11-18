@@ -69,7 +69,7 @@ void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int inde
     os << indentString(indent) << "(" << node->identifier.value;
     os << " = ";
     formatAST(os, node->expression, 0);
-    os << ")";
+    os << ");";
 }
 
 // function to format while nodes
@@ -85,6 +85,7 @@ void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
 void formatPrintNode(std::ostream& os, const PrintNode* node, int indent) {
     os << indentString(indent) << "print ";
     formatAST(os, node->expression, 0);
+    os << ";";
 }
 
 // function to format block nodes

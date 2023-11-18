@@ -28,7 +28,10 @@ enum class TokenType {
     NEWLINE,
     END,
     SEMICOLON, COMMA,
-    RBRACK, LBRACK
+    RBRACK, LBRACK,
+    RETURN,
+    DEF,
+    NULL_TOKEN
 
 };
 
