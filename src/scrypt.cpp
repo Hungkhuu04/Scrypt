@@ -1,3 +1,4 @@
+
 #include "lib/mParser.h"
 #include "lib/lex.h"
 #include "lib/ASTNodes.h" 
@@ -9,17 +10,24 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include "lib/ScryptComponents.h"
 
 std::unordered_map<std::string, Value> variables;
-Value evaluateExpression(const ASTNode* node);
-void evaluateBlock(const BlockNode* blockNode);
-void evaluateIf(ASTNode* node);
-void evaluateWhile(const WhileNode* node);
-void evaluatePrint(const PrintNode* node);
-Value evaluateBinaryOperation(const BinaryOpNode* node);
-Value evaluateVariable(const VariableNode* node);
-Value evaluateAssignment(const AssignmentNode* assignmentNode);
+std::shared_ptr<Scope> globalScope = std::make_shared<Scope>();
+
 Value tokenToValue(const Token& token);
+Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScope);
+void evaluateBlock(const BlockNode* blockNode, std::shared_ptr<Scope> currentScope);
+void evaluateIf(const IfNode* ifNode, std::shared_ptr<Scope> currentScope);
+void evaluateWhile(const WhileNode* whileNode, std::shared_ptr<Scope> currentScope);
+void evaluatePrint(const PrintNode* printNode, std::shared_ptr<Scope> currentScope);
+Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<Scope> currentScope);
+Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> currentScope);
+Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<Scope> currentScope);
+Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentScope);
+void evaluateFunctionDefinition(const FunctionNode* functionNode, std::shared_ptr<Scope> currentScope);
+void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> currentScope);
+void evaluateStatement(const ASTNode* stmt, std::shared_ptr<Scope> currentScope);
 
 // Checks for Boolean True and False
 Value tokenToValue(const Token& token) {
@@ -35,149 +43,192 @@ Value tokenToValue(const Token& token) {
     }
 }
 
-// Evaluate the expression node
-Value evaluateExpression(const ASTNode* node) {
-    try {
-        if (!node) {
-            throw std::runtime_error("Null expression node");
-        }
-
-        switch (node->getType()) {
-            case ASTNode::Type::NumberNode:
-                return Value(std::stod(static_cast<const NumberNode*>(node)->value.value));
-            case ASTNode::Type::BooleanNode:
-                return Value(static_cast<const BooleanNode*>(node)->value.type == TokenType::BOOLEAN_TRUE);
-            case ASTNode::Type::VariableNode:
-                return evaluateVariable(static_cast<const VariableNode*>(node));
-            case ASTNode::Type::BinaryOpNode:
-                return evaluateBinaryOperation(static_cast<const BinaryOpNode*>(node));
-            case ASTNode::Type::AssignmentNode:
-                return evaluateAssignment(static_cast<const AssignmentNode*>(node));
-            default:
-                throw std::runtime_error("Unknown expression node type");
-        }
-    } catch (...) {
-        throw std::runtime_error("Unknown error occurred in evaluateExpression");
-    }
-}
-
 
 // Evaluate the block node
-void evaluateBlock(const BlockNode* blockNode) {
+void evaluateBlock(const BlockNode* blockNode, std::shared_ptr<Scope> currentScope) {
     if (!blockNode) {
         throw std::runtime_error("Null block node passed to evaluateBlock");
     }
     
-    try {
-        for (const auto& stmt : blockNode->statements) {
-            switch (stmt->getType()) {
-                case ASTNode::Type::IfNode:
-                    evaluateIf(stmt.get());
-                    break;
-
-                case ASTNode::Type::WhileNode:
-                    evaluateWhile(static_cast<const WhileNode*>(stmt.get()));
-                    break;
-
-                case ASTNode::Type::PrintNode:
-                    evaluatePrint(static_cast<const PrintNode*>(stmt.get()));
-                    break;
-
-                case ASTNode::Type::AssignmentNode:
-                    evaluateAssignment(static_cast<const AssignmentNode*>(stmt.get()));
-                    break;
-
-                case ASTNode::Type::BlockNode:
-                    evaluateBlock(static_cast<const BlockNode*>(stmt.get()));
-                    break;
-
-                default:
-                    throw std::runtime_error("Unknown Node Type");
-            }
-        }
-    } catch (...) {
-        throw;
+    for (const auto& stmt : blockNode->statements) {
+        // Pass currentScope to each evaluation
+        evaluateStatement(stmt.get(), currentScope);
     }
 }
 
-// Evaluate the if node
-void evaluateIf(ASTNode* node) {
+
+
+Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentScope) {
+    // Get the function from the expression
+    auto funcValue = evaluateExpression(node->callee.get(), currentScope);
+    if (funcValue.getType() != Value::Type::Function) {
+        throw std::runtime_error("Attempted to call a non-function.");
+    }
+
+    const auto& function = funcValue.asFunction();
+
+    // Create a new scope for the function call
+    auto callScope = std::make_shared<Scope>(function.capturedScope);
+
+    // Assign arguments to parameters
+    const auto& params = function.definition->parameters;
+    const auto& args = node->arguments;
+    if (params.size() != args.size()) {
+        throw std::runtime_error("Incorrect number of arguments supplied to function.");
+    }
+
+    for (size_t i = 0; i < params.size(); ++i) {
+        auto argValue = evaluateExpression(args[i].get(), currentScope);
+        callScope->setVariable(params[i].value, argValue);
+    }
+
+    // Execute function body
     try {
-        IfNode* ifNode = dynamic_cast<IfNode*>(node);
-        if (!ifNode) {
-            throw std::runtime_error("Non-if node passed to evaluateIf");
-        }
+        evaluateBlock(static_cast<const BlockNode*>(function.definition->body.get()), callScope);
+    } catch (const ReturnException& e) {
+        return e.getValue();
+    }
 
-        Value conditionValue = evaluateExpression(ifNode->condition.get());
-        if (conditionValue.type != Value::Type::Bool) {
-            throw std::runtime_error("Runtime error: condition is not a bool.");
-        }
+    return Value(); // Return null if no return statement was executed
+}
+void evaluateFunctionDefinition(const FunctionNode* functionNode, std::shared_ptr<Scope> currentScope) {
+    if (!functionNode) {
+        throw std::runtime_error("Null function node passed to evaluateFunctionDefinition");
+    }
 
-        if (conditionValue.asBool()) {
-            evaluateBlock(static_cast<const BlockNode*>(ifNode->trueBranch.get()));
-        } else if (ifNode->falseBranch) {
-            ASTNode* elseBranchNode = ifNode->falseBranch.get();
-            if (elseBranchNode->getType() == ASTNode::Type::IfNode) {
-                evaluateIf(elseBranchNode);
-            } else {
-                evaluateBlock(static_cast<const BlockNode*>(elseBranchNode));
-            }
+    Value::Function functionValue;
+    functionValue.definition = std::make_unique<FunctionNode>(*functionNode);
+    functionValue.capturedScope = currentScope; // Capturing the current scope
+
+    Value value(std::move(functionValue));
+    currentScope->setVariable(functionNode->name.value, std::move(value));
+}
+
+
+void evaluateStatement(const ASTNode* stmt, std::shared_ptr<Scope> currentScope) {
+    switch (stmt->getType()) {
+        case ASTNode::Type::IfNode:
+            evaluateIf(static_cast<const IfNode*>(stmt), currentScope);
+            break;
+        case ASTNode::Type::WhileNode:
+            evaluateWhile(static_cast<const WhileNode*>(stmt), currentScope);
+            break;
+        case ASTNode::Type::PrintNode:
+            evaluatePrint(static_cast<const PrintNode*>(stmt), currentScope);
+            break;
+        case ASTNode::Type::AssignmentNode:
+            evaluateAssignment(static_cast<const AssignmentNode*>(stmt), currentScope);
+            break;
+        case ASTNode::Type::BlockNode:
+            evaluateBlock(static_cast<const BlockNode*>(stmt), currentScope);
+            break;
+        case ASTNode::Type::FunctionNode:
+            evaluateFunctionDefinition(static_cast<const FunctionNode*>(stmt), currentScope);
+            break;
+        case ASTNode::Type::ReturnNode:
+            evaluateReturn(static_cast<const ReturnNode*>(stmt), currentScope);
+            break;
+        default:
+            throw std::runtime_error("Unknown Node Type in evaluateStatement");
+    }
+}
+
+
+Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScope) {
+    if (!node) {
+        throw std::runtime_error("Null expression node");
+    }
+
+    switch (node->getType()) {
+        case ASTNode::Type::NumberNode: {
+            auto numberNode = static_cast<const NumberNode*>(node);
+            return Value(std::stod(numberNode->value.value));
         }
-    } catch (...) {
-        throw std::runtime_error("Unknown error occurred in evaluateIf");
+        case ASTNode::Type::BooleanNode: {
+            auto booleanNode = static_cast<const BooleanNode*>(node);
+            return Value(booleanNode->value.type == TokenType::BOOLEAN_TRUE);
+        }
+        case ASTNode::Type::VariableNode: {
+            auto variableNode = static_cast<const VariableNode*>(node);
+            return evaluateVariable(variableNode, currentScope);
+        }
+        case ASTNode::Type::BinaryOpNode: {
+            auto binaryOpNode = static_cast<const BinaryOpNode*>(node);
+            return evaluateBinaryOperation(binaryOpNode, currentScope);
+        }
+        case ASTNode::Type::AssignmentNode: {
+            auto assignmentNode = static_cast<const AssignmentNode*>(node);
+            return evaluateAssignment(assignmentNode, currentScope);
+        }
+        case ASTNode::Type::CallNode: {
+            auto callNode = static_cast<const CallNode*>(node);
+            return evaluateFunctionCall(callNode, currentScope);
+        }
+        default:
+            throw std::runtime_error("Unknown expression node type");
+    }
+}
+
+
+// Evaluate the if node
+void evaluateIf(const IfNode* ifNode, std::shared_ptr<Scope> currentScope) {
+    Value conditionValue = evaluateExpression(ifNode->condition.get(), currentScope);
+    if (conditionValue.asBool()) {
+        evaluateBlock(static_cast<const BlockNode*>(ifNode->trueBranch.get()), currentScope);
+    } else if (ifNode->falseBranch) {
+        evaluateStatement(ifNode->falseBranch.get(), currentScope);
     }
 }
 
 // Evaluate the while node
-void evaluateWhile(const WhileNode* node) {
-    if (!node) {
-        throw std::runtime_error("Null while node passed to evaluateWhile");
-    }
-
-    try {
-        while (true) {
-            Value condValue = evaluateExpression(node->condition.get());
-
-            if (condValue.type != Value::Type::Bool) {
-                throw std::runtime_error("Runtime error: condition is not a bool.");
-            }
-
-            if (!condValue.asBool()) break;
-
-            const BlockNode* blockNode = dynamic_cast<const BlockNode*>(node->body.get());
-            if (!blockNode) {
-                throw std::runtime_error("Non-block node passed to evaluateWhile");
-            }
-            evaluateBlock(blockNode);
+void evaluateWhile(const WhileNode* whileNode, std::shared_ptr<Scope> currentScope) {
+    while (true) {
+        Value conditionValue = evaluateExpression(whileNode->condition.get(), currentScope);
+        if (!conditionValue.asBool()) {
+            break;
         }
-    } catch (...) {
-        throw;
+        evaluateBlock(static_cast<const BlockNode*>(whileNode->body.get()), currentScope);
     }
 }
 
+
+void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> currentScope) {
+    if (!returnNode) {
+        throw std::runtime_error("Null return node passed to evaluateReturn");
+    }
+
+    // Evaluate the expression of the return statement, if present
+    Value returnValue;
+    if (returnNode->value) {
+        returnValue = evaluateExpression(returnNode->value.get(), currentScope);
+    } else {
+        returnValue = Value();  // Returning null if no expression is present
+    }
+
+    // Throw a ReturnException to signal a return from the function
+    throw ReturnException(std::move(returnValue));
+}
 
 
 // Evaluate the print node
-void evaluatePrint(const PrintNode* node) {
-    Value value = evaluateExpression(node->expression.get());
-    if (value.type == Value::Type::Double) {
+void evaluatePrint(const PrintNode* printNode, std::shared_ptr<Scope> currentScope) {
+    Value value = evaluateExpression(printNode->expression.get(), currentScope);
+    if (value.getType() == Value::Type::Double) {
         std::cout << value.asDouble() << std::endl;
-    } else if (value.type == Value::Type::Bool) {
+    } else if (value.getType() == Value::Type::Bool) {
         std::cout << std::boolalpha << value.asBool() << std::endl;
     }
-}
-
+};
 // Evaluate Operations
-Value evaluateBinaryOperation(const BinaryOpNode* node) {
-    try {
-    Value left = evaluateExpression(node->left.get());
-    Value right = evaluateExpression(node->right.get());
-
-    if (left.type != right.type) {
-        throw std::runtime_error("Type mismatch in binary operation.");
+Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<Scope> currentScope) {
+    if (!binaryOpNode) {
+        throw std::runtime_error("Null BinaryOpNode passed to evaluateBinaryOperation");
     }
 
-    switch (node->op.type) {
+    Value left = evaluateExpression(binaryOpNode->left.get(), currentScope);
+    Value right = evaluateExpression(binaryOpNode->right.get(), currentScope);
+
+    switch (binaryOpNode->op.type) {
         case TokenType::ADD:
             return Value(left.asDouble() + right.asDouble());
         case TokenType::SUBTRACT:
@@ -211,43 +262,40 @@ Value evaluateBinaryOperation(const BinaryOpNode* node) {
         case TokenType::LOGICAL_OR:
             return Value(left.asBool() || right.asBool());
         case TokenType::ASSIGN:
-            throw std::runtime_error("Assignment should not be handled in evaluateBinaryOperation.");
+            if (binaryOpNode->left->getType() == ASTNode::Type::VariableNode) {
+                const auto* variableNode = static_cast<const VariableNode*>(binaryOpNode->left.get());
+                currentScope->setVariable(variableNode->identifier.value, right);
+                return right;
+            } else {
+                throw std::runtime_error("Invalid left-hand side in assignment");
+            }
         default:
-            throw std::runtime_error("Unsupported binary operator.");
-    }
-    } catch (...) {
-        throw std::runtime_error("Unknown error occurred in evaluateBinaryOperation");
+            throw std::runtime_error("Unsupported binary operator in evaluateBinaryOperation");
     }
 }
 
 // Evaluate variables
-Value evaluateVariable(const VariableNode* node) {
-    try {
-        auto iter = variables.find(node->identifier.value);
-        if (iter != variables.end()) {
-            return iter->second;
-        } else {
-            throw std::runtime_error("Variable not defined: " + node->identifier.value);
-        }
-    } catch (...) {
-        throw std::runtime_error("Unknown error occurred in evaluateVariable");
+Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> currentScope) {
+    if (!variableNode) {
+        throw std::runtime_error("Null VariableNode passed to evaluateVariable");
+    }
+
+    Value* valuePtr = currentScope->getVariable(variableNode->identifier.value);
+    if (valuePtr) {
+        return *valuePtr;
+    } else {
+        throw std::runtime_error("Variable not defined: " + variableNode->identifier.value);
     }
 }
+
 
 // Evaluate Assignments
-Value evaluateAssignment(const AssignmentNode* assignmentNode) {
-    try {
-        if (!assignmentNode) {
-            throw std::runtime_error("Null assignment node passed to evaluateAssignment");
-        }
-
-        Value value = evaluateExpression(assignmentNode->expression.get());
-        variables[assignmentNode->identifier.value] = value;
-        return value;
-    } catch (...) {
-        throw std::runtime_error("Unknown error occurred in evaluateAssignment");
-    }
+Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<Scope> currentScope) {
+    Value value = evaluateExpression(assignmentNode->expression.get(), currentScope);
+    currentScope->setVariable(assignmentNode->identifier.value, value);
+    return value;
 }
+
 
 int main() {
     std::ostream& os = std::cout;
@@ -263,15 +311,16 @@ int main() {
         if (lexer.isSyntaxError(tokens)) {
             exit(1);
         }
+
         Parser parser(tokens);
         auto ast = parser.parse();
 
         if (ast->getType() == ASTNode::Type::BlockNode) {
-            evaluateBlock(static_cast<const BlockNode*>(ast.get()));
+            // Start evaluation with the global scope
+            evaluateBlock(static_cast<const BlockNode*>(ast.get()), globalScope);
         } else {
             throw std::runtime_error("Invalid AST node type");
         }
-
     } catch (const std::runtime_error& e) {
         os << e.what() << std::endl;
         if (std::string(e.what()) == "Runtime error: condition is not a bool.") {

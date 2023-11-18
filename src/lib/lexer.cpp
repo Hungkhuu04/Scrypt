@@ -181,6 +181,13 @@ std::vector<Token> Lexer::tokenize() {
             } else if (identifier == "else") {
                 tokens.push_back({TokenType::ELSE, identifier, line, identifierStartCol});
             }
+            else if (identifier == "def") {
+                tokens.push_back({TokenType::DEF, identifier, line, identifierStartCol});
+            } else if (identifier == "return") {
+                tokens.push_back({TokenType::RETURN, identifier, line, identifierStartCol});
+            } else if (identifier == "null") {
+                tokens.push_back({TokenType::NULL_TOKEN, identifier, line, identifierStartCol});
+            }
             else {
                 tokens.push_back({TokenType::IDENTIFIER, identifier, line, identifierStartCol});
             }

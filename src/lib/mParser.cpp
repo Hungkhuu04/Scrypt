@@ -47,6 +47,12 @@ std::unique_ptr<ASTNode> Parser::parseStatement()
     {
         stmt = parseBlock();
     }
+    else if (match(TokenType::DEF)) {
+        return parseFunctionDefinition();
+    }
+    else if (match(TokenType::RETURN)) {
+        return parseReturnStatement();
+    }
     else
     {
         
@@ -109,16 +115,30 @@ std::unique_ptr<ASTNode> Parser::parseWhileStatement()
 }
 
 // parses print statements
-std::unique_ptr<ASTNode> Parser::parsePrintStatement()
-{
+std::unique_ptr<ASTNode> Parser::parsePrintStatement() {
     auto expression = parseExpression();
 
-    if (!match(TokenType::SEMICOLON)) {
-        throw std::runtime_error("Expected ';' after print statement");
+    // Look ahead to see if the next token is a left parenthesis, indicating a function call
+    if (peek().type == TokenType::LEFT_PAREN) {
+        // Parse the rest of the function call
+        advance(); // Consume the LEFT_PAREN
+        expression = parseCall(std::move(expression));
+
+        // Now, check for the semicolon
+        if (!match(TokenType::SEMICOLON)) {
+            throw std::runtime_error("Expected ';' after print statement");
+        }
+    } else {
+        // For other expressions, still expect a semicolon
+        if (!match(TokenType::SEMICOLON)) {
+            throw std::runtime_error("Expected ';' after print statement");
+        }
     }
-    
+
     return std::make_unique<PrintNode>(std::move(expression));
 }
+
+
 
 // parses block nodes
 std::unique_ptr<ASTNode> Parser::parseBlock()
@@ -151,8 +171,10 @@ std::unique_ptr<ASTNode> Parser::parseExpressionStatement()
     auto expression = parseExpression();
 
    
-    if (!match(TokenType::SEMICOLON)) {
-        throw std::runtime_error("Expected ';' after expression");
+    if (peek().type != TokenType::RIGHT_BRACE && 
+        peek().type != TokenType::ELSE &&
+        !isAtEnd()) {
+        consume(TokenType::SEMICOLON);
     }
 
     return expression;
@@ -180,6 +202,44 @@ std::unique_ptr<ASTNode> Parser::parseAssignment() {
     }
     return node;
 }
+
+std::unique_ptr<ASTNode> Parser::parseFunctionDefinition() {
+    Token name = consume(TokenType::IDENTIFIER);
+    consume(TokenType::LEFT_PAREN);
+
+    std::vector<Token> parameters;
+    if (!check(TokenType::RIGHT_PAREN)) {
+        do {
+            parameters.push_back(consume(TokenType::IDENTIFIER));
+        } while (match(TokenType::COMMA));
+    }
+
+    consume(TokenType::RIGHT_PAREN);
+    std::unique_ptr<ASTNode> body = parseBlock();
+
+    return std::make_unique<FunctionNode>(name, std::move(parameters), std::move(body));
+}
+
+std::unique_ptr<ASTNode> Parser::parseReturnStatement() {
+    std::unique_ptr<ASTNode> value = nullptr;
+    if (!check(TokenType::SEMICOLON)) {
+        value = parseExpression();
+    }
+    consume(TokenType::SEMICOLON);
+    return std::make_unique<ReturnNode>(std::move(value));
+}
+
+std::unique_ptr<ASTNode> Parser::parseCall(std::unique_ptr<ASTNode> callee) {
+    std::vector<std::unique_ptr<ASTNode>> arguments;
+    if (!check(TokenType::RIGHT_PAREN)) {
+        do {
+            arguments.push_back(parseExpression());
+        } while (match(TokenType::COMMA));
+    }
+    consume(TokenType::RIGHT_PAREN);
+    return std::make_unique<CallNode>(std::move(callee), std::move(arguments));
+}
+
 
 
 /* From here to parse primary, each function parses each type of logical operation or expresion. 
@@ -237,9 +297,6 @@ std::unique_ptr<ASTNode> Parser::parseEquality() {
     }
 }
 
-
-
-
 std::unique_ptr<ASTNode> Parser::parseAddition() {
     try {
         auto node = parseMultiplication();
@@ -295,11 +352,21 @@ std::unique_ptr<ASTNode> Parser::parsePrimary() {
             }
             return expr;
         } else if (match(TokenType::IDENTIFIER)) {
-            return std::make_unique<VariableNode>(previous());
+            Token functionName = previous();
+            if (check(TokenType::LEFT_PAREN)) {
+                // This is a function call
+                advance(); // Consume LEFT_PAREN
+                return parseCall(std::make_unique<VariableNode>(functionName));
+            } else {
+                // It's just a variable
+                return std::make_unique<VariableNode>(functionName);
+            }
         } else if (match(TokenType::BOOLEAN_TRUE)) {
             return std::make_unique<BooleanNode>(previous());
         } else if (match(TokenType::BOOLEAN_FALSE)) {
             return std::make_unique<BooleanNode>(previous());
+        } else if (match(TokenType::NULL_TOKEN)) {
+            return std::make_unique<NullNode>();
         }
     } catch (...) {
         throw error();

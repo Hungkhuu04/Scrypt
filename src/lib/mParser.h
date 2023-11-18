@@ -16,6 +16,10 @@ public:
 
     
     std::unique_ptr<ASTNode> parse();
+    bool isAtEnd() const;
+    bool match(TokenType type);
+    bool match(const std::initializer_list<TokenType>& types);
+
 
 private:
     const std::vector<Token>& tokens; 
@@ -49,15 +53,16 @@ private:
     std::unique_ptr<ASTNode> parseMultiplication();
     std::unique_ptr<ASTNode> parsePrimary();
 
+    std::unique_ptr<ASTNode>parseFunctionDefinition();
+    std::unique_ptr<ASTNode>parseReturnStatement();
+    std::unique_ptr<ASTNode> parseCall(std::unique_ptr<ASTNode> callee);
+
    
     Token consume(TokenType type);
-    bool match(TokenType type);
-    bool match(const std::initializer_list<TokenType>& types);
     bool check(TokenType type) const;
     Token advance();
     const Token& peek() const;
     Token previous();
-    bool isAtEnd() const;
     void synchronize();
 
     
