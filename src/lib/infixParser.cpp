@@ -330,7 +330,6 @@ Node* InfixParser::factor(std::ostream& os) {
 
 
 // This function initiates the parsing process and returns the root of the AST.
-// This function initiates the parsing process and returns the root of the AST.
 Node* InfixParser::parse(std::ostream& os) {
     Node* rootNode = new Node(NodeType::BLOCK); // A root node to hold a sequence of statements
     try {

@@ -88,6 +88,15 @@ std::string format(Node* node, int indentLevel = 0 ,std::ostream& os = std::cout
             result += indent + "}";
             break;
         }
+        case NodeType::BLOCK: {
+            result = indent + "{\n";
+            for (const auto& child : node->children) {
+                result += format(child, indentLevel + 4, os); // You can adjust the indentation as needed
+                result += "\n";
+            }
+            result += indent + "}";
+            break;
+        }
         default:
             os << "Error: Unknown node type encountered while constructing infix string.\n";
             exit(1);
@@ -138,3 +147,4 @@ int main() {
 
     return 0;
 }
+
