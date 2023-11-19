@@ -129,6 +129,9 @@ void evaluateStatement(const ASTNode* stmt, std::shared_ptr<Scope> currentScope)
         case ASTNode::Type::ReturnNode:
             evaluateReturn(static_cast<const ReturnNode*>(stmt), currentScope);
             break;
+        case ASTNode::Type::CallNode:
+            evaluateFunctionCall(static_cast<const CallNode*>(stmt), currentScope);
+            break;
         default:
             throw std::runtime_error("Unknown Node Type in evaluateStatement");
     }
