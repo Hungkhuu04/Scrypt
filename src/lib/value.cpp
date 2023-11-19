@@ -95,7 +95,7 @@ double Value::asDouble() const {
 
 bool Value::asBool() const {
     if (type != Type::Bool) {
-        throw std::runtime_error("Value is not a bool.");
+        throw std::runtime_error("Runtime error: condition is not a bool.");
     }
     return boolValue;
 }
@@ -129,9 +129,21 @@ Value* Scope::getVariable(const std::string& name) {
     return nullptr;  // Variable not found in any scope
 }
 
+const std::unordered_map<std::string, Value>& Scope::getVariables() const{
+        return variables;
+    }
+
 std::shared_ptr<Scope> Scope::getParent() const { return parentScope; }
+
+std::shared_ptr<Scope> Scope::copyScope() const {
+    auto newScope = std::make_shared<Scope>(parentScope); // Copy the parent scope reference
+    for (const auto& var : variables) {
+        newScope->variables[var.first] = var.second; // Copy each variable
+    }
+    return newScope;
+}
 
 // ReturnException implementations
 ReturnException::ReturnException(Value returnValue) : returnValue(std::move(returnValue)) {}
 
-const Value& ReturnException::getValue() const { return returnValue; }
+const Value& ReturnException::getValue() const { retu

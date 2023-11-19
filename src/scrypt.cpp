@@ -38,6 +38,8 @@ Value tokenToValue(const Token& token) {
             return Value(true);
         case TokenType::BOOLEAN_FALSE:
             return Value(false);
+        case TokenType::NULL_TOKEN:
+            return Value();
         default:
             throw std::runtime_error("Invalid token type for value conversion");
     }
@@ -59,30 +61,34 @@ void evaluateBlock(const BlockNode* blockNode, std::shared_ptr<Scope> currentSco
 
 
 Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentScope) {
-    // Get the function from the expression
     auto funcValue = evaluateExpression(node->callee.get(), currentScope);
     if (funcValue.getType() != Value::Type::Function) {
-        throw std::runtime_error("Attempted to call a non-function.");
+        throw std::runtime_error("Runtime error: not a function.");
     }
 
     const auto& function = funcValue.asFunction();
 
-    // Create a new scope for the function call
-    auto callScope = std::make_shared<Scope>(function.capturedScope);
+    // Create a fresh local scope for the function call
+    auto callScope = std::make_shared<Scope>();
 
-    // Assign arguments to parameters
+    // Populate the scope with captured values
+    // Assuming that function.capturedScope is a map of variable names to their values
+    for (const auto& var : function.capturedScope->getVariables()) {
+        callScope->setVariable(var.first, var.second);
+    }
+
     const auto& params = function.definition->parameters;
     const auto& args = node->arguments;
     if (params.size() != args.size()) {
         throw std::runtime_error("Incorrect number of arguments supplied to function.");
     }
 
+    // Set arguments in the call scope
     for (size_t i = 0; i < params.size(); ++i) {
         auto argValue = evaluateExpression(args[i].get(), currentScope);
         callScope->setVariable(params[i].value, argValue);
     }
 
-    // Execute function body
     try {
         evaluateBlock(static_cast<const BlockNode*>(function.definition->body.get()), callScope);
     } catch (const ReturnException& e) {
@@ -91,19 +97,23 @@ Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentS
 
     return Value(); // Return null if no return statement was executed
 }
+
+
 void evaluateFunctionDefinition(const FunctionNode* functionNode, std::shared_ptr<Scope> currentScope) {
     if (!functionNode) {
         throw std::runtime_error("Null function node passed to evaluateFunctionDefinition");
     }
 
+    // Capture the current state of the scope
+    std::shared_ptr<Scope> capturedScope = currentScope->copyScope();
+
     Value::Function functionValue;
     functionValue.definition = std::make_unique<FunctionNode>(*functionNode);
-    functionValue.capturedScope = currentScope; // Capturing the current scope
+    functionValue.capturedScope = capturedScope; // Use the copied scope
 
     Value value(std::move(functionValue));
     currentScope->setVariable(functionNode->name.value, std::move(value));
 }
-
 
 void evaluateStatement(const ASTNode* stmt, std::shared_ptr<Scope> currentScope) {
     switch (stmt->getType()) {
@@ -127,6 +137,9 @@ void evaluateStatement(const ASTNode* stmt, std::shared_ptr<Scope> currentScope)
             break;
         case ASTNode::Type::ReturnNode:
             evaluateReturn(static_cast<const ReturnNode*>(stmt), currentScope);
+            break;
+        case ASTNode::Type::CallNode:
+            evaluateFunctionCall(static_cast<const CallNode*>(stmt), currentScope);
             break;
         default:
             throw std::runtime_error("Unknown Node Type in evaluateStatement");
@@ -163,6 +176,9 @@ Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScop
         case ASTNode::Type::CallNode: {
             auto callNode = static_cast<const CallNode*>(node);
             return evaluateFunctionCall(callNode, currentScope);
+        }
+        case ASTNode::Type::NullNode: {
+            return Value();
         }
         default:
             throw std::runtime_error("Unknown expression node type");
@@ -217,6 +233,8 @@ void evaluatePrint(const PrintNode* printNode, std::shared_ptr<Scope> currentSco
         std::cout << value.asDouble() << std::endl;
     } else if (value.getType() == Value::Type::Bool) {
         std::cout << std::boolalpha << value.asBool() << std::endl;
+    } else if (value.getType() == Value::Type::Null) {
+        std::cout << "null" << std::endl;
     }
 };
 // Evaluate Operations
