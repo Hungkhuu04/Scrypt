@@ -82,6 +82,7 @@ public:
 
     std::shared_ptr<Scope> getParent() const;
     std::shared_ptr<Scope> copyScope() const;
+    std::shared_ptr<Scope> deepCopy() const;
 
 private:
     std::unordered_map<std::string, Value> variables;
