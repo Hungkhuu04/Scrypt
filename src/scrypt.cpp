@@ -28,6 +28,7 @@ Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentS
 void evaluateFunctionDefinition(const FunctionNode* functionNode, std::shared_ptr<Scope> currentScope);
 void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> currentScope);
 void evaluateStatement(const ASTNode* stmt, std::shared_ptr<Scope> currentScope);
+bool compareValues(const Value& left, const Value& right);
 
 // Checks for Boolean True and False
 Value tokenToValue(const Token& token) {
@@ -38,13 +39,33 @@ Value tokenToValue(const Token& token) {
             return Value(true);
         case TokenType::BOOLEAN_FALSE:
             return Value(false);
-        case TokenType::NULL_TOKEN:
-            return Value();
         default:
             throw std::runtime_error("Invalid token type for value conversion");
     }
 }
+bool compareValues(const Value& left, const Value& right) {
+    // Handle null values first
+    if (left.isNull() || right.isNull()) {
+        return left.isNull() && right.isNull();
+    }
 
+    // Ensure types are the same before comparing
+    if (left.getType() != right.getType()) {
+        return false;
+    }
+
+    switch (left.getType()) {
+        case Value::Type::Double:
+            return left.asDouble() == right.asDouble();
+        case Value::Type::Bool:
+            return left.asBool() == right.asBool();
+        case Value::Type::Function:
+            // Function comparison can be handled based on memory address or some other logic
+            return &left.asFunction() == &right.asFunction();
+        default:
+            throw std::runtime_error("Unsupported value type in comparison");
+    }
+}
 
 // Evaluate the block node
 void evaluateBlock(const BlockNode* blockNode, std::shared_ptr<Scope> currentScope) {
@@ -61,29 +82,27 @@ void evaluateBlock(const BlockNode* blockNode, std::shared_ptr<Scope> currentSco
 
 
 Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentScope) {
-    auto funcValue = evaluateExpression(node->callee.get(), currentScope);
+    // Fetch the function value.
+    Value funcValue = evaluateExpression(node->callee.get(), currentScope);
+
     if (funcValue.getType() != Value::Type::Function) {
         throw std::runtime_error("Runtime error: not a function.");
     }
 
     const auto& function = funcValue.asFunction();
 
-    // Create a fresh local scope for the function call
-    auto callScope = std::make_shared<Scope>();
-
-    // Populate the scope with captured values
-    // Assuming that function.capturedScope is a map of variable names to their values
-    for (const auto& var : function.capturedScope->getVariables()) {
-        callScope->setVariable(var.first, var.second);
-    }
+    // Create a new scope for the function call, which is a deep copy of the captured scope.
+    auto callScope = function.capturedScope->deepCopy();
 
     const auto& params = function.definition->parameters;
     const auto& args = node->arguments;
+
+    // Check if the correct number of arguments are passed.
     if (params.size() != args.size()) {
-        throw std::runtime_error("Incorrect number of arguments supplied to function.");
+        throw std::runtime_error("Runtime error: incorrect argument count.");
     }
 
-    // Set arguments in the call scope
+    // Set arguments in the call scope.
     for (size_t i = 0; i < params.size(); ++i) {
         auto argValue = evaluateExpression(args[i].get(), currentScope);
         callScope->setVariable(params[i].value, argValue);
@@ -92,28 +111,23 @@ Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentS
     try {
         evaluateBlock(static_cast<const BlockNode*>(function.definition->body.get()), callScope);
     } catch (const ReturnException& e) {
-        return e.getValue();
+        return e.getValue(); // Return the value if the function has a return statement.
     }
 
-    return Value(); // Return null if no return statement was executed
+    return Value(); // Return null if no return statement was executed.
 }
 
 
 void evaluateFunctionDefinition(const FunctionNode* functionNode, std::shared_ptr<Scope> currentScope) {
-    if (!functionNode) {
-        throw std::runtime_error("Null function node passed to evaluateFunctionDefinition");
-    }
-
-    // Capture the current state of the scope
-    std::shared_ptr<Scope> capturedScope = currentScope->copyScope();
+    auto capturedScope = currentScope->deepCopy();
 
     Value::Function functionValue;
     functionValue.definition = std::make_unique<FunctionNode>(*functionNode);
-    functionValue.capturedScope = capturedScope; // Use the copied scope
+    functionValue.capturedScope = capturedScope;
 
-    Value value(std::move(functionValue));
-    currentScope->setVariable(functionNode->name.value, std::move(value));
+    currentScope->setVariable(functionNode->name.value, Value(std::move(functionValue)));
 }
+
 
 void evaluateStatement(const ASTNode* stmt, std::shared_ptr<Scope> currentScope) {
     switch (stmt->getType()) {
@@ -272,9 +286,9 @@ Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<
         case TokenType::GREATER_EQUAL:
             return Value(left.asDouble() >= right.asDouble());
         case TokenType::EQUAL:
-            return Value(left.asDouble() == right.asDouble());
+            return Value(compareValues(left, right));
         case TokenType::NOT_EQUAL:
-            return Value(left.asDouble() != right.asDouble());
+            return Value(!compareValues(left, right));
         case TokenType::LOGICAL_AND:
             return Value(left.asBool() && right.asBool());
         case TokenType::LOGICAL_OR:
@@ -343,7 +357,10 @@ int main() {
         os << e.what() << std::endl;
         if (std::string(e.what()) == "Runtime error: condition is not a bool.") {
             exit(3);
-        } else {
+        } else if (std::string(e.what()) == "Runtime error: not a function.") {
+            exit(3);
+        }
+        else {
             exit(2);
         }
     } catch (...){

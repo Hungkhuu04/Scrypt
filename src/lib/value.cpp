@@ -143,6 +143,24 @@ std::shared_ptr<Scope> Scope::copyScope() const {
     return newScope;
 }
 
+std::shared_ptr<Scope> Scope::deepCopy() const {
+    auto copiedScope = std::make_shared<Scope>(nullptr);
+
+    // Copy variables
+    for (const auto& variable : this->variables) {
+        const std::string& name = variable.first;
+        const Value& value = variable.second;
+        copiedScope->variables[name] = value;
+    }
+
+    // Recursively copy parent scope if it exists
+    if (this->parentScope) {
+        copiedScope->parentScope = this->parentScope->deepCopy();
+    }
+
+    return copiedScope;
+}
+
 // ReturnException implementations
 ReturnException::ReturnException(Value returnValue) : returnValue(std::move(returnValue)) {}
 
