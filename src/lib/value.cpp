@@ -146,4 +146,6 @@ std::shared_ptr<Scope> Scope::copyScope() const {
 // ReturnException implementations
 ReturnException::ReturnException(Value returnValue) : returnValue(std::move(returnValue)) {}
 
-const Value& ReturnException::getValue() const { retu
+const Value& ReturnException::getValue() const {
+    return returnValue;
+}
