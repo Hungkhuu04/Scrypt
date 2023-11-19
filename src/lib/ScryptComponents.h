@@ -78,8 +78,10 @@ public:
 
     void setVariable(const std::string& name, const Value& value);
     Value* getVariable(const std::string& name);
+    const std::unordered_map<std::string, Value>& getVariables() const;
 
     std::shared_ptr<Scope> getParent() const;
+    std::shared_ptr<Scope> copyScope() const;
 
 private:
     std::unordered_map<std::string, Value> variables;
