@@ -47,12 +47,16 @@ void evaluateBlock(const BlockNode* blockNode, std::shared_ptr<Scope> currentSco
     if (!blockNode) {
         throw std::runtime_error("Null block node passed to evaluateBlock");
     }
-    
-    for (const auto& stmt : blockNode->statements) {
-        // Pass currentScope to each evaluation
-        evaluateStatement(stmt.get(), currentScope);
+
+    try {
+        for (const auto& stmt : blockNode->statements) {
+            evaluateStatement(stmt.get(), currentScope);
+        }
+    } catch (...) {
+        throw;
     }
 }
+
 
 
 
@@ -97,15 +101,16 @@ void evaluateFunctionDefinition(const FunctionNode* functionNode, std::shared_pt
         throw std::runtime_error("Null function node passed to evaluateFunctionDefinition");
     }
 
-    // Capture the current state of the scope
-    std::shared_ptr<Scope> capturedScope = currentScope->copyScope();
-
-    Value::Function functionValue;
-    functionValue.definition = std::make_unique<FunctionNode>(*functionNode);
-    functionValue.capturedScope = capturedScope; // Use the copied scope
-
-    Value value(std::move(functionValue));
-    currentScope->setVariable(functionNode->name.value, std::move(value));
+    try {
+        std::shared_ptr<Scope> capturedScope = currentScope->copyScope();
+        Value::Function functionValue;
+        functionValue.definition = std::make_unique<FunctionNode>(*functionNode);
+        functionValue.capturedScope = capturedScope;
+        Value value(std::move(functionValue));
+        currentScope->setVariable(functionNode->name.value, std::move(value));
+    } catch (...) {
+        throw;
+    }
 }
 
 
@@ -146,36 +151,39 @@ Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScop
     if (!node) {
         throw std::runtime_error("Null expression node");
     }
-
-    switch (node->getType()) {
-        case ASTNode::Type::NumberNode: {
-            auto numberNode = static_cast<const NumberNode*>(node);
-            return Value(std::stod(numberNode->value.value));
+    try {
+        switch (node->getType()) {
+            case ASTNode::Type::NumberNode: {
+                auto numberNode = static_cast<const NumberNode*>(node);
+                return Value(std::stod(numberNode->value.value));
+            }
+            case ASTNode::Type::BooleanNode: {
+                auto booleanNode = static_cast<const BooleanNode*>(node);
+                return Value(booleanNode->value.type == TokenType::BOOLEAN_TRUE);
+            }
+            case ASTNode::Type::VariableNode: {
+                auto variableNode = static_cast<const VariableNode*>(node);
+                return evaluateVariable(variableNode, currentScope);
+            }
+            case ASTNode::Type::BinaryOpNode: {
+                auto binaryOpNode = static_cast<const BinaryOpNode*>(node);
+                return evaluateBinaryOperation(binaryOpNode, currentScope);
+            }
+            case ASTNode::Type::AssignmentNode: {
+                auto assignmentNode = static_cast<const AssignmentNode*>(node);
+                return evaluateAssignment(assignmentNode, currentScope);
+            }
+            case ASTNode::Type::CallNode: {
+                auto callNode = static_cast<const CallNode*>(node);
+                return evaluateFunctionCall(callNode, currentScope);
+            }
+            case ASTNode::Type::NullNode:
+                return Value();
+            default:
+                throw std::runtime_error("Unknown expression node type");
         }
-        case ASTNode::Type::BooleanNode: {
-            auto booleanNode = static_cast<const BooleanNode*>(node);
-            return Value(booleanNode->value.type == TokenType::BOOLEAN_TRUE);
-        }
-        case ASTNode::Type::VariableNode: {
-            auto variableNode = static_cast<const VariableNode*>(node);
-            return evaluateVariable(variableNode, currentScope);
-        }
-        case ASTNode::Type::BinaryOpNode: {
-            auto binaryOpNode = static_cast<const BinaryOpNode*>(node);
-            return evaluateBinaryOperation(binaryOpNode, currentScope);
-        }
-        case ASTNode::Type::AssignmentNode: {
-            auto assignmentNode = static_cast<const AssignmentNode*>(node);
-            return evaluateAssignment(assignmentNode, currentScope);
-        }
-        case ASTNode::Type::CallNode: {
-            auto callNode = static_cast<const CallNode*>(node);
-            return evaluateFunctionCall(callNode, currentScope);
-        }
-        case ASTNode::Type::NullNode:
-            return Value();
-        default:
-            throw std::runtime_error("Unknown expression node type");
+    } catch (...) {
+        throw;
     }
 }
 
