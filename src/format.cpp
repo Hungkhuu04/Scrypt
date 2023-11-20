@@ -7,13 +7,30 @@
 #include <cmath>
 #include <iomanip>
 
+std::string indentString(int indentLevel);
+void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent = 0);
+void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent);
+void formatNumberNode(std::ostream& os, const NumberNode* node, int indent);
+void formatBooleanNode(std::ostream& os, const BooleanNode* node, int indent);
+void formatVariableNode(std::ostream& os, const VariableNode* node, int indent);
+void formatIfNode(std::ostream& os, const IfNode* node, int indent);
+void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent);
+void formatWhileNode(std::ostream& os, const WhileNode* node, int indent);
+void formatPrintNode(std::ostream& os, const PrintNode* node, int indent);
+void formatBlockNode(std::ostream& os, const BlockNode* node, int indent);
+void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent);
+void formatReturnNode(std::ostream& os, const ReturnNode* node, int indent);
+void formatCallNode(std::ostream& os, const CallNode* node, int indent);
+void formatNullNode(std::ostream& os, const NullNode* node, int indent);
+
 // function to create an indentation string
 std::string indentString(int indentLevel) {
     return std::string(indentLevel * 4, ' '); // 4 spaces per indent level
 }
 
-// function to format the AST
-void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent = 0);
+void formatNullNode(std::ostream& os, const NullNode* node, int indent) {
+    os << indentString(indent) << "null";
+}
 
 // function to format operation types
 void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent) {
@@ -69,7 +86,7 @@ void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int inde
     os << indentString(indent) << "(" << node->identifier.value;
     os << " = ";
     formatAST(os, node->expression, 0);
-    os << ");";
+    os << ")";
 }
 
 // function to format while nodes
@@ -85,7 +102,6 @@ void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
 void formatPrintNode(std::ostream& os, const PrintNode* node, int indent) {
     os << indentString(indent) << "print ";
     formatAST(os, node->expression, 0);
-    os << ";";
 }
 
 // function to format block nodes
@@ -100,6 +116,7 @@ void formatBlockNode(std::ostream& os, const BlockNode* node, int indent) {
     }
 }
 
+// main format function
 // main format function
 void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent) {
     if (!node) return;
@@ -132,11 +149,61 @@ void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int inden
         case ASTNode::Type::BlockNode:
             formatBlockNode(os, static_cast<const BlockNode*>(node.get()), indent);
             break;
+        case ASTNode::Type::FunctionNode:
+            formatFunctionNode(os, static_cast<const FunctionNode*>(node.get()), indent);
+            break;
+        case ASTNode::Type::ReturnNode:
+            formatReturnNode(os, static_cast<const ReturnNode*>(node.get()), indent);
+            break;
+        case ASTNode::Type::CallNode:
+            formatCallNode(os, static_cast<const CallNode*>(node.get()), indent);
+            break;
+        case ASTNode::Type::NullNode:
+            formatNullNode(os, static_cast<const NullNode*>(node.get()), indent);
+            break;
         default:
             os << indentString(indent) << "/* Unknown node type */";
             break;
     }
 }
+
+
+// Function to format FunctionNode (function definitions)
+void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent) {
+    os << indentString(indent) << "def " << node->name.value << "(";
+    for (size_t i = 0; i < node->parameters.size(); ++i) {
+        os << node->parameters[i].value;
+        if (i < node->parameters.size() - 1) {
+            os << ", ";
+        }
+    }
+    os << ") {\n";
+    formatAST(os, node->body, indent + 1);
+    os << "\n" << indentString(indent) << "}";
+}
+
+// Function to format ReturnNode (return statements)
+void formatReturnNode(std::ostream& os, const ReturnNode* node, int indent) {
+    os << indentString(indent) << "return ";
+    if (node->value) {
+        formatAST(os, node->value, 0);
+    }
+    os << ";";
+}
+
+// Function to format CallNode (function calls)
+void formatCallNode(std::ostream& os, const CallNode* node, int indent) {
+    formatAST(os, node->callee, indent);
+    os << '(';
+    for (size_t i = 0; i < node->arguments.size(); ++i) {
+        formatAST(os, node->arguments[i], 0);
+        if (i < node->arguments.size() - 1) {
+            os << ", ";
+        }
+    }
+    os << ')';
+}
+
 
 int main() {
     std::ostream& os = std::cout;

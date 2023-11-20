@@ -272,23 +272,14 @@ std::unique_ptr<ASTNode> Parser::parseLogicalAnd() {
         throw;
     }
 }
-
+// parses equality expressions
 std::unique_ptr<ASTNode> Parser::parseEquality() {
     try {
         auto node = parseComparison();
         while (match(TokenType::EQUAL) || match(TokenType::NOT_EQUAL)) {
             Token op = previous();
             auto right = parseComparison();
-
-            if (op.type == TokenType::EQUAL || op.type == TokenType::NOT_EQUAL) {
-                if (node->getType() != right->getType()) {
-                    // For '==' and '!=', if types are different, they are not equal
-                    Token booleanToken = op.type == TokenType::EQUAL ? Token(TokenType::BOOLEAN_FALSE, "false", op.line, op.column) 
-                                                                     : Token(TokenType::BOOLEAN_TRUE, "true", op.line, op.column);
-                    return std::make_unique<BooleanNode>(booleanToken);
-                }
-            }
-
+            // Simply create a BinaryOpNode for the equality/inequality check
             node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
         }
         return node;
