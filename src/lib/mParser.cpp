@@ -272,7 +272,7 @@ std::unique_ptr<ASTNode> Parser::parseLogicalAnd() {
         throw;
     }
 }
-// parses equality expressions
+
 std::unique_ptr<ASTNode> Parser::parseEquality() {
     try {
         auto node = parseComparison();
@@ -360,9 +360,9 @@ std::unique_ptr<ASTNode> Parser::parsePrimary() {
             return std::make_unique<NullNode>();
         }
     } catch (...) {
-        throw error();
+        throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
     }
-    throw error();
+    throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
 }
 
 
@@ -421,7 +421,7 @@ Token Parser::consume(TokenType type)
 {
     if (check(type)) 
         return advance();
-    throw error();
+    throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
 }
 
 //Checks if the current token is of the given type.
@@ -449,9 +449,4 @@ Token Parser::advance()
 bool Parser::isAtEnd() const
 {
     return current >= tokens.size() || tokens.at(current).type == TokenType::END;
-}
-
-//Throws a runtime error indicating an unexpected token.
-ParseError Parser::error() {
-    throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
 }

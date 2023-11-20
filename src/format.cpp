@@ -215,7 +215,8 @@ void formatCallNode(std::ostream& os, const CallNode* node, int indent) {
             os << ", ";
         }
     }
-    os << ");";
+    os << ')';
+    os << ";";
 }
 
 

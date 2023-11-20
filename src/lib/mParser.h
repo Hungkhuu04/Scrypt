@@ -5,7 +5,6 @@
 #include "ASTNodes.h"
 #include <vector>
 #include <memory>
-#include "mParserError.h"
 #include<ostream>
 #include<iostream>
 
@@ -64,9 +63,6 @@ private:
     const Token& peek() const;
     Token previous();
     void synchronize();
-
-    
-    ParseError error();
 };
 
 #endif // PARSER_H
