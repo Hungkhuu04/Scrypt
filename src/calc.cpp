@@ -1,159 +1,143 @@
-
-#include "lib/mParser.h"
-#include "lib/ASTNodes.h" 
-#include "lib/lex.h"
+#include "mParser.h"
+#include "Lexer.h" // Custom lexer header file for tokenizing input
+#include "ASTNodes.h" // Contains definitions for all ASTNode types
 #include <iostream>
 #include <string>
-#include <cstring>
-#include <sstream>
 #include <unordered_map>
-#include <cmath>
-#include <ostream>
-#include <iomanip>
-#include "lib/ScryptComponents.h"
-using namespace std;
 
 std::unordered_map<std::string, Value> variables;
 
-// function to create an indentation string
-std::string indentString(int indentLevel) {
-    return std::string(indentLevel * 4, ' '); // 4 spaces per indent level
-}
-
-// function to format the AST
+// Format and evaluate functions declaration
 void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent = 0);
+Value evaluate(const std::unique_ptr<ASTNode>& node);
 
-// function to format operation types
-void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent) {
-    os << '(';
-    formatAST(os, node->left, 0);  
-    os << ' ' << node->op.value << ' ';    
-    formatAST(os, node->right, 0);
-    os << ')';
-}
-
-// function to format numbers (especially doubles)
-void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
-    double value = std::stod(node->value.value);
-    if (std::floor(value) == value) {
-        os << indentString(indent) << static_cast<long>(value);
-    } else {
-        std::ostringstream tempStream;
-        tempStream << std::fixed << std::setprecision(2) << value;
-        std::string str = tempStream.str();
-        str.erase(str.find_last_not_of('0') + 1, std::string::npos); 
-        if (str.back() == '.') {
-            str.pop_back(); 
+int main() {
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        if (line.empty()) {
+            break;
         }
-        os << indentString(indent) << str;
-    }
-}
 
-// function to format Booleans
-void formatBooleanNode(std::ostream& os, const BooleanNode* node, int indent) {
-    os << indentString(indent) << node->value.value;
-}
+        try {
+            // Tokenize the input
+            Lexer lexer(line);
+            auto tokens = lexer.tokenize();
 
-// function to format Variables
-void formatVariableNode(std::ostream& os, const VariableNode* node, int indent) {
-    os << indentString(indent) << node->identifier.value;
-}
+            // Parse the tokens into an AST
+            Parser parser(tokens);
+            std::unique_ptr<ASTNode> ast = parser.parse();
 
-// function to format if nodes
-void formatIfNode(std::ostream& os, const IfNode* node, int indent) {
-    os << indentString(indent) << "if ";
-    formatAST(os, node->condition, 0);
-    os << " {\n";
-    formatAST(os, node->trueBranch, indent + 1);
-    if (node->falseBranch) {
-        os << "\n" << indentString(indent) << "}\n" << indentString(indent) << "else {\n";
-        formatAST(os, node->falseBranch, indent + 1);
-    }
-    os << "\n" << indentString(indent) << "}";
-}
+            // Evaluate the AST
+            Value result = evaluate(ast);
 
-// function to format assignment nodes
-void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent) {
-    os << indentString(indent) << "(" << node->identifier.value;
-    os << " = ";
-    formatAST(os, node->expression, 0);
-    os << ")";
-}
-
-// function to format while nodes
-void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
-    os << indentString(indent) << "while ";
-    formatAST(os, node->condition, 0);
-    os << " {\n";
-    formatAST(os, node->body, indent + 1);
-    os << "\n" << indentString(indent) << "}";
-}
-
-// function to format print nodes
-void formatPrintNode(std::ostream& os, const PrintNode* node, int indent) {
-    os << indentString(indent) << "print ";
-    formatAST(os, node->expression, 0);
-}
-
-// function to format block nodes
-void formatBlockNode(std::ostream& os, const BlockNode* node, int indent) {
-    bool isFirstStatement = true;
-    for (const auto& stmt : node->statements) {
-        if (!isFirstStatement) {
-            os << "\n";
+            // Format and output the AST (optional, for debugging or visualization)
+            formatAST(std::cout, ast);
+            std::cout << "Result: " << result.toString() << std::endl;
+        } catch (const std::runtime_error& e) {
+            std::cerr << "Error: " << e.what() << std::endl;
         }
-        formatAST(os, stmt, indent);
-        isFirstStatement = false;
     }
+    return 0;
 }
 
-// main format function
-void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent) {
+// Functions to format and evaluate the AST (implementation needed)
+
+void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent = 0) {
     if (!node) return;
 
+    std::string indention = std::string(indent * 4, ' '); // 4 spaces per indent level
+
     switch (node->getType()) {
-        case ASTNode::Type::BinaryOpNode:
-            formatBinaryOpNode(os, static_cast<const BinaryOpNode*>(node.get()), indent);
+        case ASTNode::Type::BinaryOpNode: {
+            auto binNode = static_cast<const BinaryOpNode*>(node.get());
+            os << indention << "(" << binNode->op.value;
+            formatAST(os, binNode->left, indent + 1);
+            formatAST(os, binNode->right, indent + 1);
+            os << ")";
             break;
-        case ASTNode::Type::NumberNode:
-            formatNumberNode(os, static_cast<const NumberNode*>(node.get()), indent);
+        }
+        case ASTNode::Type::NumberNode: {
+            auto numNode = static_cast<const NumberNode*>(node.get());
+            os << indention << numNode->value.value;
             break;
-        case ASTNode::Type::BooleanNode:
-            formatBooleanNode(os, static_cast<const BooleanNode*>(node.get()), indent);
+        }
+        case ASTNode::Type::BooleanNode: {
+            auto boolNode = static_cast<const BooleanNode*>(node.get());
+            os << indention << (boolNode->value.value ? "true" : "false");
             break;
-        case ASTNode::Type::VariableNode:
-            formatVariableNode(os, static_cast<const VariableNode*>(node.get()), indent);
+        }
+        case ASTNode::Type::VariableNode: {
+            auto varNode = static_cast<const VariableNode*>(node.get());
+            os << indention << varNode->identifier.value;
             break;
-        case ASTNode::Type::AssignmentNode:
-            formatAssignmentNode(os, static_cast<const AssignmentNode*>(node.get()), indent);
+        }
+        case ASTNode::Type::AssignmentNode: {
+            auto assignNode = static_cast<const AssignmentNode*>(node.get());
+            os << indention << "(" << assignNode->identifier.value << " = ";
+            formatAST(os, assignNode->expression, indent + 1);
+            os << ")";
             break;
-        case ASTNode::Type::PrintNode:
-            formatPrintNode(os, static_cast<const PrintNode*>(node.get()), indent);
+        }
+        case ASTNode::Type::PrintNode: {
+            auto printNode = static_cast<const PrintNode*>(node.get());
+            os << indention << "print ";
+            formatAST(os, printNode->expression, indent + 1);
             break;
-        case ASTNode::Type::IfNode:
-            formatIfNode(os, static_cast<const IfNode*>(node.get()), indent);
+        }
+        case ASTNode::Type::IfNode: {
+            auto ifNode = static_cast<const IfNode*>(node.get());
+            os << indention << "if ";
+            formatAST(os, ifNode->condition, indent + 1);
+            os << " {\n";
+            formatAST(os, ifNode->trueBranch, indent + 1);
+            if (ifNode->falseBranch) {
+                os << "\n" << indention << "} else {\n";
+                formatAST(os, ifNode->falseBranch, indent + 1);
+            }
+            os << "\n" << indention << "}";
             break;
-        case ASTNode::Type::WhileNode:
-            formatWhileNode(os, static_cast<const WhileNode*>(node.get()), indent);
+        }
+        case ASTNode::Type::WhileNode: {
+            auto whileNode = static_cast<const WhileNode*>(node.get());
+            os << indention << "while ";
+            formatAST(os, whileNode->condition, indent + 1);
+            os << " {\n";
+            formatAST(os, whileNode->body, indent + 1);
+            os << "\n" << indention << "}";
             break;
-        case ASTNode::Type::BlockNode:
-            formatBlockNode(os, static_cast<const BlockNode*>(node.get()), indent);
+        }
+        case ASTNode::Type::BlockNode: {
+            auto blockNode = static_cast<const BlockNode*>(node.get());
+            for (const auto& stmt : blockNode->statements) {
+                formatAST(os, stmt, indent + 1);
+                os << "\n";
+            }
             break;
+        }
         default:
-            os << indentString(indent) << "/* Unknown node type */";
+            os << indention << "/* Unknown node type */";
             break;
     }
 }
 
+
+
+
 Value evaluate(const std::unique_ptr<ASTNode>& node) {
-    if (!node) return Value(); // Handle null node
+    if (!node) {
+        return Value();  // Handle null node
+    }
 
     switch (node->getType()) {
-        case ASTNode::Type::NumberNode:
-            return Value(std::stod(static_cast<const NumberNode*>(node.get())->value.value));
-        
-        case ASTNode::Type::BooleanNode:
-            return Value(static_cast<const BooleanNode*>(node.get())->value.value == "true");
+        case ASTNode::Type::NumberNode: {
+            auto numNode = static_cast<const NumberNode*>(node.get());
+            return Value(std::stod(numNode->value.value));
+        }
+
+        case ASTNode::Type::BooleanNode: {
+            auto boolNode = static_cast<const BooleanNode*>(node.get());
+            return Value(boolNode->value.value == "true");
+        }
 
         case ASTNode::Type::BinaryOpNode: {
             const auto* binNode = static_cast<const BinaryOpNode*>(node.get());
@@ -195,7 +179,6 @@ Value evaluate(const std::unique_ptr<ASTNode>& node) {
                     return left || right;
                 case TokenType::LOGICAL_XOR:
                     return (left && !right) || (!left && right);
-                // Add cases for BOOLEAN_TRUE, BOOLEAN_FALSE, IDENTIFIER, ASSIGN, UNKNOWN
                 default:
                     throw std::runtime_error("Unsupported binary operation");
             }
@@ -212,52 +195,50 @@ Value evaluate(const std::unique_ptr<ASTNode>& node) {
 
         case ASTNode::Type::AssignmentNode: {
             const auto* assignNode = static_cast<const AssignmentNode*>(node.get());
+            if (variables.find(assignNode->identifier.value) == variables.end()) {
+                throw std::runtime_error("Invalid assignee: " + assignNode->identifier.value);
+            }
             Value value = evaluate(assignNode->expression);
             variables[assignNode->identifier.value] = value;
             return value;
         }
 
+        case ASTNode::Type::PrintNode: {
+            const auto* printNode = static_cast<const PrintNode*>(node.get());
+            Value value = evaluate(printNode->expression);
+            std::cout << value.toString() << std::endl;
+            return value;
+        }
+
+        case ASTNode::Type::IfNode: {
+            const auto* ifNode = static_cast<const IfNode*>(node.get());
+            Value condition = evaluate(ifNode->condition);
+            if (condition.isTrue()) {
+                return evaluate(ifNode->trueBranch);
+            } else if (ifNode->falseBranch) {
+                return evaluate(ifNode->falseBranch);
+            }
+            return Value();
+        }
+
+        case ASTNode::Type::WhileNode: {
+            const auto* whileNode = static_cast<const WhileNode*>(node.get());
+            while (evaluate(whileNode->condition).isTrue()) {
+                evaluate(whileNode->body);
+            }
+            return Value();
+        }
+
+        case ASTNode::Type::BlockNode: {
+            const auto* blockNode = static_cast<const BlockNode*>(node.get());
+            Value lastValue;
+            for (const auto& stmt : blockNode->statements) {
+                lastValue = evaluate(stmt);
+            }
+            return lastValue;
+        }
+
         default:
-            throw std::runtime_error("Unknown node type");
+            throw std::runtime_error("Unknown node type in evaluation");
     }
-}
-
-int main() {
-    std::ostream& os = std::cout;
-    std::string line;
-
-    while (std::getline(std::cin, line)) {
-        // Add a check for empty line to allow for a way to exit the loop
-        if (line.empty()) {
-            break;
-        }
-
-        try {
-            Lexer lexer(line);
-            auto tokens = lexer.tokenize();
-            if (lexer.isSyntaxError(tokens)) {
-                os << "Syntax error detected." << std::endl;
-                continue; // Skip the rest of the loop and read the next line
-            }
-
-            Parser parser(tokens);
-            std::unique_ptr<ASTNode> ast = parser.parse();
-
-            if (ast) {
-                formatAST(os, ast);
-                os << std::endl;
-              
-            } else {
-                os << "No AST generated." << std::endl;
-            }
-        } catch (const std::runtime_error& e) {
-            os << e.what() << std::endl;
-            continue; // Skip the rest of the loop and read the next line
-        } catch (...) {
-            os << "Unknown error" << std::endl;
-            continue; // Skip the rest of the loop and read the next line
-        }
-    }
-
-    return 0;
 }
