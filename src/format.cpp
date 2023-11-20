@@ -181,16 +181,17 @@ void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent) 
     }
     os << ") {";
     
-    // Check if the function body is a BlockNode and if it has statements
     const BlockNode* blockNode = dynamic_cast<const BlockNode*>(node->body.get());
     if (blockNode && !blockNode->statements.empty()) {
         os << "\n";
         formatAST(os, node->body, indent + 1);
-        os << "\n" << indentString(indent) << "}";
+        os << "\n" << indentString(indent);
     } else {
-        os << " }"; // Handle empty body case
+        os << "\n" << indentString(indent); // Add newline and indentation for empty body
     }
+    os << "}"; // Closing brace
 }
+
 
 
 
@@ -214,7 +215,7 @@ void formatCallNode(std::ostream& os, const CallNode* node, int indent) {
             os << ", ";
         }
     }
-    os << ')';
+    os << ');';
 }
 
 
