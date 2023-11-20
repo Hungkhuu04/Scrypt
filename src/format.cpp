@@ -83,10 +83,10 @@ void formatIfNode(std::ostream& os, const IfNode* node, int indent) {
 
 // function to format assignment nodes
 void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent) {
-    os << indentString(indent) << "(" << node->identifier.value;
+    os << indentString(indent) << node->identifier.value;
     os << " = ";
     formatAST(os, node->expression, 0);
-    os << ")";
+    os << ";"; // Add semicolon here
 }
 
 // function to format while nodes
@@ -102,6 +102,7 @@ void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
 void formatPrintNode(std::ostream& os, const PrintNode* node, int indent) {
     os << indentString(indent) << "print ";
     formatAST(os, node->expression, 0);
+    os << ";"; // Add semicolon here
 }
 
 // function to format block nodes
@@ -178,9 +179,13 @@ void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent) 
         }
     }
     os << ") {\n";
+    if (node->body->getType() == ASTNode::Type::BlockNode && static_cast<const BlockNode*>(node->body.get())->statements.empty()) {
+        os << indentString(indent + 1); // Indent the inside of the function body
+    }
     formatAST(os, node->body, indent + 1);
-    os << "\n" << indentString(indent) << "}";
+    os << "\n" << indentString(indent) << "}"; // Correctly indent the closing brace
 }
+
 
 // Function to format ReturnNode (return statements)
 void formatReturnNode(std::ostream& os, const ReturnNode* node, int indent) {

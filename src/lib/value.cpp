@@ -107,6 +107,25 @@ const Value::Function& Value::asFunction() const {
     return functionValue;
 }
 
+bool Value::equals(const Value& other) const {
+    // First, check if the types of the two values are the same
+    if (this->type != other.type) return false;
+
+    // Compare based on type
+    switch (this->type) {
+        case Type::Null:
+            return true; // If both are Null, they are equal
+        case Type::Bool:
+            return this->boolValue == other.boolValue;
+        case Type::Double:
+            return this->doubleValue == other.doubleValue;
+        // Add cases for other types your Value class supports
+        default:
+            throw std::runtime_error("Unsupported type in Value::equals");
+    }
+}
+
+
 bool Value::isNull() const {
     return type == Type::Null;
 }
