@@ -206,7 +206,8 @@ void formatReturnNode(std::ostream& os, const ReturnNode* node, int indent) {
 }
 
 // Function to format CallNode (function calls)
-void formatCallNode(std::ostream& os, const CallNode* node, int indent) {
+
+void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isStandalone = true) {
     formatAST(os, node->callee, indent);
     os << '(';
     for (size_t i = 0; i < node->arguments.size(); ++i) {
@@ -216,8 +217,13 @@ void formatCallNode(std::ostream& os, const CallNode* node, int indent) {
         }
     }
     os << ')';
-    os << ";";
+    if (isStandalone) {
+        os << ";"; // Add a semicolon if it's a standalone function call
+    }
 }
+
+
+
 
 
 int main() {
