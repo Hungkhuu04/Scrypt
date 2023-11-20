@@ -192,20 +192,24 @@ void evaluateIf(const IfNode* ifNode, std::shared_ptr<Scope> currentScope) {
 
 // Evaluate the while node
 void evaluateWhile(const WhileNode* whileNode, std::shared_ptr<Scope> currentScope) {
-    while (true) {
-        Value conditionValue = evaluateExpression(whileNode->condition.get(), currentScope);
-        if (!conditionValue.asBool()) {
-            break;
-        }
-        auto loopScope = std::make_shared<Scope>(currentScope);
-        evaluateBlock(static_cast<const BlockNode*>(whileNode->body.get()), loopScope);
+    try {
+        while (true) {
+            Value conditionValue = evaluateExpression(whileNode->condition.get(), currentScope);
+            if (!conditionValue.asBool()) {
+                break;
+            }
+            auto loopScope = std::make_shared<Scope>(currentScope);
+            evaluateBlock(static_cast<const BlockNode*>(whileNode->body.get()), loopScope);
 
-        // Propagate changes back to the current scope
-        for (const auto& var : loopScope->getVariables()) {
-            if (currentScope->hasVariable(var.first)) {
-                currentScope->setVariable(var.first, var.second);
+            // Propagate changes back to the current scope
+            for (const auto& var : loopScope->getVariables()) {
+                if (currentScope->hasVariable(var.first)) {
+                    currentScope->setVariable(var.first, var.second);
+                }
             }
         }
+    } catch (...) {
+        throw;
     }
 }
 
