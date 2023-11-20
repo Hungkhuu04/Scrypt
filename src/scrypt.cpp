@@ -57,35 +57,40 @@ void evaluateBlock(const BlockNode* blockNode, std::shared_ptr<Scope> currentSco
 
 
 Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentScope) {
-    auto funcValue = evaluateExpression(node->callee.get(), currentScope);
-    if (funcValue.getType() != Value::Type::Function) {
-        throw std::runtime_error("Runtime error: not a function.");
-    }
-
-    const auto& function = funcValue.asFunction();
-
-    // Create a new scope for the function call with the function's captured scope as the parent
-    auto callScope = std::make_shared<Scope>(function.capturedScope);
-
-    const auto& params = function.definition->parameters;
-    const auto& args = node->arguments;
-    if (params.size() != args.size()) {
-        throw std::runtime_error("Runtime error: incorrect argument count.");
-    }
-
-    for (size_t i = 0; i < params.size(); ++i) {
-        auto argValue = evaluateExpression(args[i].get(), currentScope);
-        callScope->setVariable(params[i].value, argValue);
-    }
-
     try {
-        evaluateBlock(static_cast<const BlockNode*>(function.definition->body.get()), callScope);
-    } catch (const ReturnException& e) {
-        return e.getValue();
-    }
+        auto funcValue = evaluateExpression(node->callee.get(), currentScope);
+        if (funcValue.getType() != Value::Type::Function) {
+            throw std::runtime_error("Runtime error: not a function.");
+        }
 
-    return Value(); // Return null if no return statement was executed
+        const auto& function = funcValue.asFunction();
+
+        // Create a new scope for the function call with the function's captured scope as the parent
+        auto callScope = std::make_shared<Scope>(function.capturedScope);
+
+        const auto& params = function.definition->parameters;
+        const auto& args = node->arguments;
+        if (params.size() != args.size()) {
+            throw std::runtime_error("Runtime error: incorrect argument count.");
+        }
+
+        for (size_t i = 0; i < params.size(); ++i) {
+            auto argValue = evaluateExpression(args[i].get(), currentScope);
+            callScope->setVariable(params[i].value, argValue);
+        }
+
+        try {
+            evaluateBlock(static_cast<const BlockNode*>(function.definition->body.get()), callScope);
+        } catch (const ReturnException& e) {
+            return e.getValue();
+        }
+
+        return Value(); // Return null if no return statement was executed
+    } catch (...) {
+        throw;
+    }
 }
+
 
 void evaluateFunctionDefinition(const FunctionNode* functionNode, std::shared_ptr<Scope> currentScope) {
     if (!functionNode) {
@@ -359,6 +364,8 @@ int main() {
         if (std::string(e.what()) == "Runtime error: condition is not a bool.") {
             exit(3);
         } else if (std::string(e.what()) == "Runtime error: incorrect argument count.") {
+            exit(3);
+        } else if (std::string(e.what()) == "Runtime error: not a function.") {
             exit(3);
         } else {
             exit(2);
