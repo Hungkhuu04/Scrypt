@@ -227,18 +227,16 @@ void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> current
 // Evaluate the print node
 void evaluatePrint(const PrintNode* printNode, std::shared_ptr<Scope> currentScope) {
     Value value = evaluateExpression(printNode->expression.get(), currentScope);
-    switch (value.getType()) {
-        case Value::Type::Double:
-            std::cout << value.asDouble() << std::endl;
-            break;
-        case Value::Type::Bool:
-            std::cout << std::boolalpha << value.asBool() << std::endl;
-            break;
-        case Value::Type::Null:  // Add a case for Null type
-            std::cout << "null" << std::endl;
-            break;
+    if (value.getType() == Value::Type::Double) {
+        std::cout << value.asDouble() << std::endl;
+    } else if (value.getType() == Value::Type::Bool) {
+        std::cout << std::boolalpha << value.asBool() << std::endl;
+    } else if (value.getType() == Value::Type::Null) {
+        std::cout << "null" << std::endl;
+    } else {
+        throw std::runtime_error("Invalid type in print statement");
     }
-}
+};
 // Evaluate Operations
 Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<Scope> currentScope) {
     if (!binaryOpNode) {
