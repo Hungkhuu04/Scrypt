@@ -87,7 +87,7 @@ void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int inde
     os << indentString(indent) << "(" << node->identifier.value;
     os << " = ";
     formatAST(os, node->expression, 0);
-    os << ")";
+    os << ");"; // Add a semicolon here
 }
 
 // function to format while nodes
@@ -103,6 +103,7 @@ void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
 void formatPrintNode(std::ostream& os, const PrintNode* node, int indent) {
     os << indentString(indent) << "print ";
     formatAST(os, node->expression, 0);
+    os << ";"; // Add a semicolon here
 }
 
 // function to format block nodes
@@ -178,18 +179,29 @@ void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent) 
             os << ", ";
         }
     }
-    os << ") {\n";
-    formatAST(os, node->body, indent + 1);
-    os << "\n" << indentString(indent) << "}";
+    os << ") {";
+    
+    // Check if the function body is a BlockNode and if it has statements
+    const BlockNode* blockNode = dynamic_cast<const BlockNode*>(node->body.get());
+    if (blockNode && !blockNode->statements.empty()) {
+        os << "\n";
+        formatAST(os, node->body, indent + 1);
+        os << "\n" << indentString(indent) << "}";
+    } else {
+        os << " }"; // Handle empty body case
+    }
 }
+
+
 
 // Function to format ReturnNode (return statements)
 void formatReturnNode(std::ostream& os, const ReturnNode* node, int indent) {
-    os << indentString(indent) << "return ";
+    os << indentString(indent) << "return";
     if (node->value) {
+        os << " ";
         formatAST(os, node->value, 0);
     }
-    os << ";";
+    os << ";"; // Ensure semicolon is outside of the conditional
 }
 
 // Function to format CallNode (function calls)
