@@ -112,7 +112,6 @@ bool Value::isNull() const {
 }
 
 // Scope class implementations
-Scope::Scope(std::shared_ptr<Scope> parent) : parentScope(std::move(parent)) {}
 
 void Scope::setVariable(const std::string& name, const Value& value) {
     variables[name] = value;
@@ -127,6 +126,15 @@ Value* Scope::getVariable(const std::string& name) {
         return parentScope->getVariable(name);
     }
     return nullptr;  // Variable not found in any scope
+}
+
+bool Scope::hasVariable(const std::string& name) {
+    if (variables.count(name) > 0) {
+        return true;
+    } else if (parentScope) {
+        return parentScope->hasVariable(name);
+    }
+    return false;
 }
 
 const std::unordered_map<std::string, Value>& Scope::getVariables() const{

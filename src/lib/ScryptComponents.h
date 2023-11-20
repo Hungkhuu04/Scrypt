@@ -74,7 +74,7 @@ private:
 // Scope class for variable scoping
 class Scope {
 public:
-    explicit Scope(std::shared_ptr<Scope> parent = nullptr);
+    Scope(std::shared_ptr<Scope> parent = nullptr) : parentScope(parent) {}
 
     void setVariable(const std::string& name, const Value& value);
     Value* getVariable(const std::string& name);
@@ -83,6 +83,7 @@ public:
     std::shared_ptr<Scope> getParent() const;
     std::shared_ptr<Scope> copyScope() const;
     std::shared_ptr<Scope> deepCopy() const;
+    bool hasVariable(const std::string& name);
 
 private:
     std::unordered_map<std::string, Value> variables;

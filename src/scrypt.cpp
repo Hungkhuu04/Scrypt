@@ -11,7 +11,6 @@
 #include <cmath>
 #include "lib/ScryptComponents.h"
 
-std::unordered_map<std::string, Value> variables;
 std::shared_ptr<Scope> globalScope = std::make_shared<Scope>();
 
 Value tokenToValue(const Token& token);
@@ -191,9 +190,18 @@ void evaluateWhile(const WhileNode* whileNode, std::shared_ptr<Scope> currentSco
         if (!conditionValue.asBool()) {
             break;
         }
-        evaluateBlock(static_cast<const BlockNode*>(whileNode->body.get()), currentScope);
+        auto loopScope = std::make_shared<Scope>(currentScope);
+        evaluateBlock(static_cast<const BlockNode*>(whileNode->body.get()), loopScope);
+
+        // Propagate changes back to the current scope
+        for (const auto& var : loopScope->getVariables()) {
+            if (currentScope->hasVariable(var.first)) {
+                currentScope->setVariable(var.first, var.second);
+            }
+        }
     }
 }
+
 
 
 void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> currentScope) {
@@ -296,7 +304,22 @@ Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> 
 // Evaluate Assignments
 Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<Scope> currentScope) {
     Value value = evaluateExpression(assignmentNode->expression.get(), currentScope);
-    currentScope->setVariable(assignmentNode->identifier.value, value);
+
+    // Check if the variable already exists in the current or parent scopes
+    if (currentScope->hasVariable(assignmentNode->identifier.value)) {
+        // Update the variable in its respective scope
+        Scope* scopeToUpdate = currentScope.get();
+        while (scopeToUpdate && !scopeToUpdate->getVariable(assignmentNode->identifier.value)) {
+            scopeToUpdate = scopeToUpdate->getParent().get();
+        }
+        if (scopeToUpdate) {
+            scopeToUpdate->setVariable(assignmentNode->identifier.value, value);
+        }
+    } else {
+        // Create the variable in the current scope
+        currentScope->setVariable(assignmentNode->identifier.value, value);
+    }
+
     return value;
 }
 
