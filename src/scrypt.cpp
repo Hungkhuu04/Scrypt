@@ -59,7 +59,7 @@ void evaluateBlock(const BlockNode* blockNode, std::shared_ptr<Scope> currentSco
 Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentScope) {
     auto funcValue = evaluateExpression(node->callee.get(), currentScope);
     if (funcValue.getType() != Value::Type::Function) {
-        throw std::runtime_error("Attempted to call a non-function.");
+        throw std::runtime_error("Runtime error: not a function.");
     }
 
     const auto& function = funcValue.asFunction();
@@ -167,6 +167,8 @@ Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScop
             auto callNode = static_cast<const CallNode*>(node);
             return evaluateFunctionCall(callNode, currentScope);
         }
+        case ASTNode::Type::NullNode:
+            return Value();
         default:
             throw std::runtime_error("Unknown expression node type");
     }
@@ -214,7 +216,7 @@ void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> current
     if (returnNode->value) {
         returnValue = evaluateExpression(returnNode->value.get(), currentScope);
     } else {
-        returnValue = Value();  // Returning null if no expression is present
+        throw ReturnException(Value());  // Returning null if no expression is present
     }
 
     // Throw a ReturnException to signal a return from the function
@@ -225,12 +227,18 @@ void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> current
 // Evaluate the print node
 void evaluatePrint(const PrintNode* printNode, std::shared_ptr<Scope> currentScope) {
     Value value = evaluateExpression(printNode->expression.get(), currentScope);
-    if (value.getType() == Value::Type::Double) {
-        std::cout << value.asDouble() << std::endl;
-    } else if (value.getType() == Value::Type::Bool) {
-        std::cout << std::boolalpha << value.asBool() << std::endl;
+    switch (value.getType()) {
+        case Value::Type::Double:
+            std::cout << value.asDouble() << std::endl;
+            break;
+        case Value::Type::Bool:
+            std::cout << std::boolalpha << value.asBool() << std::endl;
+            break;
+        case Value::Type::Null:  // Add a case for Null type
+            std::cout << "null" << std::endl;
+            break;
     }
-};
+}
 // Evaluate Operations
 Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<Scope> currentScope) {
     if (!binaryOpNode) {
@@ -266,9 +274,9 @@ Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<
         case TokenType::GREATER_EQUAL:
             return Value(left.asDouble() >= right.asDouble());
         case TokenType::EQUAL:
-            return Value(left.asDouble() == right.asDouble());
+            return Value(left.equals(right));
         case TokenType::NOT_EQUAL:
-            return Value(left.asDouble() != right.asDouble());
+            return Value(!left.equals(right));
         case TokenType::LOGICAL_AND:
             return Value(left.asBool() && right.asBool());
         case TokenType::LOGICAL_OR:
@@ -351,6 +359,8 @@ int main() {
     } catch (const std::runtime_error& e) {
         os << e.what() << std::endl;
         if (std::string(e.what()) == "Runtime error: condition is not a bool.") {
+            exit(3);
+        } else if (std::string(e.what()) == "Runtime error: incorrect argument count.") {
             exit(3);
         } else {
             exit(2);

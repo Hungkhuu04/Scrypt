@@ -58,6 +58,7 @@ public:
     bool asBool() const;
     const Function& asFunction() const;
     bool isNull() const;
+    bool equals(const Value& other) const;
 
 private:
     Type type;
