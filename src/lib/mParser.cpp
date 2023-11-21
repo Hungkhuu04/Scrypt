@@ -62,6 +62,45 @@ std::unique_ptr<ASTNode> Parser::parseStatement()
 
 }
 
+
+std::unique_ptr<ASTNode> Parser::parseFunctionDefinition() {
+    Token name = consume(TokenType::IDENTIFIER);
+    consume(TokenType::LEFT_PAREN);
+
+    std::vector<Token> parameters;
+    if (!check(TokenType::RIGHT_PAREN)) {
+        do {
+            parameters.push_back(consume(TokenType::IDENTIFIER));
+        } while (match(TokenType::COMMA));
+    }
+
+    consume(TokenType::RIGHT_PAREN);
+    std::unique_ptr<ASTNode> body = parseBlock();
+
+    return std::make_unique<FunctionNode>(name, std::move(parameters), std::move(body));
+}
+
+std::unique_ptr<ASTNode> Parser::parseReturnStatement() {
+    std::unique_ptr<ASTNode> value = nullptr;
+    if (!check(TokenType::SEMICOLON)) {
+        value = parseExpression();
+    }
+    consume(TokenType::SEMICOLON);
+    return std::make_unique<ReturnNode>(std::move(value));
+}
+
+std::unique_ptr<ASTNode> Parser::parseCall(std::unique_ptr<ASTNode> callee) {
+    std::vector<std::unique_ptr<ASTNode>> arguments;
+    if (!check(TokenType::RIGHT_PAREN)) {
+        do {
+            arguments.push_back(parseExpression());
+        } while (match(TokenType::COMMA));
+    }
+    consume(TokenType::RIGHT_PAREN);
+    return std::make_unique<CallNode>(std::move(callee), std::move(arguments));
+}
+
+
 // Parses if statements & blocks
 std::unique_ptr<ASTNode> Parser::parseIfStatement()
 {
@@ -190,57 +229,74 @@ std::unique_ptr<ASTNode> Parser::parseExpression()
 std::unique_ptr<ASTNode> Parser::parseAssignment() {
     auto node = parseLogicalOr();
     if (match(TokenType::ASSIGN)) {
-        Token equals = previous();
-        auto value = parseAssignment();
-        
-        if (node->getType() != ASTNode::Type::VariableNode) {
+        if (node->getType() == ASTNode::Type::VariableNode || node->getType() == ASTNode::Type::ArrayLookupNode) {
+            auto value = parseAssignment();
+            return std::make_unique<AssignmentNode>(std::move(node), std::move(value));
+        } else {
             throw std::runtime_error("Runtime error: invalid assignee.");
         }
-        
-        auto variable = static_cast<VariableNode *>(node.get());
-        return std::make_unique<AssignmentNode>(variable->identifier, std::move(value));
     }
     return node;
 }
 
-std::unique_ptr<ASTNode> Parser::parseFunctionDefinition() {
-    Token name = consume(TokenType::IDENTIFIER);
-    consume(TokenType::LEFT_PAREN);
 
-    std::vector<Token> parameters;
-    if (!check(TokenType::RIGHT_PAREN)) {
+std::unique_ptr<ASTNode> Parser::parseArrayLiteral() {
+    std::vector<std::unique_ptr<ASTNode>> elements;
+    if (!check(TokenType::RBRACK)) {
         do {
-            parameters.push_back(consume(TokenType::IDENTIFIER));
+            elements.push_back(parseExpression());
         } while (match(TokenType::COMMA));
     }
 
-    consume(TokenType::RIGHT_PAREN);
-    std::unique_ptr<ASTNode> body = parseBlock();
-
-    return std::make_unique<FunctionNode>(name, std::move(parameters), std::move(body));
+    consume(TokenType::RBRACK);
+    return std::make_unique<ArrayLiteralNode>(std::move(elements));
 }
 
-std::unique_ptr<ASTNode> Parser::parseReturnStatement() {
-    std::unique_ptr<ASTNode> value = nullptr;
-    if (!check(TokenType::SEMICOLON)) {
-        value = parseExpression();
+
+std::unique_ptr<ASTNode> Parser::parseArrayLookup(std::unique_ptr<ASTNode> array) {
+    auto index = parseExpression();
+    consume(TokenType::RBRACK);
+    
+    return std::make_unique<ArrayLookupNode>(std::move(array), std::move(index));
+}
+
+std::unique_ptr<ASTNode> Parser::parsePrimary() {
+    try {
+        if (match(TokenType::NUMBER)) {
+            return std::make_unique<NumberNode>(previous());
+        } else if (match(TokenType::LEFT_PAREN)) {
+            auto expr = parseExpression();
+            consume(TokenType::RIGHT_PAREN);
+            return expr;
+        } else if (match(TokenType::LBRACK)) {
+            // This is an array literal
+            return parseArrayLiteral();
+        } else if (match(TokenType::IDENTIFIER)) {
+            Token identifier = previous();
+            if (check(TokenType::LEFT_PAREN)) {
+                // This is a function call
+                advance(); // Consume LEFT_PAREN
+                return parseCall(std::make_unique<VariableNode>(identifier));
+            } else if (check(TokenType::LBRACK)) {
+                // This is an array lookup
+                advance();
+                return parseArrayLookup(std::make_unique<VariableNode>(identifier));
+            } else {
+                // It's just a variable
+                return std::make_unique<VariableNode>(identifier);
+            }
+        } else if (match(TokenType::BOOLEAN_TRUE)) {
+            return std::make_unique<BooleanNode>(previous());
+        } else if (match(TokenType::BOOLEAN_FALSE)) {
+            return std::make_unique<BooleanNode>(previous());
+        } else if (match(TokenType::NULL_TOKEN)) {
+            return std::make_unique<NullNode>();
+        }
+    } catch (...) {
+        throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
     }
-    consume(TokenType::SEMICOLON);
-    return std::make_unique<ReturnNode>(std::move(value));
+    throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
 }
-
-std::unique_ptr<ASTNode> Parser::parseCall(std::unique_ptr<ASTNode> callee) {
-    std::vector<std::unique_ptr<ASTNode>> arguments;
-    if (!check(TokenType::RIGHT_PAREN)) {
-        do {
-            arguments.push_back(parseExpression());
-        } while (match(TokenType::COMMA));
-    }
-    consume(TokenType::RIGHT_PAREN);
-    return std::make_unique<CallNode>(std::move(callee), std::move(arguments));
-}
-
-
 
 /* From here to parse primary, each function parses each type of logical operation or expresion. 
 It is coded to use precedence from track A
@@ -329,40 +385,6 @@ std::unique_ptr<ASTNode> Parser::parseMultiplication() {
     } catch (...) {
         throw;
     }
-}
-
-
-std::unique_ptr<ASTNode> Parser::parsePrimary() {
-    try {
-        if (match(TokenType::NUMBER)) {
-            return std::make_unique<NumberNode>(previous());
-        } else if (match(TokenType::LEFT_PAREN)) {
-            auto expr = parseExpression();
-            consume(TokenType::RIGHT_PAREN);
-            while (match(TokenType::NEWLINE)) {
-            }
-            return expr;
-        } else if (match(TokenType::IDENTIFIER)) {
-            Token functionName = previous();
-            if (check(TokenType::LEFT_PAREN)) {
-                // This is a function call
-                advance(); // Consume LEFT_PAREN
-                return parseCall(std::make_unique<VariableNode>(functionName));
-            } else {
-                // It's just a variable
-                return std::make_unique<VariableNode>(functionName);
-            }
-        } else if (match(TokenType::BOOLEAN_TRUE)) {
-            return std::make_unique<BooleanNode>(previous());
-        } else if (match(TokenType::BOOLEAN_FALSE)) {
-            return std::make_unique<BooleanNode>(previous());
-        } else if (match(TokenType::NULL_TOKEN)) {
-            return std::make_unique<NullNode>();
-        }
-    } catch (...) {
-        throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
-    }
-    throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
 }
 
 

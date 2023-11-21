@@ -1,5 +1,6 @@
 #include "ScryptComponents.h"
 #include <stdexcept>
+#include <cmath>
 
 
 // Value class implementation
@@ -13,6 +14,9 @@ Value::Value(Function function)
     : type(Type::Function) {
     new (&functionValue) Function(std::move(function));
 }
+
+Value::Value(std::vector<Value> array)
+    : type(Type::Array), arrayValue(std::move(array)) {}
 
 Value::~Value() {
     cleanUp();
@@ -130,7 +134,32 @@ bool Value::isNull() const {
     return type == Type::Null;
 }
 
-// Scope class implementations
+bool Value::isArray() const {
+    return type == Type::Array;
+}
+
+bool Value::isInteger() const {
+    if (type != Type::Double) {
+        return false;
+    }
+    double intPart;
+    return std::modf(doubleValue, &intPart) == 0.0;
+}
+
+
+std::vector<Value>& Value::asArray() {
+    if (type != Type::Array) {
+        throw std::runtime_error("Value is not an array.");
+    }
+    return arrayValue;
+}
+
+const std::vector<Value>& Value::asArray() const {
+    if (type != Type::Array) {
+        throw std::runtime_error("Value is not an array.");
+    }
+    return arrayValue;
+}
 
 void Scope::setVariable(const std::string& name, const Value& value) {
     variables[name] = value;

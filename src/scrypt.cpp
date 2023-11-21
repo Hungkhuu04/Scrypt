@@ -1,3 +1,4 @@
+
 #include "lib/mParser.h"
 #include "lib/lex.h"
 #include "lib/ASTNodes.h" 
@@ -20,12 +21,15 @@ void evaluateIf(const IfNode* ifNode, std::shared_ptr<Scope> currentScope);
 void evaluateWhile(const WhileNode* whileNode, std::shared_ptr<Scope> currentScope);
 void evaluatePrint(const PrintNode* printNode, std::shared_ptr<Scope> currentScope);
 Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<Scope> currentScope);
-Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> currentScope);
+Value* evaluateVariable(const ASTNode* node, std::shared_ptr<Scope> currentScope);
 Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<Scope> currentScope);
 Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentScope);
 void evaluateFunctionDefinition(const FunctionNode* functionNode, std::shared_ptr<Scope> currentScope);
 void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> currentScope);
 void evaluateStatement(const ASTNode* stmt, std::shared_ptr<Scope> currentScope);
+Value evaluateArrayLiteral(const ArrayLiteralNode* arrayNode, std::shared_ptr<Scope> currentScope);
+Value evaluateArrayLookup(const ArrayLookupNode* lookupNode, std::shared_ptr<Scope> currentScope);
+
 
 // Checks for Boolean True and False
 Value tokenToValue(const Token& token) {
@@ -56,9 +60,6 @@ void evaluateBlock(const BlockNode* blockNode, std::shared_ptr<Scope> currentSco
         throw;
     }
 }
-
-
-
 
 Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentScope) {
     try {
@@ -177,8 +178,15 @@ Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScop
                 auto callNode = static_cast<const CallNode*>(node);
                 return evaluateFunctionCall(callNode, currentScope);
             }
-            case ASTNode::Type::NullNode:
+            case ASTNode::Type::NullNode: {
                 return Value();
+            }
+            case ASTNode::Type::ArrayLiteralNode: {
+                return evaluateArrayLiteral(static_cast<const ArrayLiteralNode*>(node), currentScope);
+            }
+            case ASTNode::Type::ArrayLookupNode: {
+                return evaluateArrayLookup(static_cast<const ArrayLookupNode*>(node), currentScope);
+            }
             default:
                 throw std::runtime_error("Unknown expression node type");
         }
@@ -239,21 +247,60 @@ void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> current
     // Throw a ReturnException to signal a return from the function
     throw ReturnException(std::move(returnValue));
 }
+void printArray(const std::vector<Value>& array) {
+    
+    std::cout << '[';
+    bool firstElement = true;
+    for (const auto& elem : array) {
+        if (!firstElement) {
+            std::cout << ", ";
+        }
+        firstElement = false;
+
+        switch (elem.getType()) {
+            case Value::Type::Double:
+                std::cout << elem.asDouble();
+                break;
+            case Value::Type::Bool:
+                std::cout << std::boolalpha << elem.asBool();
+                break;
+            case Value::Type::Null:
+                std::cout << "null";
+                break;
+            case Value::Type::Array:
+                printArray(elem.asArray());
+                break;
+            // Handle other types if necessary
+            default:
+                throw std::runtime_error("Unsupported type in array print");
+        }
+    }
+    std::cout << ']';
+}
 
 
 // Evaluate the print node
 void evaluatePrint(const PrintNode* printNode, std::shared_ptr<Scope> currentScope) {
     Value value = evaluateExpression(printNode->expression.get(), currentScope);
-    if (value.getType() == Value::Type::Double) {
-        std::cout << value.asDouble() << std::endl;
-    } else if (value.getType() == Value::Type::Bool) {
-        std::cout << std::boolalpha << value.asBool() << std::endl;
-    } else if (value.getType() == Value::Type::Null) {
-        std::cout << "null" << std::endl;
-    } else {
-        throw std::runtime_error("Invalid type in print statement");
+    switch (value.getType()) {
+        case Value::Type::Double:
+            std::cout << value.asDouble() << std::endl;
+            break;
+        case Value::Type::Bool:
+            std::cout << std::boolalpha << value.asBool() << std::endl;
+            break;
+        case Value::Type::Null:
+            std::cout << "null" << std::endl;
+            break;
+        case Value::Type::Array:
+            printArray(value.asArray());
+            std::cout << std::endl;
+            break;
+        default:
+            throw std::runtime_error("Unsupported type in print statement");
     }
-};
+}
+
 // Evaluate Operations
 Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<Scope> currentScope) {
     if (!binaryOpNode) {
@@ -310,42 +357,100 @@ Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<
 }
 
 // Evaluate variables
-Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> currentScope) {
-    if (!variableNode) {
+Value* evaluateVariable(const ASTNode* node, std::shared_ptr<Scope> currentScope) {
+    if (!node) {
         throw std::runtime_error("Null VariableNode passed to evaluateVariable");
     }
 
+    // Ensure the node is a VariableNode
+    if (node->getType() != ASTNode::Type::VariableNode) {
+        throw std::runtime_error("Expected VariableNode in evaluateVariable");
+    }
+
+    auto variableNode = static_cast<const VariableNode*>(node);
+
+    // Retrieve the variable from the current scope
     Value* valuePtr = currentScope->getVariable(variableNode->identifier.value);
-    if (valuePtr) {
-        return *valuePtr;
-    } else {
+    if (!valuePtr) {
         throw std::runtime_error("Variable not defined: " + variableNode->identifier.value);
     }
+
+    return valuePtr;
 }
 
 
 // Evaluate Assignments
 Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<Scope> currentScope) {
-    Value value = evaluateExpression(assignmentNode->expression.get(), currentScope);
-
-    // Check if the variable already exists in the current or parent scopes
-    if (currentScope->hasVariable(assignmentNode->identifier.value)) {
-        // Update the variable in its respective scope
-        Scope* scopeToUpdate = currentScope.get();
-        while (scopeToUpdate && !scopeToUpdate->getVariable(assignmentNode->identifier.value)) {
-            scopeToUpdate = scopeToUpdate->getParent().get();
-        }
-        if (scopeToUpdate) {
-            scopeToUpdate->setVariable(assignmentNode->identifier.value, value);
-        }
-    } else {
-        // Create the variable in the current scope
-        currentScope->setVariable(assignmentNode->identifier.value, value);
+    if (!assignmentNode) {
+        throw std::runtime_error("Null assignment node passed to evaluateAssignment");
     }
 
-    return value;
+    // Evaluate the right-hand side (rhs) expression
+    Value rhsValue = evaluateExpression(assignmentNode->rhs.get(), currentScope);
+
+    if (assignmentNode->lhs->getType() == ASTNode::Type::VariableNode) {
+        // Handle variable assignment
+        auto variableNode = static_cast<const VariableNode*>(assignmentNode->lhs.get());
+        currentScope->setVariable(variableNode->identifier.value, rhsValue);
+    } else if (assignmentNode->lhs->getType() == ASTNode::Type::ArrayLookupNode) {
+        // Handle array element assignment
+        auto arrayLookupNode = static_cast<const ArrayLookupNode*>(assignmentNode->lhs.get());
+
+        // Ensure the array is actually a variable
+        if (arrayLookupNode->array->getType() != ASTNode::Type::VariableNode) {
+            throw std::runtime_error("Array assignment requires a variable");
+        }
+
+        // Evaluate the array variable and index
+        auto variableNode = static_cast<const VariableNode*>(arrayLookupNode->array.get());
+        Value* arrayValuePtr = evaluateVariable(variableNode, currentScope);
+
+        if (!arrayValuePtr || !arrayValuePtr->isArray()) {
+            throw std::runtime_error("Invalid array variable");
+        }
+
+        Value indexValue = evaluateExpression(arrayLookupNode->index.get(), currentScope);
+        if (!indexValue.isInteger()) {
+            throw std::runtime_error("Array index is not an integer");
+        }
+
+        int index = static_cast<int>(indexValue.asDouble());
+        if (index < 0 || index >= arrayValuePtr->asArray().size()) {
+            throw std::runtime_error("Array index out of bounds");
+        }
+
+        arrayValuePtr->asArray()[index] = rhsValue;
+    } else {
+        throw std::runtime_error("Invalid left-hand side in assignment");
+    }
+
+    return rhsValue;
 }
 
+
+
+Value evaluateArrayLiteral(const ArrayLiteralNode* arrayNode, std::shared_ptr<Scope> currentScope) {
+    std::vector<Value> elements;
+    for (const auto& element : arrayNode->elements) {
+        elements.push_back(evaluateExpression(element.get(), currentScope));
+    }
+    return Value(std::move(elements));
+}
+
+Value evaluateArrayLookup(const ArrayLookupNode* lookupNode, std::shared_ptr<Scope> currentScope) {
+    auto arrayValue = evaluateExpression(lookupNode->array.get(), currentScope);
+    auto indexValue = evaluateExpression(lookupNode->index.get(), currentScope);
+
+    if (!indexValue.isInteger()) {
+        throw std::runtime_error("Runtime error: index is not an integer.");
+    }
+    auto& array = arrayValue.asArray();
+    int index = static_cast<int>(indexValue.asDouble());
+    if (index < 0 || index >= array.size()) {
+        throw std::runtime_error("Runtime error: index out of bounds.");
+    }
+    return array[index];
+}
 
 int main() {
     std::ostream& os = std::cout;
