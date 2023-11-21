@@ -265,7 +265,10 @@ std::unique_ptr<ASTNode> Parser::parsePrimary() {
 
     if (match(TokenType::NUMBER)) {
         node = std::make_unique<NumberNode>(previous());
-    } else if (match(TokenType::LEFT_PAREN)) {
+    }  else if (match(TokenType::NULL_TOKEN)) {
+        return std::make_unique<NullNode>();
+    }
+    else if (match(TokenType::LEFT_PAREN)) {
         node = parseExpression();
         consume(TokenType::RIGHT_PAREN);
     } else if (match(TokenType::LBRACK)) {
