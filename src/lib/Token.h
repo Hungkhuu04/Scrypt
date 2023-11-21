@@ -31,8 +31,10 @@ enum class TokenType {
     RBRACK, LBRACK,
     RETURN,
     DEF,
-    NULL_TOKEN
-
+    NULL_TOKEN,
+    LEN,
+    POP,
+    PUSH,
 };
 
 

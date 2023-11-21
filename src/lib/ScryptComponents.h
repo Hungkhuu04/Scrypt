@@ -14,7 +14,7 @@ class Scope;
 // Value class to represent different types of values in your script
 class Value {
 public:
-    enum class Type { Double, Bool, Function, Null };
+    enum class Type { Double, Bool, Function, Null, Array};
 
     struct Function {
         std::shared_ptr<FunctionNode> definition; // Changed to shared_ptr
@@ -51,6 +51,7 @@ public:
     Value(Value&& other) noexcept;
     Value& operator=(const Value& other);
     Value& operator=(Value&& other) noexcept;
+    Value(std::vector<Value> array);
     ~Value();
 
     Type getType() const;
@@ -60,12 +61,18 @@ public:
     bool isNull() const;
     bool equals(const Value& other) const;
 
+    bool isArray() const;
+    bool isInteger() const;
+    std::vector<Value>& asArray();
+    const std::vector<Value>& asArray() const;
+
 private:
     Type type;
     union {
         double doubleValue;
         bool boolValue;
         Function functionValue; // Raw storage, will be constructed/destructed manually
+        std::vector<Value> arrayValue;
     };
 
     void cleanUp();

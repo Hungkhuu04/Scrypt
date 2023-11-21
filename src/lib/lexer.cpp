@@ -187,6 +187,12 @@ std::vector<Token> Lexer::tokenize() {
                 tokens.push_back({TokenType::RETURN, identifier, line, identifierStartCol});
             } else if (identifier == "null") {
                 tokens.push_back({TokenType::NULL_TOKEN, identifier, line, identifierStartCol});
+            } else if (identifier == "len") {
+        tokens.push_back({TokenType::LEN, identifier, line, identifierStartCol});
+            } else if (identifier == "pop") {
+                tokens.push_back({TokenType::POP, identifier, line, identifierStartCol});
+            } else if (identifier == "push") {
+                tokens.push_back({TokenType::PUSH, identifier, line, identifierStartCol});
             }
             else {
                 tokens.push_back({TokenType::IDENTIFIER, identifier, line, identifierStartCol});

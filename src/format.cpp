@@ -9,7 +9,8 @@
 #include <iomanip>
 
 std::string indentString(int indentLevel);
-void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent = 0);
+void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent, bool isOutermost = true);
+void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isOutermost = true);
 void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent);
 void formatNumberNode(std::ostream& os, const NumberNode* node, int indent);
 void formatBooleanNode(std::ostream& os, const BooleanNode* node, int indent);
@@ -21,8 +22,10 @@ void formatPrintNode(std::ostream& os, const PrintNode* node, int indent);
 void formatBlockNode(std::ostream& os, const BlockNode* node, int indent);
 void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent);
 void formatReturnNode(std::ostream& os, const ReturnNode* node, int indent);
-void formatCallNode(std::ostream& os, const CallNode* node, int indent);
 void formatNullNode(std::ostream& os, const NullNode* node, int indent);
+void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent);
+void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent);
+
 
 // function to create an indentation string
 std::string indentString(int indentLevel) {
@@ -36,9 +39,9 @@ void formatNullNode(std::ostream& os, const NullNode* node, int indent) {
 // function to format operation types
 void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent) {
     os << '(';
-    formatAST(os, node->left, 0);  
-    os << ' ' << node->op.value << ' ';    
-    formatAST(os, node->right, 0);
+    formatAST(os, node->left, 0, false); // Passing false for isOutermost
+    os << ' ' << node->op.value << ' ';
+    formatAST(os, node->right, 0, false); // Passing false for isOutermost
     os << ')';
 }
 
@@ -84,11 +87,26 @@ void formatIfNode(std::ostream& os, const IfNode* node, int indent) {
 
 // function to format assignment nodes
 void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent) {
-    os << indentString(indent) << "(" << node->identifier.value;
-    os << " = ";
-    formatAST(os, node->expression, 0);
-    os << ");"; // Add a semicolon here
+    os << indentString(indent) << "(";
+
+    // Handle both VariableNode and ArrayLookupNode on left-hand side
+    if (node->lhs->getType() == ASTNode::Type::VariableNode) {
+        auto variableNode = static_cast<const VariableNode*>(node->lhs.get());
+        os << variableNode->identifier.value << " = ";
+    } else if (node->lhs->getType() == ASTNode::Type::ArrayLookupNode) {
+        auto arrayLookupNode = static_cast<const ArrayLookupNode*>(node->lhs.get());
+        formatArrayLookupNode(os, arrayLookupNode, 0);
+        os << " = ";
+    } else {
+        throw std::runtime_error("Invalid left-hand side in assignment");
+    }
+
+        formatAST(os, node->rhs, 0, false);
+        os << ")";
+        os << ";";
 }
+
+
 
 // function to format while nodes
 void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
@@ -102,8 +120,8 @@ void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
 // function to format print nodes
 void formatPrintNode(std::ostream& os, const PrintNode* node, int indent) {
     os << indentString(indent) << "print ";
-    formatAST(os, node->expression, 0);
-    os << ";"; // Add a semicolon here
+    formatAST(os, node->expression, 0, false); // Already correctly passing false for isOutermost
+    os << ";";
 }
 
 // function to format block nodes
@@ -120,7 +138,7 @@ void formatBlockNode(std::ostream& os, const BlockNode* node, int indent) {
 
 // main format function
 // main format function
-void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent) {
+void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent, bool isOutermost)  {
     if (!node) return;
 
     switch (node->getType()) {
@@ -158,10 +176,16 @@ void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int inden
             formatReturnNode(os, static_cast<const ReturnNode*>(node.get()), indent);
             break;
         case ASTNode::Type::CallNode:
-            formatCallNode(os, static_cast<const CallNode*>(node.get()), indent);
+            formatCallNode(os, static_cast<const CallNode*>(node.get()), indent, isOutermost);
             break;
         case ASTNode::Type::NullNode:
             formatNullNode(os, static_cast<const NullNode*>(node.get()), indent);
+            break;
+        case ASTNode::Type::ArrayLiteralNode:
+            formatArrayLiteralNode(os, static_cast<const ArrayLiteralNode*>(node.get()), indent);
+            break;
+        case ASTNode::Type::ArrayLookupNode:
+            formatArrayLookupNode(os, static_cast<const ArrayLookupNode*>(node.get()), indent);
             break;
         default:
             os << indentString(indent) << "/* Unknown node type */";
@@ -207,22 +231,40 @@ void formatReturnNode(std::ostream& os, const ReturnNode* node, int indent) {
 
 // Function to format CallNode (function calls)
 
-void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isStandalone = true) {
-    formatAST(os, node->callee, indent);
+void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isOutermost) {
+    formatAST(os, node->callee, indent, false);
     os << '(';
     for (size_t i = 0; i < node->arguments.size(); ++i) {
-        formatAST(os, node->arguments[i], 0);
+        formatAST(os, node->arguments[i], 0, false);
         if (i < node->arguments.size() - 1) {
             os << ", ";
         }
     }
-    os << ')';
-    if (isStandalone) {
-        os << ";"; // Add a semicolon if it's a standalone function call
+    os << ")"; // Close the function call parentheses
+
+    // Add a semicolon only if it's the outermost function call and not within an expression
+    if (isOutermost && indent == 0) {
+        os << ";";
     }
 }
 
 
+void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent) {
+    os << indentString(indent) << "[";
+    for (size_t i = 0; i < node->elements.size(); ++i) {
+        formatAST(os, node->elements[i], 0);
+        if (i < node->elements.size() - 1) os << ", ";
+    }
+    os << "]";
+}
+
+// Function to format ArrayLookupNode (array access)
+void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent) {
+    formatAST(os, node->array, indent);
+    os << "[";
+    formatAST(os, node->index, 0);
+    os << "]";
+}
 
 
 
@@ -242,7 +284,7 @@ int main() {
         Parser parser(tokens);
         std::unique_ptr<ASTNode> ast;
         ast = parser.parse();
-        formatAST(std::cout, ast);
+        formatAST(std::cout, ast, 0, true);
         os << std::endl;
     } catch (const std::runtime_error& e) {
         os << e.what() << std::endl;

@@ -56,6 +56,10 @@ private:
     std::unique_ptr<ASTNode>parseReturnStatement();
     std::unique_ptr<ASTNode> parseCall(std::unique_ptr<ASTNode> callee);
 
+    std::unique_ptr<ASTNode> parseArrayLiteral();
+    std::unique_ptr<ASTNode> parseArrayLookup(std::unique_ptr<ASTNode> array);
+    std::unique_ptr<ASTNode> parseArrayAssignment(std::unique_ptr<ASTNode> array, std::unique_ptr<ASTNode> index);
+
    
     Token consume(TokenType type);
     bool check(TokenType type) const;

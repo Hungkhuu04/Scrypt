@@ -22,7 +22,9 @@ struct ASTNode {
         ReturnNode,
         CallNode,
         NullNode,
-        
+        ArrayLiteralNode,
+        ArrayLookupNode,
+        ArrayAssignmentNode  
     };
 
     ASTNode(Type type) : nodeType(type) {}
@@ -94,16 +96,20 @@ struct VariableNode : ASTNode {
 
 // Node for assignment statements
 struct AssignmentNode : ASTNode {
-    Token identifier;
-    std::unique_ptr<ASTNode> expression;
+    std::unique_ptr<ASTNode> lhs; // Left-hand side can be a variable or array lookup
+    std::unique_ptr<ASTNode> rhs; // Right-hand side
 
-    AssignmentNode(Token identifier, std::unique_ptr<ASTNode> expression)
-        : ASTNode(Type::AssignmentNode), identifier(identifier), expression(std::move(expression)) {}
+    AssignmentNode(std::unique_ptr<ASTNode> lhs, std::unique_ptr<ASTNode> rhs)
+        : ASTNode(Type::AssignmentNode), lhs(std::move(lhs)), rhs(std::move(rhs)) {}
 
     ASTNode* clone() const override {
-        return new AssignmentNode(identifier, std::unique_ptr<ASTNode>(expression->clone()));
+        return new AssignmentNode(
+            std::unique_ptr<ASTNode>(lhs->clone()),
+            std::unique_ptr<ASTNode>(rhs->clone())
+        );
     }
 };
+
 
 // Node for print statements
 struct PrintNode : ASTNode {
@@ -248,6 +254,39 @@ struct CallNode : ASTNode {
         );
     }
 };
+
+struct ArrayLiteralNode : ASTNode {
+    std::vector<std::unique_ptr<ASTNode>> elements;
+
+    ArrayLiteralNode(std::vector<std::unique_ptr<ASTNode>> elements)
+        : ASTNode(Type::ArrayLiteralNode), elements(std::move(elements)) {}
+
+    ASTNode* clone() const override {
+        std::vector<std::unique_ptr<ASTNode>> clonedElements;
+        clonedElements.reserve(elements.size());
+        for (const auto& elem : elements) {
+            clonedElements.push_back(std::unique_ptr<ASTNode>(elem->clone()));
+        }
+        return new ArrayLiteralNode(std::move(clonedElements));
+    }
+};
+
+struct ArrayLookupNode : ASTNode {
+    std::unique_ptr<ASTNode> array;
+    std::unique_ptr<ASTNode> index;
+
+    ArrayLookupNode(std::unique_ptr<ASTNode> array, std::unique_ptr<ASTNode> index)
+        : ASTNode(Type::ArrayLookupNode), array(std::move(array)), index(std::move(index)) {}
+
+    ASTNode* clone() const override {
+        return new ArrayLookupNode(
+            std::unique_ptr<ASTNode>(array->clone()),
+            std::unique_ptr<ASTNode>(index->clone())
+        );
+    }
+};
+
+
 
 
 #endif
