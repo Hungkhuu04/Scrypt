@@ -416,9 +416,10 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
         }
 
         int index = static_cast<int>(indexValue.asDouble());
-        if (index < 0 || index >= arrayValuePtr->asArray().size()) {
+        if (index < 0 || index >= static_cast<int>(arrayValuePtr->asArray().size())) {
             throw std::runtime_error("Array index out of bounds");
         }
+
 
         arrayValuePtr->asArray()[index] = rhsValue;
     } else {
@@ -447,7 +448,7 @@ Value evaluateArrayLookup(const ArrayLookupNode* lookupNode, std::shared_ptr<Sco
     }
     auto& array = arrayValue.asArray();
     int index = static_cast<int>(indexValue.asDouble());
-    if (index < 0 || index >= array.size()) {
+    if (index < 0 || index >= static_cast<int>(array.size())) {
         throw std::runtime_error("Runtime error: index out of bounds.");
     }
     return array[index];
