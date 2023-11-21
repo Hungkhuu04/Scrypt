@@ -58,6 +58,8 @@ void evaluateBlock(const BlockNode* blockNode, std::shared_ptr<Scope> currentSco
 }
 
 
+
+
 Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentScope) {
     try {
         auto funcValue = evaluateExpression(node->callee.get(), currentScope);
