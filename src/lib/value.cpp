@@ -64,10 +64,14 @@ void Value::copyFrom(const Value& other) {
         case Type::Function:
             new (&functionValue) Function(other.functionValue);
             break;
+        case Type::Array:
+            arrayValue = other.arrayValue; // Copy the array
+            break;
         case Type::Null:
             break;
     }
 }
+
 
 void Value::moveFrom(Value&& other) {
     type = other.type;
@@ -81,10 +85,15 @@ void Value::moveFrom(Value&& other) {
         case Type::Function:
             new (&functionValue) Function(std::move(other.functionValue));
             break;
+        case Type::Array:
+            arrayValue = std::move(other.arrayValue); // Move the array
+            break;
         case Type::Null:
             break;
     }
+    other.type = Type::Null; // Set the moved-from object to null state
 }
+
 
 Value::Type Value::getType() const {
     return type;
