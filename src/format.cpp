@@ -23,7 +23,7 @@ void formatBlockNode(std::ostream& os, const BlockNode* node, int indent);
 void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent);
 void formatReturnNode(std::ostream& os, const ReturnNode* node, int indent);
 void formatNullNode(std::ostream& os, const NullNode* node, int indent);
-void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent);
+void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent, bool isOutermost);
 void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent);
 
 
@@ -182,7 +182,7 @@ void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int inden
             formatNullNode(os, static_cast<const NullNode*>(node.get()), indent);
             break;
         case ASTNode::Type::ArrayLiteralNode:
-            formatArrayLiteralNode(os, static_cast<const ArrayLiteralNode*>(node.get()), indent);
+            formatArrayLiteralNode(os, static_cast<const ArrayLiteralNode*>(node.get()), indent, isOutermost);
             break;
         case ASTNode::Type::ArrayLookupNode:
             formatArrayLookupNode(os, static_cast<const ArrayLookupNode*>(node.get()), indent);
@@ -249,15 +249,19 @@ void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isO
 }
 
 
-void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent) {
+void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent, bool isOutermost = true) {;
     os << indentString(indent) << "[";
     for (size_t i = 0; i < node->elements.size(); ++i) {
-        formatAST(os, node->elements[i], 0);
+        formatAST(os, node->elements[i], 0, false); // Passing false for isOutermost
         if (i < node->elements.size() - 1) os << ", ";
     }
     os << "]";
-}
 
+    // Add a semicolon only if it's the outermost array literal
+    if (isOutermost && indent == 0) {
+        os << ";";
+    }
+}
 // Function to format ArrayLookupNode (array access)
 void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent) {
     formatAST(os, node->array, indent);

@@ -72,7 +72,6 @@ void Value::copyFrom(const Value& other) {
     }
 }
 
-
 void Value::moveFrom(Value&& other) {
     type = other.type;
     switch (type) {
