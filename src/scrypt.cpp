@@ -296,6 +296,8 @@ Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<
             return Value(left.asBool() && right.asBool());
         case TokenType::LOGICAL_OR:
             return Value(left.asBool() || right.asBool());
+        case TokenType::LOGICAL_XOR: 
+            return Value(left.asBool() != right.asBool());
         case TokenType::ASSIGN:
             if (binaryOpNode->left->getType() == ASTNode::Type::VariableNode) {
                 const auto* variableNode = static_cast<const VariableNode*>(binaryOpNode->left.get());
@@ -308,7 +310,6 @@ Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<
             throw std::runtime_error("Unsupported binary operator in evaluateBinaryOperation");
     }
 }
-
 // Evaluate variables
 Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> currentScope) {
     if (!variableNode) {

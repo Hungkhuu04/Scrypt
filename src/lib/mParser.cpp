@@ -305,7 +305,7 @@ It is coded to use precedence from track A
 std::unique_ptr<ASTNode> Parser::parseLogicalOr() {
     try {
         auto node = parseLogicalAnd();
-        while (match(TokenType::LOGICAL_OR)) {
+        while (match(TokenType::LOGICAL_OR) || match(TokenType::LOGICAL_XOR)) {
             Token op = previous();
             auto right = parseLogicalAnd();
             node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
@@ -315,6 +315,7 @@ std::unique_ptr<ASTNode> Parser::parseLogicalOr() {
         throw;
     }
 }
+
 
 std::unique_ptr<ASTNode> Parser::parseLogicalAnd() {
     try {
