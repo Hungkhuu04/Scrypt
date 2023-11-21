@@ -10,25 +10,51 @@
 
 using namespace std;
 
-std::unordered_map<std::string, Value> variables;
-void formatAST(std::ostream &os, const std::unique_ptr<ASTNode> &node, int indent = 0);
+std::string indentString(int indentLevel);
+void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent, bool isOutermost = true);
+void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isOutermost = true);
+void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent);
+void formatNumberNode(std::ostream& os, const NumberNode* node, int indent);
+void formatBooleanNode(std::ostream& os, const BooleanNode* node, int indent);
+void formatVariableNode(std::ostream& os, const VariableNode* node, int indent);
+void formatIfNode(std::ostream& os, const IfNode* node, int indent);
+void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent);
+void formatWhileNode(std::ostream& os, const WhileNode* node, int indent);
+void formatPrintNode(std::ostream& os, const PrintNode* node, int indent);
+void formatBlockNode(std::ostream& os, const BlockNode* node, int indent);
+void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent);
+void formatReturnNode(std::ostream& os, const ReturnNode* node, int indent);
+void formatNullNode(std::ostream& os, const NullNode* node, int indent);
+void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent, bool isOutermost);
+void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent);
 
+Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> currentScope);
+Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<Scope> currentScope);
+Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<Scope> currentScope);
+Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScope);
 
-// Function to create an indentation string
+std::shared_ptr<Scope> globalScope = std::make_shared<Scope>();
+
+//FROM HERE DOWN IS FORMAT.CPP
+// function to create an indentation string
 std::string indentString(int indentLevel) {
     return std::string(indentLevel * 4, ' '); // 4 spaces per indent level
 }
 
-// Format Binary Operation Node
+void formatNullNode(std::ostream& os, const NullNode* node, int indent) {
+    os << indentString(indent) << "null";
+}
+
+// function to format operation types
 void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent) {
     os << '(';
-    formatAST(os, node->left, 0);  
-    os << ' ' << node->op.value << ' ';    
-    formatAST(os, node->right, 0);
+    formatAST(os, node->left, 0, false); // Passing false for isOutermost
+    os << ' ' << node->op.value << ' ';
+    formatAST(os, node->right, 0, false); // Passing false for isOutermost
     os << ')';
 }
 
-// Format Number Node
+// function to format numbers (especially doubles)
 void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
     double value = std::stod(node->value.value);
     if (std::floor(value) == value) {
@@ -45,17 +71,17 @@ void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
     }
 }
 
-// Format Boolean Node
+// function to format Booleans
 void formatBooleanNode(std::ostream& os, const BooleanNode* node, int indent) {
     os << indentString(indent) << node->value.value;
 }
 
-// Format Variable Node
+// function to format Variables
 void formatVariableNode(std::ostream& os, const VariableNode* node, int indent) {
     os << indentString(indent) << node->identifier.value;
 }
 
-// Format If Node
+// function to format if nodes
 void formatIfNode(std::ostream& os, const IfNode* node, int indent) {
     os << indentString(indent) << "if ";
     formatAST(os, node->condition, 0);
@@ -68,16 +94,9 @@ void formatIfNode(std::ostream& os, const IfNode* node, int indent) {
     os << "\n" << indentString(indent) << "}";
 }
 
-void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent) {
-    formatAST(os, node->array, indent);
-    os << "[";
-    formatAST(os, node->index, 0);
-    os << "]";
-}
-
-// Format Assignment Node
+// function to format assignment nodes
 void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent) {
-    os << indentString(indent);
+    os << indentString(indent) << "(";
 
     // Handle both VariableNode and ArrayLookupNode on left-hand side
     if (node->lhs->getType() == ASTNode::Type::VariableNode) {
@@ -91,11 +110,14 @@ void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int inde
         throw std::runtime_error("Invalid left-hand side in assignment");
     }
 
-    formatAST(os, node->rhs, 0);
-    os << ";";
+        formatAST(os, node->rhs, 0, false);
+        os << ")";
+        os << ";";
 }
 
-// Format While Node
+
+
+// function to format while nodes
 void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
     os << indentString(indent) << "while ";
     formatAST(os, node->condition, 0);
@@ -104,13 +126,14 @@ void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
     os << "\n" << indentString(indent) << "}";
 }
 
-// Format Print Node
+// function to format print nodes
 void formatPrintNode(std::ostream& os, const PrintNode* node, int indent) {
     os << indentString(indent) << "print ";
-    formatAST(os, node->expression, 0);
+    formatAST(os, node->expression, 0, false); // Already correctly passing false for isOutermost
+    os << ";";
 }
 
-// Format Block Node
+// function to format block nodes
 void formatBlockNode(std::ostream& os, const BlockNode* node, int indent) {
     bool isFirstStatement = true;
     for (const auto& stmt : node->statements) {
@@ -122,7 +145,9 @@ void formatBlockNode(std::ostream& os, const BlockNode* node, int indent) {
     }
 }
 
-void formatAST(std::ostream &os, const std::unique_ptr<ASTNode> &node, int indent = 0){
+// main format function
+// main format function
+void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent, bool isOutermost)  {
     if (!node) return;
 
     switch (node->getType()) {
@@ -153,6 +178,24 @@ void formatAST(std::ostream &os, const std::unique_ptr<ASTNode> &node, int inden
         case ASTNode::Type::BlockNode:
             formatBlockNode(os, static_cast<const BlockNode*>(node.get()), indent);
             break;
+        case ASTNode::Type::FunctionNode:
+            formatFunctionNode(os, static_cast<const FunctionNode*>(node.get()), indent);
+            break;
+        case ASTNode::Type::ReturnNode:
+            formatReturnNode(os, static_cast<const ReturnNode*>(node.get()), indent);
+            break;
+        case ASTNode::Type::CallNode:
+            formatCallNode(os, static_cast<const CallNode*>(node.get()), indent, isOutermost);
+            break;
+        case ASTNode::Type::NullNode:
+            formatNullNode(os, static_cast<const NullNode*>(node.get()), indent);
+            break;
+        case ASTNode::Type::ArrayLiteralNode:
+            formatArrayLiteralNode(os, static_cast<const ArrayLiteralNode*>(node.get()), indent, isOutermost);
+            break;
+        case ASTNode::Type::ArrayLookupNode:
+            formatArrayLookupNode(os, static_cast<const ArrayLookupNode*>(node.get()), indent);
+            break;
         default:
             os << indentString(indent) << "/* Unknown node type */";
             break;
@@ -160,127 +203,282 @@ void formatAST(std::ostream &os, const std::unique_ptr<ASTNode> &node, int inden
 }
 
 
-Value evaluate(const std::unique_ptr<ASTNode>& node) {
-    if (!node) return Value();
-
-    switch (node->getType()) {
-        case ASTNode::Type::NumberNode: {
-            const auto* numNode = static_cast<const NumberNode*>(node.get());
-            return Value(std::stod(numNode->value.value));
+// Function to format FunctionNode (function definitions)
+void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent) {
+    os << indentString(indent) << "def " << node->name.value << "(";
+    for (size_t i = 0; i < node->parameters.size(); ++i) {
+        os << node->parameters[i].value;
+        if (i < node->parameters.size() - 1) {
+            os << ", ";
         }
-
-        case ASTNode::Type::BooleanNode: {
-            const auto* boolNode = static_cast<const BooleanNode*>(node.get());
-            return Value(boolNode->value.value == "true");
-        }
-
-        case ASTNode::Type::BinaryOpNode: {
-            const auto* binNode = static_cast<const BinaryOpNode*>(node.get());
-            Value left = evaluate(binNode->left);
-            Value right = evaluate(binNode->right);
-            break;
-        }
-
-        case ASTNode::Type::VariableNode: {
-            const auto* varNode = static_cast<const VariableNode*>(node.get());
-            if (variables.find(varNode->identifier.value) != variables.end()) {
-                return variables[varNode->identifier.value];
-            }
-            throw std::runtime_error("Variable not found: " + varNode->identifier.value);
-        }
-
-        case ASTNode::Type::AssignmentNode: {
-            const auto* assignNode = static_cast<const AssignmentNode*>(node.get());
-            Value rhsValue = evaluate(assignNode->rhs);
-
-            if (assignNode->lhs->getType() == ASTNode::Type::VariableNode) {
-                auto varNode = static_cast<const VariableNode*>(assignNode->lhs.get());
-                variables[varNode->identifier.value] = rhsValue;
-            } else if (assignNode->lhs->getType() == ASTNode::Type::ArrayLookupNode) {
-            } else {
-                throw std::runtime_error("Invalid left-hand side in assignment");
-            }
-
-            return rhsValue;
-        }
-
-
-        case ASTNode::Type::IfNode: {
-            const auto* ifNode = static_cast<const IfNode*>(node.get());
-            Value condition = evaluate(ifNode->condition);
-            bool conditionAsBool = false;
-            if (conditionAsBool) {
-                return evaluate(ifNode->trueBranch);
-            } else if (ifNode->falseBranch) {
-                return evaluate(ifNode->falseBranch);
-            }
-            return Value();
-        }
-
-        case ASTNode::Type::PrintNode: {
-            const auto* printNode = static_cast<const PrintNode*>(node.get());
-            Value value = evaluate(printNode->expression);
-            std::string valueAsString;
-            std::cout << valueAsString << std::endl;
-            return Value();
-        }
-
-        case ASTNode::Type::WhileNode: {
-            const auto* whileNode = static_cast<const WhileNode*>(node.get());
-            while (true) {
-                Value condition = evaluate(whileNode->condition);
-                bool conditionAsBool = false; // Convert condition to boolean
-                if (!conditionAsBool) break;
-                evaluate(whileNode->body);
-            }
-            return Value();
-        }
-
-        case ASTNode::Type::FunctionNode: {
-            const auto* funcNode = static_cast<const FunctionNode*>(node.get());
-            return Value(); // Function definitions don't return a value
-        }
-
-        default:
-            throw std::runtime_error("Unknown node type in evaluation");
     }
+    os << ") {";
+    
+    const BlockNode* blockNode = dynamic_cast<const BlockNode*>(node->body.get());
+    if (blockNode && !blockNode->statements.empty()) {
+        os << "\n";
+        formatAST(os, node->body, indent + 1);
+        os << "\n" << indentString(indent);
+    } else {
+        os << "\n" << indentString(indent); // Add newline and indentation for empty body
+    }
+    os << "}"; // Closing brace
 }
 
 
 
 
+// Function to format ReturnNode (return statements)
+void formatReturnNode(std::ostream& os, const ReturnNode* node, int indent) {
+    os << indentString(indent) << "return";
+    if (node->value) {
+        os << " ";
+        formatAST(os, node->value, 0);
+    }
+    os << ";"; // Ensure semicolon is outside of the conditional
+}
+
+// Function to format CallNode (function calls)
+
+void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isOutermost) {
+    formatAST(os, node->callee, indent, false);
+    os << '(';
+    for (size_t i = 0; i < node->arguments.size(); ++i) {
+        formatAST(os, node->arguments[i], 0, false);
+        if (i < node->arguments.size() - 1) {
+            os << ", ";
+        }
+    }
+    os << ")"; // Close the function call parentheses
+
+    // Add a semicolon only if it's the outermost function call and not within an expression
+    if (isOutermost && indent == 0) {
+        os << ";";
+    }
+}
+
+
+void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent, bool isOutermost = true) {;
+    os << indentString(indent) << "[";
+    for (size_t i = 0; i < node->elements.size(); ++i) {
+        formatAST(os, node->elements[i], 0, false); // Passing false for isOutermost
+        if (i < node->elements.size() - 1) os << ", ";
+    }
+    os << "]";
+
+    // Add a semicolon only if it's the outermost array literal
+    if (isOutermost && indent == 0) {
+        os << ";";
+    }
+}
+// Function to format ArrayLookupNode (array access)
+void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent) {
+    formatAST(os, node->array, indent);
+    os << "[";
+    formatAST(os, node->index, 0);
+    os << "]";
+}
+
+void formatAndEvaluateAST(const std::unique_ptr<ASTNode>& ast, std::shared_ptr<Scope> scope) {
+    // Format the AST
+    std::ostringstream formattedOutput;
+    formatAST(formattedOutput, ast, 0, true);
+    std::cout << formattedOutput.str() << std::endl;
+
+    // Evaluate the AST
+    try {
+        Value result = evaluateExpression(ast.get(), scope);
+        if (result.getType() == Value::Type::Double) {
+            std::cout << result.asDouble() << std::endl;
+        } else if (result.getType() == Value::Type::Bool) {
+            std::cout << std::boolalpha << result.asBool() << std::endl;
+        } else if (result.getType() == Value::Type::Null) {
+            std::cout << "null" << std::endl;
+        } else {
+            throw std::runtime_error("Invalid type in evaluation result");
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Evaluation error: " << e.what() << std::endl;
+    }
+}
+
+Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScope) {
+    if (!node) {
+        throw std::runtime_error("Null expression node");
+    }
+    try {
+        switch (node->getType()) {
+            case ASTNode::Type::NumberNode: {
+                auto numberNode = static_cast<const NumberNode*>(node);
+                return Value(std::stod(numberNode->value.value));
+            }
+            case ASTNode::Type::BooleanNode: {
+                auto booleanNode = static_cast<const BooleanNode*>(node);
+                return Value(booleanNode->value.type == TokenType::BOOLEAN_TRUE);
+            }
+            case ASTNode::Type::VariableNode: {
+                auto variableNode = static_cast<const VariableNode*>(node);
+                return evaluateVariable(variableNode, currentScope);
+            }
+            case ASTNode::Type::BinaryOpNode: {
+                auto binaryOpNode = static_cast<const BinaryOpNode*>(node);
+                return evaluateBinaryOperation(binaryOpNode, currentScope);
+            }
+            case ASTNode::Type::AssignmentNode: {
+                auto assignmentNode = static_cast<const AssignmentNode*>(node);
+                return evaluateAssignment(assignmentNode, currentScope);
+            }
+            case ASTNode::Type::BlockNode: {
+                auto blockNode = static_cast<const BlockNode*>(node);
+                Value lastValue;
+                for (const auto& stmt : blockNode->statements) {
+                    lastValue = evaluateExpression(stmt.get(), currentScope);
+                }
+                return lastValue; // Or decide how you want to handle the value of a block
+            }
+            case ASTNode::Type::NullNode:
+                return Value();
+            default:
+                throw std::runtime_error("Unknown expression node type");
+        }
+    } catch (...) {
+        throw;
+    }
+}
+
+Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> currentScope) {
+    if (!variableNode) {
+        throw std::runtime_error("Null VariableNode passed to evaluateVariable");
+    }
+
+    Value* valuePtr = currentScope->getVariable(variableNode->identifier.value);
+    if (valuePtr) {
+        return *valuePtr;
+    } else {
+        throw std::runtime_error("Variable not defined: " + variableNode->identifier.value);
+    }
+}
+
+Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<Scope> currentScope) {
+    if (!binaryOpNode) {
+        throw std::runtime_error("Null BinaryOpNode passed to evaluateBinaryOperation");
+    }
+
+    Value left = evaluateExpression(binaryOpNode->left.get(), currentScope);
+    Value right = evaluateExpression(binaryOpNode->right.get(), currentScope);
+
+    switch (binaryOpNode->op.type) {
+        case TokenType::ADD:
+            return Value(left.asDouble() + right.asDouble());
+        case TokenType::SUBTRACT:
+            return Value(left.asDouble() - right.asDouble());
+        case TokenType::MULTIPLY:
+            return Value(left.asDouble() * right.asDouble());
+        case TokenType::DIVIDE:
+            if (right.asDouble() == 0) {
+                throw std::runtime_error("Division by zero.");
+            }
+            return Value(left.asDouble() / right.asDouble());
+        case TokenType::MODULO:
+            if (right.asDouble() == 0) {
+                throw std::runtime_error("Modulo by zero.");
+            }
+            return Value(fmod(left.asDouble(), right.asDouble()));
+        case TokenType::LESS:
+            return Value(left.asDouble() < right.asDouble());
+        case TokenType::LESS_EQUAL:
+            return Value(left.asDouble() <= right.asDouble());
+        case TokenType::GREATER:
+            return Value(left.asDouble() > right.asDouble());
+        case TokenType::GREATER_EQUAL:
+            return Value(left.asDouble() >= right.asDouble());
+        case TokenType::EQUAL:
+            return Value(left.equals(right));
+        case TokenType::NOT_EQUAL:
+            return Value(!left.equals(right));
+        case TokenType::LOGICAL_AND:
+            return Value(left.asBool() && right.asBool());
+        case TokenType::LOGICAL_OR:
+            return Value(left.asBool() || right.asBool());
+        case TokenType::ASSIGN:
+            if (binaryOpNode->left->getType() == ASTNode::Type::VariableNode) {
+                const auto* variableNode = static_cast<const VariableNode*>(binaryOpNode->left.get());
+                currentScope->setVariable(variableNode->identifier.value, right);
+                return right;
+            } else {
+                throw std::runtime_error("Invalid left-hand side in assignment");
+            }
+        default:
+            throw std::runtime_error("Unsupported binary operator in evaluateBinaryOperation");
+    }
+}
+
+Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<Scope> currentScope) {
+    if (!assignmentNode) {
+        throw std::runtime_error("Null assignment node passed to evaluateAssignment");
+    }
+
+    // Evaluate the right-hand side (rhs) expression
+    Value rhsValue = evaluateExpression(assignmentNode->rhs.get(), currentScope);
+
+    // Check the type of the lhs
+    if (assignmentNode->lhs->getType() == ASTNode::Type::VariableNode) {
+        // Handle variable assignment
+        auto variableNode = static_cast<const VariableNode*>(assignmentNode->lhs.get());
+        currentScope->setVariable(variableNode->identifier.value, rhsValue);
+    } else if (assignmentNode->lhs->getType() == ASTNode::Type::ArrayLookupNode) {
+        // Handle array element assignment
+        auto arrayLookupNode = static_cast<const ArrayLookupNode*>(assignmentNode->lhs.get());
+
+        // Evaluate the array variable and index
+        Value arrayValue = evaluateExpression(arrayLookupNode->array.get(), currentScope);
+        Value indexValue = evaluateExpression(arrayLookupNode->index.get(), currentScope);
+
+        if (!indexValue.isInteger()) {
+            throw std::runtime_error("Array index is not an integer");
+        }
+
+        int index = static_cast<int>(indexValue.asDouble());
+        if (index < 0 || index >= static_cast<int>(arrayValue.asArray().size())) {
+            throw std::runtime_error("Array index out of bounds");
+        }
+
+        arrayValue.asArray()[index] = rhsValue;
+    } else {
+        throw std::runtime_error("Invalid left-hand side in assignment");
+    }
+
+    return rhsValue;
+}
 
 int main() {
-    std::ostream& os = std::cout;
+    std::shared_ptr<Scope> globalScope = std::make_shared<Scope>();
     std::string line;
+    std::ostream& os = std::cout;
 
-    while (std::getline(std::cin, line)) {
-        if (line.empty()) {
-            break;
+    while (true) {  // Infinite loop
+        if (!std::getline(std::cin, line)) {
+            if (std::cin.eof()) {
+                break;
+            } else {
+                return 1;
+            }
         }
 
         try {
             Lexer lexer(line);
             auto tokens = lexer.tokenize();
+            if (lexer.isSyntaxError(tokens)) {
+                continue;  // Go to the next iteration of the loop
+            }
 
             Parser parser(tokens);
-            std::unique_ptr<ASTNode> ast = parser.parse();
+            auto ast = parser.parse();
 
-            if (ast) {
-                formatAST(os, ast);
-
-                Value result = evaluate(ast);
-                std::string resultString;
-
-
-                os << " = " << resultString << std::endl;  
-            } else {
-                os << "No AST generated." << std::endl;
-            }
-        } catch (const std::runtime_error& e) {
-            os << "Runtime error: " << e.what() << std::endl;
-        } catch (...) {
-            os << "Unknown error" << std::endl;
+            // Format and evaluate the AST
+            formatAndEvaluateAST(ast, globalScope);
+        } catch (const std::exception& e) {
+            os << e.what() << std::endl;
         }
     }
 

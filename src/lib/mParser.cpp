@@ -261,42 +261,40 @@ std::unique_ptr<ASTNode> Parser::parseArrayLookup(std::unique_ptr<ASTNode> array
 }
 
 std::unique_ptr<ASTNode> Parser::parsePrimary() {
-    try {
-        if (match(TokenType::NUMBER)) {
-            return std::make_unique<NumberNode>(previous());
-        } else if (match(TokenType::LEFT_PAREN)) {
-            auto expr = parseExpression();
-            consume(TokenType::RIGHT_PAREN);
-            return expr;
-        } else if (match(TokenType::LBRACK)) {
-            // This is an array literal
-            return parseArrayLiteral();
-        } else if (match(TokenType::IDENTIFIER)) {
-            Token identifier = previous();
-            if (check(TokenType::LEFT_PAREN)) {
-                // This is a function call
-                advance(); // Consume LEFT_PAREN
-                return parseCall(std::make_unique<VariableNode>(identifier));
-            } else if (check(TokenType::LBRACK)) {
-                // This is an array lookup
-                advance();
-                return parseArrayLookup(std::make_unique<VariableNode>(identifier));
-            } else {
-                // It's just a variable
-                return std::make_unique<VariableNode>(identifier);
-            }
-        } else if (match(TokenType::BOOLEAN_TRUE)) {
-            return std::make_unique<BooleanNode>(previous());
-        } else if (match(TokenType::BOOLEAN_FALSE)) {
-            return std::make_unique<BooleanNode>(previous());
-        } else if (match(TokenType::NULL_TOKEN)) {
-            return std::make_unique<NullNode>();
+    std::unique_ptr<ASTNode> node;
+
+    if (match(TokenType::NUMBER)) {
+        node = std::make_unique<NumberNode>(previous());
+    } else if (match(TokenType::LEFT_PAREN)) {
+        node = parseExpression();
+        consume(TokenType::RIGHT_PAREN);
+    } else if (match(TokenType::LBRACK)) {
+        node = parseArrayLiteral();
+    } else if (match(TokenType::IDENTIFIER)) {
+        Token identifier = previous();
+        if (check(TokenType::LEFT_PAREN)) {
+            advance(); // Consume LEFT_PAREN
+            node = parseCall(std::make_unique<VariableNode>(identifier));
+        } else {
+            node = std::make_unique<VariableNode>(identifier);
         }
-    } catch (...) {
+    } else if (match(TokenType::BOOLEAN_TRUE) || match(TokenType::BOOLEAN_FALSE) || match(TokenType::NULL_TOKEN)) {
+        node = std::make_unique<BooleanNode>(previous());
+    } else {
         throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
     }
-    throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
+
+    // Handle repeated array lookups
+    while (check(TokenType::LBRACK)) {
+        advance(); // Consume LBRACK
+        auto index = parseExpression();
+        consume(TokenType::RBRACK);
+        node = std::make_unique<ArrayLookupNode>(std::move(node), std::move(index));
+    }
+
+    return node;
 }
+
 
 /* From here to parse primary, each function parses each type of logical operation or expresion. 
 It is coded to use precedence from track A
