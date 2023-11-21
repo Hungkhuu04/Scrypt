@@ -269,34 +269,32 @@ std::unique_ptr<ASTNode> Parser::parsePrimary() {
             consume(TokenType::RIGHT_PAREN);
             return expr;
         } else if (match(TokenType::LBRACK)) {
-            // This is an array literal
             return parseArrayLiteral();
         } else if (match(TokenType::IDENTIFIER)) {
             Token identifier = previous();
             if (check(TokenType::LEFT_PAREN)) {
-                // This is a function call
-                advance(); // Consume LEFT_PAREN
+                advance();
                 return parseCall(std::make_unique<VariableNode>(identifier));
             } else if (check(TokenType::LBRACK)) {
-                // This is an array lookup
                 advance();
                 return parseArrayLookup(std::make_unique<VariableNode>(identifier));
             } else {
-                // It's just a variable
                 return std::make_unique<VariableNode>(identifier);
             }
-        } else if (match(TokenType::BOOLEAN_TRUE)) {
+        } else if (match(TokenType::BOOLEAN_TRUE) || match(TokenType::BOOLEAN_FALSE) || match(TokenType::NULL_TOKEN)) {
             return std::make_unique<BooleanNode>(previous());
-        } else if (match(TokenType::BOOLEAN_FALSE)) {
-            return std::make_unique<BooleanNode>(previous());
-        } else if (match(TokenType::NULL_TOKEN)) {
-            return std::make_unique<NullNode>();
         }
     } catch (...) {
-        throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
+        if (!isAtEnd()) {
+            auto currentToken = peek();
+            throw std::runtime_error("Unexpected token at line " + std::to_string(currentToken.line) + " column " + std::to_string(currentToken.column) + ": " + currentToken.value);
+        } else {
+            throw std::runtime_error("Unexpected end of input");
+        }
     }
-    throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
+    throw std::runtime_error("Unexpected token");
 }
+
 
 /* From here to parse primary, each function parses each type of logical operation or expresion. 
 It is coded to use precedence from track A
