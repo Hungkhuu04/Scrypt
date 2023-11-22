@@ -269,7 +269,7 @@ std::unique_ptr<ASTNode> Parser::parsePrimary() {
         consume(TokenType::RIGHT_PAREN);
     } else if (match(TokenType::LBRACK)) {
         node = parseArrayLiteral();
-    } else if (match(TokenType::IDENTIFIER)) {
+    } else if (match(TokenType::IDENTIFIER) || match(TokenType::PUSH) || match(TokenType::POP) || match(TokenType::LEN)) {
         Token identifier = previous();
         if (check(TokenType::LEFT_PAREN)) {
             advance(); // Consume LEFT_PAREN
