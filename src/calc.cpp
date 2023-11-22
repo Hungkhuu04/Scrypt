@@ -294,7 +294,7 @@ Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<
             return Value(left.asDouble() * right.asDouble());
         case TokenType::DIVIDE:
             if (right.asDouble() == 0) {
-                throw std::runtime_error("Runtime error: Division by zero.");
+                throw std::runtime_error("Runtime error: division by zero.");
             }
             return Value(left.asDouble() / right.asDouble());
         case TokenType::MODULO:
