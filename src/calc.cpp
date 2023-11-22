@@ -295,7 +295,7 @@ Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScop
                 Value indexValue = evaluateExpression(arrayLookupNode->index.get(), currentScope);
 
                 if (!indexValue.isInteger()) {
-                    throw std::runtime_error("Runtime error: index is not an integer.");
+                    throw std::runtime_error("Runtime error: index is not a number.");
                 }
                 int index = static_cast<int>(indexValue.asDouble());
                 if (index < 0 || index >= static_cast<int>(arrayValue.asArray().size())) {
