@@ -65,7 +65,7 @@ public:
     bool isInteger() const;
     std::vector<Value>& asArray();
     const std::vector<Value>& asArray() const;
-
+    Value deepCopy() const;
 private:
     Type type;
     union {
