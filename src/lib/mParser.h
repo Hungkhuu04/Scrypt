@@ -45,6 +45,7 @@ private:
     std::unique_ptr<ASTNode> parseExpression();
     std::unique_ptr<ASTNode> parseAssignment();
     std::unique_ptr<ASTNode> parseLogicalOr();
+    std::unique_ptr<ASTNode> parseLogicalXor();
     std::unique_ptr<ASTNode> parseLogicalAnd();
     std::unique_ptr<ASTNode> parseEquality();
     std::unique_ptr<ASTNode> parseComparison();

@@ -12,18 +12,12 @@ using namespace std;
 
 std::string indentString(int indentLevel);
 void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent, bool isOutermost = true);
-void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isOutermost = true);
 void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent);
 void formatNumberNode(std::ostream& os, const NumberNode* node, int indent);
 void formatBooleanNode(std::ostream& os, const BooleanNode* node, int indent);
 void formatVariableNode(std::ostream& os, const VariableNode* node, int indent);
-void formatIfNode(std::ostream& os, const IfNode* node, int indent);
 void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent);
-void formatWhileNode(std::ostream& os, const WhileNode* node, int indent);
-void formatPrintNode(std::ostream& os, const PrintNode* node, int indent);
 void formatBlockNode(std::ostream& os, const BlockNode* node, int indent);
-void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent);
-void formatReturnNode(std::ostream& os, const ReturnNode* node, int indent);
 void formatNullNode(std::ostream& os, const NullNode* node, int indent);
 void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent, bool isOutermost);
 void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent);
@@ -81,19 +75,6 @@ void formatVariableNode(std::ostream& os, const VariableNode* node, int indent) 
     os << indentString(indent) << node->identifier.value;
 }
 
-// function to format if nodes
-void formatIfNode(std::ostream& os, const IfNode* node, int indent) {
-    os << indentString(indent) << "if ";
-    formatAST(os, node->condition, 0);
-    os << " {\n";
-    formatAST(os, node->trueBranch, indent + 1);
-    if (node->falseBranch) {
-        os << "\n" << indentString(indent) << "}\n" << indentString(indent) << "else {\n";
-        formatAST(os, node->falseBranch, indent + 1);
-    }
-    os << "\n" << indentString(indent) << "}";
-}
-
 // function to format assignment nodes
 void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent) {
     os << indentString(indent) << "(";
@@ -112,25 +93,6 @@ void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int inde
 
         formatAST(os, node->rhs, 0, false);
         os << ")";
-        os << ";";
-}
-
-
-
-// function to format while nodes
-void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
-    os << indentString(indent) << "while ";
-    formatAST(os, node->condition, 0);
-    os << " {\n";
-    formatAST(os, node->body, indent + 1);
-    os << "\n" << indentString(indent) << "}";
-}
-
-// function to format print nodes
-void formatPrintNode(std::ostream& os, const PrintNode* node, int indent) {
-    os << indentString(indent) << "print ";
-    formatAST(os, node->expression, 0, false); // Already correctly passing false for isOutermost
-    os << ";";
 }
 
 // function to format block nodes
@@ -166,26 +128,8 @@ void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int inden
         case ASTNode::Type::AssignmentNode:
             formatAssignmentNode(os, static_cast<const AssignmentNode*>(node.get()), indent);
             break;
-        case ASTNode::Type::PrintNode:
-            formatPrintNode(os, static_cast<const PrintNode*>(node.get()), indent);
-            break;
-        case ASTNode::Type::IfNode:
-            formatIfNode(os, static_cast<const IfNode*>(node.get()), indent);
-            break;
-        case ASTNode::Type::WhileNode:
-            formatWhileNode(os, static_cast<const WhileNode*>(node.get()), indent);
-            break;
         case ASTNode::Type::BlockNode:
             formatBlockNode(os, static_cast<const BlockNode*>(node.get()), indent);
-            break;
-        case ASTNode::Type::FunctionNode:
-            formatFunctionNode(os, static_cast<const FunctionNode*>(node.get()), indent);
-            break;
-        case ASTNode::Type::ReturnNode:
-            formatReturnNode(os, static_cast<const ReturnNode*>(node.get()), indent);
-            break;
-        case ASTNode::Type::CallNode:
-            formatCallNode(os, static_cast<const CallNode*>(node.get()), indent, isOutermost);
             break;
         case ASTNode::Type::NullNode:
             formatNullNode(os, static_cast<const NullNode*>(node.get()), indent);
@@ -228,35 +172,9 @@ void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent) 
 
 
 
-// Function to format ReturnNode (return statements)
-void formatReturnNode(std::ostream& os, const ReturnNode* node, int indent) {
-    os << indentString(indent) << "return";
-    if (node->value) {
-        os << " ";
-        formatAST(os, node->value, 0);
-    }
-    os << ";"; // Ensure semicolon is outside of the conditional
-}
+
 
 // Function to format CallNode (function calls)
-
-void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isOutermost) {
-    formatAST(os, node->callee, indent, false);
-    os << '(';
-    for (size_t i = 0; i < node->arguments.size(); ++i) {
-        formatAST(os, node->arguments[i], 0, false);
-        if (i < node->arguments.size() - 1) {
-            os << ", ";
-        }
-    }
-    os << ")"; // Close the function call parentheses
-
-    // Add a semicolon only if it's the outermost function call and not within an expression
-    if (isOutermost && indent == 0) {
-        os << ";";
-    }
-}
-
 
 void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent, bool isOutermost = true) {;
     os << indentString(indent) << "[";
@@ -398,10 +316,10 @@ Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<
             return Value(!left.equals(right));
         case TokenType::LOGICAL_AND:
             return Value(left.asBool() && right.asBool());
-        case TokenType::LOGICAL_OR:
-            return Value(left.asBool() || right.asBool());
         case TokenType::LOGICAL_XOR: 
             return Value(left.asBool() != right.asBool());
+        case TokenType::LOGICAL_OR:
+            return Value(left.asBool() || right.asBool());
         case TokenType::ASSIGN:
             if (binaryOpNode->left->getType() == ASTNode::Type::VariableNode) {
                 const auto* variableNode = static_cast<const VariableNode*>(binaryOpNode->left.get());
