@@ -253,8 +253,31 @@ Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScop
                 }
                 return lastValue; // Or decide how you want to handle the value of a block
             }
-            case ASTNode::Type::NullNode:
+            case ASTNode::Type::NullNode: {
                 return Value();
+            }
+            case ASTNode::Type::ArrayLiteralNode: {
+                auto arrayLiteralNode = static_cast<const ArrayLiteralNode*>(node);
+                std::vector<Value> arrayValues;
+                for (const auto& element : arrayLiteralNode->elements) {
+                    arrayValues.push_back(evaluateExpression(element.get(), currentScope));
+                }
+                return Value(arrayValues);
+            }
+            case ASTNode::Type::ArrayLookupNode: {
+                auto arrayLookupNode = static_cast<const ArrayLookupNode*>(node);
+                Value arrayValue = evaluateExpression(arrayLookupNode->array.get(), currentScope);
+                Value indexValue = evaluateExpression(arrayLookupNode->index.get(), currentScope);
+
+                if (!indexValue.isInteger()) {
+                    throw std::runtime_error("Array index must be an integer");
+                }
+                int index = static_cast<int>(indexValue.asDouble());
+                if (index < 0 || index >= static_cast<int>(arrayValue.asArray().size())) {
+                    throw std::runtime_error("Array index out of bounds");
+                }
+                return arrayValue.asArray()[index];
+            }
             default:
                 throw std::runtime_error("Unknown expression node type");
         }
