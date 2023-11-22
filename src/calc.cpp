@@ -562,9 +562,9 @@ int main() {
     std::string line;
     std::ostream& os = std::cout;
 
-    globalScope->setVariable("len", Value(lenFunction));
-    globalScope->setVariable("pop", Value(popFunction));
-    globalScope->setVariable("push", Value(pushFunction));
+    globalScope->setVariable("len", Value(Value::FunctionPtr(lenFunction)));
+    globalScope->setVariable("pop", Value(Value::FunctionPtr(popFunction)));
+    globalScope->setVariable("push", Value(Value::FunctionPtr(pushFunction)));
 
     while (true) {  // Infinite loop
         if (!std::getline(std::cin, line)) {
