@@ -139,7 +139,7 @@ bool Value::asBool() const {
 
 const Value::Function& Value::asFunction() const {
     if (type != Type::Function) {
-        throw std::runtime_error("Value is not a function.");
+        throw std::runtime_error("Runtime error: not a function.");
     }
     return functionValue;
 }
@@ -195,14 +195,14 @@ bool Value::isInteger() const {
 
 std::vector<Value>& Value::asArray() {
     if (type != Type::Array) {
-        throw std::runtime_error("Value is not an array.");
+        throw std::runtime_error("Runtime error: not an array.");
     }
     return arrayValue;
 }
 
 const std::vector<Value>& Value::asArray() const {
     if (type != Type::Array) {
-        throw std::runtime_error("Value is not an array.");
+        throw std::runtime_error("Runtime error: not an array.");
     }
     return arrayValue;
 }

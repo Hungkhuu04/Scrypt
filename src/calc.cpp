@@ -373,7 +373,7 @@ Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<
                 currentScope->setVariable(variableNode->identifier.value, right);
                 return right;
             } else {
-                throw std::runtime_error("Invalid left-hand side in assignment");
+                throw std::runtime_error("Runtime error: invalid assignee.");
             }
         default:
             throw std::runtime_error("Unsupported binary operator in evaluateBinaryOperation");
@@ -398,7 +398,7 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
 
         // Evaluate the array part to get the variable name
         if (arrayLookupNode->array->getType() != ASTNode::Type::VariableNode) {
-            throw std::runtime_error("Array assignment requires a variable for the array part");
+            throw std::runtime_error("Runtime error: not an array.");
         }
         auto variableNode = static_cast<const VariableNode*>(arrayLookupNode->array.get());
         std::string arrayName = variableNode->identifier.value;
@@ -413,11 +413,11 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
         // Evaluate the index expression
         Value indexValue = evaluateExpression(arrayLookupNode->index.get(), currentScope);
         if (!indexValue.isInteger()) {
-            throw std::runtime_error("Array index must be an integer");
+            throw std::runtime_error("Runtime error: index is not a number.");
         }
         int index = static_cast<int>(indexValue.asDouble());
         if (index < 0 || index >= static_cast<int>(array.size())) {
-            throw std::runtime_error("Array index out of bounds");
+            throw std::runtime_error("Runtime error: index out of bounds.");
         }
 
         // Evaluate the right-hand side (rhs) expression
@@ -431,7 +431,7 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
     }
     else {
         // If lhs is neither a variable nor an array lookup, throw an error
-        throw std::runtime_error("Invalid left-hand side in assignment");
+        throw std::runtime_error("Runtime error: invalid assignee.");
     }
 
     // Return the rhs value, which is the result of the assignment expression
