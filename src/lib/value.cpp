@@ -74,6 +74,29 @@ void Value::copyFrom(const Value& other) {
     }
 }
 
+Value Value::deepCopy() const {
+    switch (type) {
+        case Type::Double:
+            return Value(doubleValue);
+        case Type::Bool:
+            return Value(boolValue);
+        case Type::Array: {
+            std::vector<Value> copiedArray;
+            for (const auto& element : arrayValue) {
+                copiedArray.push_back(element.deepCopy());
+            }
+            return Value(copiedArray);
+        }
+        case Type::Null:
+            return Value();
+        // Add cases for other types as necessary
+
+        default:
+            // Handle unexpected type, perhaps by throwing an exception
+            throw std::runtime_error("Unknown or unsupported type for deepCopy");
+    }
+}
+
 void Value::moveFrom(Value&& other) {
     type = other.type;
     switch (type) {

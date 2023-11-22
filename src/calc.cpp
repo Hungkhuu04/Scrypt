@@ -284,7 +284,8 @@ Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScop
                 auto arrayLiteralNode = static_cast<const ArrayLiteralNode*>(node);
                 std::vector<Value> arrayValues;
                 for (const auto& element : arrayLiteralNode->elements) {
-                    arrayValues.push_back(evaluateExpression(element.get(), currentScope));
+                    Value copiedElement = evaluateExpression(element.get(), currentScope).deepCopy();
+                    arrayValues.push_back(copiedElement);
                 }
                 return Value(arrayValues);
             }
@@ -384,43 +385,59 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
         throw std::runtime_error("Null assignment node passed to evaluateAssignment");
     }
 
-    if (assignmentNode->lhs->getType() != ASTNode::Type::VariableNode &&
-        assignmentNode->lhs->getType() != ASTNode::Type::ArrayLookupNode) {
-        throw std::runtime_error("Runtime error: invalid assignee.");
-    }
-
-    // Evaluate the right-hand side (rhs) expression
+    // Evaluate the right-hand side (rhs) expression first
     Value rhsValue = evaluateExpression(assignmentNode->rhs.get(), currentScope);
 
-    // Check the type of the lhs
+    // Handle assignment based on the type of the left-hand side (lhs)
     if (assignmentNode->lhs->getType() == ASTNode::Type::VariableNode) {
-        // Handle variable assignment
+        // Variable assignment
         auto variableNode = static_cast<const VariableNode*>(assignmentNode->lhs.get());
         currentScope->setVariable(variableNode->identifier.value, rhsValue);
     } else if (assignmentNode->lhs->getType() == ASTNode::Type::ArrayLookupNode) {
-        // Handle array element assignment
         auto arrayLookupNode = static_cast<const ArrayLookupNode*>(assignmentNode->lhs.get());
 
-        // Evaluate the array variable and index
-        Value arrayValue = evaluateExpression(arrayLookupNode->array.get(), currentScope);
-        Value indexValue = evaluateExpression(arrayLookupNode->index.get(), currentScope);
-
-        if (!indexValue.isInteger()) {
-            throw std::runtime_error("Array index is not an integer");
+        // Evaluate the array part to get the variable name
+        if (arrayLookupNode->array->getType() != ASTNode::Type::VariableNode) {
+            throw std::runtime_error("Array assignment requires a variable for the array part");
         }
+        auto variableNode = static_cast<const VariableNode*>(arrayLookupNode->array.get());
+        std::string arrayName = variableNode->identifier.value;
 
+        // Fetch the array from the current scope
+        Value* arrayValuePtr = currentScope->getVariable(arrayName);
+        if (!arrayValuePtr || arrayValuePtr->getType() != Value::Type::Array) {
+            throw std::runtime_error("Array variable not found or not an array");
+        }
+        std::vector<Value>& array = arrayValuePtr->asArray();
+
+        // Evaluate the index expression
+        Value indexValue = evaluateExpression(arrayLookupNode->index.get(), currentScope);
+        if (!indexValue.isInteger()) {
+            throw std::runtime_error("Array index must be an integer");
+        }
         int index = static_cast<int>(indexValue.asDouble());
-        if (index < 0 || index >= static_cast<int>(arrayValue.asArray().size())) {
+        if (index < 0 || index >= static_cast<int>(array.size())) {
             throw std::runtime_error("Array index out of bounds");
         }
 
-        arrayValue.asArray()[index] = rhsValue;
-    } else {
+        // Evaluate the right-hand side (rhs) expression
+        Value rhsValue = evaluateExpression(assignmentNode->rhs.get(), currentScope);
+
+        // Perform the assignment
+        array[index] = rhsValue;
+
+        // Return the assigned value
+        return rhsValue;
+    }
+    else {
+        // If lhs is neither a variable nor an array lookup, throw an error
         throw std::runtime_error("Invalid left-hand side in assignment");
     }
 
+    // Return the rhs value, which is the result of the assignment expression
     return rhsValue;
 }
+
 
 int main() {
     std::shared_ptr<Scope> globalScope = std::make_shared<Scope>();
