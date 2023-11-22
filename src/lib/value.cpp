@@ -65,7 +65,7 @@ void Value::copyFrom(const Value& other) {
             new (&functionValue) Function(other.functionValue);
             break;
         case Type::Array:
-            arrayValue = other.arrayValue; // Copy the array
+            new (&arrayValue) std::vector<Value>(other.arrayValue); // Correctly construct the array
             break;
         case Type::Null:
             break;
@@ -85,7 +85,7 @@ void Value::moveFrom(Value&& other) {
             new (&functionValue) Function(std::move(other.functionValue));
             break;
         case Type::Array:
-            arrayValue = std::move(other.arrayValue); // Move the array
+            new (&arrayValue) std::vector<Value>(std::move(other.arrayValue)); // Correctly construct the array
             break;
         case Type::Null:
             break;
