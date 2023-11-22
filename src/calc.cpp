@@ -409,6 +409,55 @@ Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<
     }
 }
 
+Value* evaluateArrayPart(const ASTNode* node, std::shared_ptr<Scope> currentScope) {
+    if (!node) {
+        throw std::runtime_error("Null node in evaluateArrayPart");
+    }
+
+    switch (node->getType()) {
+        case ASTNode::Type::VariableNode: {
+            auto variableNode = static_cast<const VariableNode*>(node);
+            return currentScope->getVariable(variableNode->identifier.value);
+        }
+        case ASTNode::Type::ArrayLookupNode: {
+            auto arrayLookupNode = static_cast<const ArrayLookupNode*>(node);
+            Value* arrayPtr = evaluateArrayPart(arrayLookupNode->array.get(), currentScope);
+
+            if (!arrayPtr || arrayPtr->getType() != Value::Type::Array) {
+                throw std::runtime_error("Runtime error: not an array in evaluateArrayPart");
+            }
+
+            Value indexValue = evaluateExpression(arrayLookupNode->index.get(), currentScope);
+            if (indexValue.getType() != Value::Type::Double || modf(indexValue.asDouble(), nullptr) != 0.0) {
+                throw std::runtime_error("Runtime error: index is not an integer in evaluateArrayPart");
+            }
+
+            int index = static_cast<int>(indexValue.asDouble());
+            if (index < 0 or index >= static_cast<int>(arrayPtr->asArray().size())) {
+                throw std::runtime_error("Runtime error: index out of bounds in evaluateArrayPart");
+            }
+
+            return &arrayPtr->asArray()[index];
+        }
+        case ASTNode::Type::ArrayLiteralNode: {
+            // Handle array literal node
+            auto arrayLiteralNode = static_cast<const ArrayLiteralNode*>(node);
+            std::vector<Value> arrayValues;
+            for (const auto& element : arrayLiteralNode->elements) {
+                Value copiedElement = evaluateExpression(element.get(), currentScope).deepCopy();
+                arrayValues.push_back(copiedElement);
+            }
+            // Store this temporary array in a temporary scope and return its pointer
+            std::string tempVarName = "_tempArrayLiteral";
+            currentScope->setVariable(tempVarName, Value(arrayValues));
+            return currentScope->getVariable(tempVarName);
+        }
+        default:
+            throw std::runtime_error("Invalid node type in evaluateArrayPart");
+    }
+}
+
+
 Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<Scope> currentScope) {
     if (!assignmentNode) {
         throw std::runtime_error("Null assignment node passed to evaluateAssignment");
@@ -417,44 +466,47 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
     // Evaluate the right-hand side (rhs) expression first
     Value rhsValue = evaluateExpression(assignmentNode->rhs.get(), currentScope);
 
-    // Handle assignment based on the type of the left-hand side (lhs)
     if (assignmentNode->lhs->getType() == ASTNode::Type::VariableNode) {
-        // Variable assignment
         auto variableNode = static_cast<const VariableNode*>(assignmentNode->lhs.get());
         currentScope->setVariable(variableNode->identifier.value, rhsValue);
     } else if (assignmentNode->lhs->getType() == ASTNode::Type::ArrayLookupNode) {
         auto arrayLookupNode = static_cast<const ArrayLookupNode*>(assignmentNode->lhs.get());
 
-        // Evaluate the array part to get the array
-        Value arrayValue = evaluateExpression(arrayLookupNode->array.get(), currentScope);
-        if (arrayValue.getType() != Value::Type::Array) {
-            throw std::runtime_error("Runtime error: not an array.");
+        if (arrayLookupNode->array->getType() == ASTNode::Type::ArrayLiteralNode) {
+            // Direct handling of ArrayLiteralNode
+            auto arrayLiteralNode = static_cast<const ArrayLiteralNode*>(arrayLookupNode->array.get());
+            std::vector<Value> tempArray;
+            for (const auto& element : arrayLiteralNode->elements) {
+                tempArray.push_back(evaluateExpression(element.get(), currentScope));
+            }
+
+            Value indexValue = evaluateExpression(arrayLookupNode->index.get(), currentScope);
+            if (indexValue.getType() != Value::Type::Double || modf(indexValue.asDouble(), nullptr) != 0.0) {
+                throw std::runtime_error("Runtime error: index is not an integer.");
+            }
+
+            int index = static_cast<int>(indexValue.asDouble());
+            if (index < 0 || index >= static_cast<int>(tempArray.size())) {
+                throw std::runtime_error("Runtime error: index out of bounds.");
+            }
+
+            // Perform the assignment on the temporary array
+            tempArray[index] = rhsValue;
+            return Value(tempArray);
+        } else {
+            // Handle normal ArrayLookupNode
+            Value* arrayElementPtr = evaluateArrayPart(arrayLookupNode, currentScope);
+            if (!arrayElementPtr) {
+                throw std::runtime_error("Runtime error: invalid array element in evaluateAssignment");
+            }
+
+            *arrayElementPtr = rhsValue;
+            return rhsValue;
         }
-        std::vector<Value>& array = arrayValue.asArray();
-
-        // Evaluate the index expression
-        Value indexValue = evaluateExpression(arrayLookupNode->index.get(), currentScope);
-        if (indexValue.getType() != Value::Type::Double || modf(indexValue.asDouble(), nullptr) != 0.0) {
-            throw std::runtime_error("Runtime error: index is not an integer.");
-        }
-
-        int index = static_cast<int>(indexValue.asDouble());
-        if (index < 0 || index >= static_cast<int>(array.size())) {
-            throw std::runtime_error("Runtime error: index out of bounds.");
-        }
-
-        // Perform the assignment
-        array[index] = rhsValue;
-
-        // Return the assigned value
-        return rhsValue;
-    }
-    else {
-        // If lhs is neither a variable nor an array lookup, throw an error
+    } else {
         throw std::runtime_error("Runtime error: invalid assignee.");
     }
 
-    // Return the rhs value, which is the result of the assignment expression
     return rhsValue;
 }
 
