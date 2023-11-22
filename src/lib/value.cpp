@@ -131,6 +131,19 @@ bool Value::equals(const Value& other) const {
             return this->boolValue == other.boolValue;
         case Type::Double:
             return this->doubleValue == other.doubleValue;
+        case Type::Array: {
+            const auto& thisArray = this->asArray();
+            const auto& otherArray = other.asArray();
+            if (thisArray.size() != otherArray.size()) {
+                return false;
+            }
+            for (size_t i = 0; i < thisArray.size(); ++i) {
+                if (!thisArray[i].equals(otherArray[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
         // Add cases for other types your Value class supports
         default:
             throw std::runtime_error("Unsupported type in Value::equals");
