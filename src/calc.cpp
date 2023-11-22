@@ -425,39 +425,23 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
     } else if (assignmentNode->lhs->getType() == ASTNode::Type::ArrayLookupNode) {
         auto arrayLookupNode = static_cast<const ArrayLookupNode*>(assignmentNode->lhs.get());
 
-        // Evaluate the array part to get the variable name
-        if (arrayLookupNode->array->getType() != ASTNode::Type::VariableNode) {
+        // Evaluate the array part to get the array
+        Value arrayValue = evaluateExpression(arrayLookupNode->array.get(), currentScope);
+        if (arrayValue.getType() != Value::Type::Array) {
             throw std::runtime_error("Runtime error: not an array.");
         }
-        auto variableNode = static_cast<const VariableNode*>(arrayLookupNode->array.get());
-        std::string arrayName = variableNode->identifier.value;
-
-        // Fetch the array from the current scope
-        Value* arrayValuePtr = currentScope->getVariable(arrayName);
-        if (!arrayValuePtr || arrayValuePtr->getType() != Value::Type::Array) {
-            throw std::runtime_error("Runtime error: not an array.");
-        }
-        std::vector<Value>& array = arrayValuePtr->asArray();
+        std::vector<Value>& array = arrayValue.asArray();
 
         // Evaluate the index expression
         Value indexValue = evaluateExpression(arrayLookupNode->index.get(), currentScope);
-        if (indexValue.getType() != Value::Type::Double) {
-        throw std::runtime_error("Runtime error: index is not a number.");
-        }
-
-        // Check for non-integer index using modf
-        double intPart;
-        if (modf(indexValue.asDouble(), &intPart) != 0.0) {
+        if (indexValue.getType() != Value::Type::Double || modf(indexValue.asDouble(), nullptr) != 0.0) {
             throw std::runtime_error("Runtime error: index is not an integer.");
         }
 
-        int index = static_cast<int>(intPart);
+        int index = static_cast<int>(indexValue.asDouble());
         if (index < 0 || index >= static_cast<int>(array.size())) {
             throw std::runtime_error("Runtime error: index out of bounds.");
         }
-
-        // Evaluate the right-hand side (rhs) expression
-        Value rhsValue = evaluateExpression(assignmentNode->rhs.get(), currentScope);
 
         // Perform the assignment
         array[index] = rhsValue;
@@ -473,6 +457,7 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
     // Return the rhs value, which is the result of the assignment expression
     return rhsValue;
 }
+
 
 
 int main() {
