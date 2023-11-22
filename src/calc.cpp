@@ -298,15 +298,25 @@ Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScop
                     throw std::runtime_error("Runtime error: index is not a number.");
                 }
 
+                double indexDouble = indexValue.asDouble();
                 double intPart;
-                if (modf(indexValue.asDouble(), &intPart) != 0.0) {
+                double fracPart = modf(indexDouble, &intPart);
+
+                // Check if fractional part is exactly zero or within a very small range of an integer
+                if (fracPart != 0.0 && fabs(fracPart) > 1e-9) {
                     throw std::runtime_error("Runtime error: index is not an integer.");
+                }
+
+                // Round to nearest integer if within threshold
+                if (fabs(fracPart) <= 1e-9) {
+                    intPart = round(indexDouble);
                 }
 
                 int index = static_cast<int>(intPart);
                 if (index < 0 || index >= static_cast<int>(arrayValue.asArray().size())) {
                     throw std::runtime_error("Runtime error: index out of bounds.");
                 }
+
                 return arrayValue.asArray()[index];
             }
             default:
