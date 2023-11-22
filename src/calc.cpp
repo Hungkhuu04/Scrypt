@@ -216,7 +216,7 @@ void formatAndEvaluateAST(const std::unique_ptr<ASTNode>& ast, std::shared_ptr<S
             throw std::runtime_error("Invalid type in evaluation result");
         }
     } catch (const std::exception& e) {
-        std::cerr << "Evaluation error: " << e.what() << std::endl;
+        throw;
     }
 }
 
@@ -273,7 +273,7 @@ Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> 
     if (valuePtr) {
         return *valuePtr;
     } else {
-        throw std::runtime_error("Variable not defined: " + variableNode->identifier.value);
+        throw std::runtime_error("Runtime error: unknown identifier " + variableNode->identifier.value);
     }
 }
 
@@ -294,7 +294,7 @@ Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<
             return Value(left.asDouble() * right.asDouble());
         case TokenType::DIVIDE:
             if (right.asDouble() == 0) {
-                throw std::runtime_error("Division by zero.");
+                throw std::runtime_error("Runtime error: Division by zero.");
             }
             return Value(left.asDouble() / right.asDouble());
         case TokenType::MODULO:

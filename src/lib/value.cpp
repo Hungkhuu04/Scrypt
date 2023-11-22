@@ -100,7 +100,7 @@ Value::Type Value::getType() const {
 
 double Value::asDouble() const {
     if (type != Type::Double) {
-        throw std::runtime_error("Value is not a double.");
+        throw std::runtime_error("Runtime error: invalid operand type.");
     }
     return doubleValue;
 }
