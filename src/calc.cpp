@@ -20,7 +20,7 @@ void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int inde
 void formatBlockNode(std::ostream& os, const BlockNode* node, int indent);
 void formatNullNode(std::ostream& os, const NullNode* node, int indent);
 void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent, bool isOutermost);
-void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent);
+void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent, bool isOutermost);
 
 Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> currentScope);
 Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<Scope> currentScope);
@@ -134,7 +134,7 @@ void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int inden
             formatArrayLiteralNode(os, static_cast<const ArrayLiteralNode*>(node.get()), indent, isOutermost);
             break;
         case ASTNode::Type::ArrayLookupNode:
-            formatArrayLookupNode(os, static_cast<const ArrayLookupNode*>(node.get()), indent);
+            formatArrayLookupNode(os, static_cast<const ArrayLookupNode*>(node.get()), indent, isOutermost);
             break;
         default:
             os << indentString(indent) << "/* Unknown node type */";
@@ -181,17 +181,20 @@ void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int 
     os << "]";
 
     // Add a semicolon only if it's the outermost array literal
-    if (isOutermost && indent == 0) {
-        os << ";";
-    }
 }
 // Function to format ArrayLookupNode (array access)
-void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent) {
-    formatAST(os, node->array, indent);
+void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent, bool isOutermost) {
+    // Format the array part
+    formatAST(os, node->array, indent, false); // Pass false to isOutermost
+
+    // Format the index part
     os << "[";
-    formatAST(os, node->index, 0);
+    formatAST(os, node->index, 0, false); // Pass false to isOutermost
     os << "]";
+
+    // Append a semicolon if it's a standalone array lookup expression
 }
+
 
 void formatAndEvaluateAST(const std::unique_ptr<ASTNode>& ast, std::shared_ptr<Scope> scope) {
     // Format the AST
