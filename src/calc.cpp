@@ -19,6 +19,7 @@ void formatVariableNode(std::ostream& os, const VariableNode* node, int indent);
 void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent);
 void formatBlockNode(std::ostream& os, const BlockNode* node, int indent);
 void formatNullNode(std::ostream& os, const NullNode* node, int indent);
+void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isOutermost);
 void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent, bool isOutermost);
 void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent, bool isOutermost);
 
@@ -26,6 +27,11 @@ Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> 
 Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<Scope> currentScope);
 Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<Scope> currentScope);
 Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScope);
+Value evaluateFunctionCall(const CallNode* callNode, std::shared_ptr<Scope> currentScope);
+
+Value lenFunction(const std::vector<Value>& args);
+Value popFunction(std::vector<Value>& args);
+Value pushFunction(std::vector<Value>& args);
 
 std::shared_ptr<Scope> globalScope = std::make_shared<Scope>();
 
@@ -153,6 +159,9 @@ void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int inden
         case ASTNode::Type::NullNode:
             formatNullNode(os, static_cast<const NullNode*>(node.get()), indent);
             break;
+        case ASTNode::Type::CallNode:
+            formatCallNode(os, static_cast<const CallNode*>(node.get()), indent, isOutermost);
+        break;
         case ASTNode::Type::ArrayLiteralNode:
             formatArrayLiteralNode(os, static_cast<const ArrayLiteralNode*>(node.get()), indent, isOutermost);
             break;
@@ -165,6 +174,17 @@ void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int inden
     }
 }
 
+void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isOutermost) {
+    formatAST(os, node->callee, indent, false);
+    os << '(';
+    for (size_t i = 0; i < node->arguments.size(); ++i) {
+        formatAST(os, node->arguments[i], 0, false);
+        if (i < node->arguments.size() - 1) {
+            os << ", ";
+        }
+    }
+    os << ")"; // Close the function call parentheses
+}
 
 // Function to format FunctionNode (function definitions)
 void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent) {
@@ -303,6 +323,9 @@ Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScop
             case ASTNode::Type::NullNode: {
                 return Value();
             }
+            case ASTNode::Type::CallNode: {
+                return evaluateFunctionCall(static_cast<const CallNode*>(node), currentScope);
+            }
             case ASTNode::Type::ArrayLiteralNode: {
                 auto arrayLiteralNode = static_cast<const ArrayLiteralNode*>(node);
                 std::vector<Value> arrayValues;
@@ -409,6 +432,32 @@ Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<
     }
 }
 
+Value evaluateFunctionCall(const CallNode* callNode, std::shared_ptr<Scope> currentScope) {
+    if (!callNode) {
+        throw std::runtime_error("Null CallNode passed to evaluateFunctionCall");
+    }
+
+    // Evaluate the callee to get the function name
+    auto functionName = static_cast<const VariableNode*>(callNode->callee.get())->identifier.value;
+
+    // Evaluate arguments
+    std::vector<Value> evaluatedArgs;
+    for (const auto& arg : callNode->arguments) {
+        evaluatedArgs.push_back(evaluateExpression(arg.get(), currentScope));
+    }
+
+    // Handle specific function calls
+    if (functionName == "push") {
+        return pushFunction(evaluatedArgs);
+    } else if (functionName == "pop") {
+        return popFunction(evaluatedArgs);
+    } else if (functionName == "len") {
+        return lenFunction(evaluatedArgs);
+    } else {
+        throw std::runtime_error("Unknown function name: " + functionName);
+    }
+}
+
 Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<Scope> currentScope) {
     if (!assignmentNode) {
         throw std::runtime_error("Null assignment node passed to evaluateAssignment");
@@ -478,11 +527,44 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
     return rhsValue;
 }
 
+Value lenFunction(const std::vector<Value>& args) {
+    if (args.size() != 1 || !args[0].isArray()) {
+        throw std::runtime_error("len function expects a single array argument.");
+    }
+    return Value(static_cast<double>(args[0].asArray().size()));
+}
+
+Value popFunction(std::vector<Value>& args) {
+    if (args.size() != 1 || !args[0].isArray()) {
+        throw std::runtime_error("pop function expects a single array argument.");
+    }
+    auto& array = args[0].asArray();
+    if (array.empty()) {
+        throw std::runtime_error("pop from an empty array.");
+    }
+    Value poppedValue = std::move(array.back());
+    array.pop_back();
+    return poppedValue;
+}
+
+Value pushFunction(std::vector<Value>& args) {
+    if (args.size() != 2 || !args[0].isArray()) {
+        throw std::runtime_error("push function expects an array and a value argument.");
+    }
+    args[0].asArray().push_back(args[1]);
+    return Value();
+}
+
+
 
 int main() {
     std::shared_ptr<Scope> globalScope = std::make_shared<Scope>();
     std::string line;
     std::ostream& os = std::cout;
+
+    globalScope->setVariable("len", Value(lenFunction));
+    globalScope->setVariable("pop", Value(popFunction));
+    globalScope->setVariable("push", Value(pushFunction));
 
     while (true) {  // Infinite loop
         if (!std::getline(std::cin, line)) {
