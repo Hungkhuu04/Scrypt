@@ -320,7 +320,7 @@ Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> 
     if (valuePtr) {
         return *valuePtr;
     } else {
-        throw std::runtime_error("Variable not defined: " + variableNode->identifier.value);
+        throw std::runtime_error("Runtime error: unknown identifier " + variableNode->identifier.value);
     }
 }
 
