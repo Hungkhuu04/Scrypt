@@ -432,19 +432,24 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
             throw std::runtime_error("Runtime error: index is not a number.");
         }
 
-        // Check for non-integer index using modf
+        double indexDouble = indexValue.asDouble();
         double intPart;
-        if (modf(indexValue.asDouble(), &intPart) != 0.0) {
+        double fracPart = modf(indexDouble, &intPart);
+
+        // Check if fractional part is exactly zero or within a very small range of an integer
+        if (fracPart != 0.0 && fabs(fracPart) > 1e-9) {
             throw std::runtime_error("Runtime error: index is not an integer.");
+        }
+
+        // Round to nearest integer if within threshold
+        if (fabs(fracPart) <= 1e-9) {
+            intPart = round(indexDouble);
         }
 
         int index = static_cast<int>(intPart);
         if (index < 0 || index >= static_cast<int>(array.size())) {
             throw std::runtime_error("Runtime error: index out of bounds.");
         }
-
-        // Evaluate the right-hand side (rhs) expression
-        Value rhsValue = evaluateExpression(assignmentNode->rhs.get(), currentScope);
 
         // Perform the assignment
         array[index] = rhsValue;
