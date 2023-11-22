@@ -49,6 +49,8 @@ Value& Value::operator=(Value&& other) noexcept {
 void Value::cleanUp() {
     if (type == Type::Function) {
         functionValue.~Function();
+    } else if (type == Type::Array) {
+        arrayValue.~vector();  // Explicitly call the destructor for the vector
     }
 }
 
