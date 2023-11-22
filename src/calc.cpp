@@ -295,11 +295,11 @@ Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScop
                 Value indexValue = evaluateExpression(arrayLookupNode->index.get(), currentScope);
 
                 if (!indexValue.isInteger()) {
-                    throw std::runtime_error("Runtime error: index is not a number.");
+                    throw std::runtime_error("Runtime error: index is not an integer.");
                 }
                 int index = static_cast<int>(indexValue.asDouble());
                 if (index < 0 || index >= static_cast<int>(arrayValue.asArray().size())) {
-                    throw std::runtime_error("Array index out of bounds");
+                    throw std::runtime_error("Runtime error: index out of bounds.");
                 }
                 return arrayValue.asArray()[index];
             }
@@ -406,14 +406,14 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
         // Fetch the array from the current scope
         Value* arrayValuePtr = currentScope->getVariable(arrayName);
         if (!arrayValuePtr || arrayValuePtr->getType() != Value::Type::Array) {
-            throw std::runtime_error("Array variable not found or not an array");
+            throw std::runtime_error("Runtime error: not an array.");
         }
         std::vector<Value>& array = arrayValuePtr->asArray();
 
         // Evaluate the index expression
         Value indexValue = evaluateExpression(arrayLookupNode->index.get(), currentScope);
         if (!indexValue.isInteger()) {
-            throw std::runtime_error("Runtime error: index is not a number.");
+            throw std::runtime_error("Runtime error: index is not an integer.");
         }
         int index = static_cast<int>(indexValue.asDouble());
         if (index < 0 || index >= static_cast<int>(array.size())) {
