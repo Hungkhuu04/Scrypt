@@ -7,14 +7,15 @@
 #include <memory>
 #include <vector>
 #include "ASTNodes.h"
-
+#include <functional>
 // Forward declaration for Scope class
 class Scope;
 
 // Value class to represent different types of values in your script
 class Value {
 public:
-    enum class Type { Double, Bool, Function, Null, Array};
+    using FunctionPtr = std::function<Value(std::vector<Value>&)>;
+    enum class Type { Double, Bool, Function, Null, Array, BuiltinFunction};
 
     struct Function {
         std::shared_ptr<FunctionNode> definition; // Changed to shared_ptr
@@ -52,6 +53,8 @@ public:
     Value& operator=(const Value& other);
     Value& operator=(Value&& other) noexcept;
     Value(std::vector<Value> array);
+    Value(FunctionPtr func);
+
     ~Value();
 
     Type getType() const;
@@ -66,6 +69,7 @@ public:
     std::vector<Value>& asArray();
     const std::vector<Value>& asArray() const;
     Value deepCopy() const;
+    Value executeFunction(std::vector<Value>& args) const;
 private:
     Type type;
     union {
@@ -73,6 +77,7 @@ private:
         bool boolValue;
         Function functionValue; // Raw storage, will be constructed/destructed manually
         std::vector<Value> arrayValue;
+        FunctionPtr builtinFunction; 
     };
 
     void cleanUp();

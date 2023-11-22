@@ -18,6 +18,8 @@ Value::Value(Function function)
 Value::Value(std::vector<Value> array)
     : type(Type::Array), arrayValue(std::move(array)) {}
 
+Value::Value(FunctionPtr func) : type(Type::BuiltinFunction), builtinFunction(func) {}
+
 Value::~Value() {
     cleanUp();
 }
@@ -199,6 +201,7 @@ std::vector<Value>& Value::asArray() {
     }
     return arrayValue;
 }
+
 
 const std::vector<Value>& Value::asArray() const {
     if (type != Type::Array) {
