@@ -195,6 +195,36 @@ void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int in
     // Append a semicolon if it's a standalone array lookup expression
 }
 
+void printValue(const Value& value) {
+    switch (value.getType()) {
+        case Value::Type::Double:
+            std::cout << value.asDouble();
+            break;
+
+        case Value::Type::Bool:
+            std::cout << std::boolalpha << value.asBool();
+            break;
+
+        case Value::Type::Null:
+            std::cout << "null";
+            break;
+
+        case Value::Type::Array: {
+            std::cout << "[";
+            const auto& array = value.asArray();
+            for (size_t i = 0; i < array.size(); ++i) {
+                if (i > 0) std::cout << ", ";
+                printValue(array[i]);  // Recursive call
+            }
+            std::cout << "]";
+            break;
+        }
+
+        default:
+            std::cout << "/* Unsupported type */";
+            break;
+    }
+}
 
 void formatAndEvaluateAST(const std::unique_ptr<ASTNode>& ast, std::shared_ptr<Scope> scope) {
     // Format the AST
@@ -205,19 +235,13 @@ void formatAndEvaluateAST(const std::unique_ptr<ASTNode>& ast, std::shared_ptr<S
     // Evaluate the AST
     try {
         Value result = evaluateExpression(ast.get(), scope);
-        if (result.getType() == Value::Type::Double) {
-            std::cout << result.asDouble() << std::endl;
-        } else if (result.getType() == Value::Type::Bool) {
-            std::cout << std::boolalpha << result.asBool() << std::endl;
-        } else if (result.getType() == Value::Type::Null) {
-            std::cout << "null" << std::endl;
-        } else {
-            throw std::runtime_error("Invalid type in evaluation result");
-        }
+        printValue(result);  // Use the helper function to print the result
+        std::cout << std::endl;
     } catch (const std::exception& e) {
-        throw;
+        std::cout << e.what() << std::endl;  // Outputting the error message directly
     }
 }
+
 
 Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScope) {
     if (!node) {
