@@ -229,12 +229,8 @@ std::unique_ptr<ASTNode> Parser::parseExpression()
 std::unique_ptr<ASTNode> Parser::parseAssignment() {
     auto node = parseLogicalOr();
     if (match(TokenType::ASSIGN)) {
-        if (node->getType() == ASTNode::Type::VariableNode || node->getType() == ASTNode::Type::ArrayLookupNode) {
-            auto value = parseAssignment();
-            return std::make_unique<AssignmentNode>(std::move(node), std::move(value));
-        } else {
-            throw std::runtime_error("Runtime error: invalid assignee.");
-        }
+        auto value = parseAssignment();
+        return std::make_unique<AssignmentNode>(std::move(node), std::move(value));
     }
     return node;
 }

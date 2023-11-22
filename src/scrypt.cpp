@@ -331,6 +331,11 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
         throw std::runtime_error("Null assignment node passed to evaluateAssignment");
     }
 
+    if (assignmentNode->lhs->getType() != ASTNode::Type::VariableNode &&
+        assignmentNode->lhs->getType() != ASTNode::Type::ArrayLookupNode) {
+        throw std::runtime_error("Runtime error: invalid assignee.");
+    }
+
     // Evaluate the right-hand side (rhs) expression
     Value rhsValue = evaluateExpression(assignmentNode->rhs.get(), currentScope);
 

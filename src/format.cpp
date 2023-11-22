@@ -24,7 +24,7 @@ void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent);
 void formatReturnNode(std::ostream& os, const ReturnNode* node, int indent);
 void formatNullNode(std::ostream& os, const NullNode* node, int indent);
 void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent, bool isOutermost);
-void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent);
+void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent, bool isOutermost) ;
 
 
 // function to create an indentation string
@@ -86,24 +86,20 @@ void formatIfNode(std::ostream& os, const IfNode* node, int indent) {
 }
 
 // function to format assignment nodes
+
 void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent) {
     os << indentString(indent) << "(";
 
-    // Handle both VariableNode and ArrayLookupNode on left-hand side
-    if (node->lhs->getType() == ASTNode::Type::VariableNode) {
-        auto variableNode = static_cast<const VariableNode*>(node->lhs.get());
-        os << variableNode->identifier.value << " = ";
-    } else if (node->lhs->getType() == ASTNode::Type::ArrayLookupNode) {
-        auto arrayLookupNode = static_cast<const ArrayLookupNode*>(node->lhs.get());
-        formatArrayLookupNode(os, arrayLookupNode, 0);
-        os << " = ";
-    } else {
-        throw std::runtime_error("Invalid left-hand side in assignment");
-    }
+    // Format left-hand side (LHS)
+    formatAST(os, node->lhs, 0, false);  // Format LHS regardless of its type
 
-        formatAST(os, node->rhs, 0, false);
-        os << ")";
-        os << ";";
+    os << " = ";
+
+    // Format right-hand side (RHS)
+    formatAST(os, node->rhs, 0, false);
+
+    os << ")";
+    os << ";";
 }
 
 
@@ -185,7 +181,7 @@ void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int inden
             formatArrayLiteralNode(os, static_cast<const ArrayLiteralNode*>(node.get()), indent, isOutermost);
             break;
         case ASTNode::Type::ArrayLookupNode:
-            formatArrayLookupNode(os, static_cast<const ArrayLookupNode*>(node.get()), indent);
+            formatArrayLookupNode(os, static_cast<const ArrayLookupNode*>(node.get()), indent, isOutermost);
             break;
         default:
             os << indentString(indent) << "/* Unknown node type */";
@@ -263,13 +259,20 @@ void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int 
     }
 }
 // Function to format ArrayLookupNode (array access)
-void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent) {
-    formatAST(os, node->array, indent);
-    os << "[";
-    formatAST(os, node->index, 0);
-    os << "]";
-}
+void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent, bool isOutermost) {
+    // Format the array part
+    formatAST(os, node->array, indent, false); // Pass false to isOutermost
 
+    // Format the index part
+    os << "[";
+    formatAST(os, node->index, 0, false); // Pass false to isOutermost
+    os << "]";
+
+    // Append a semicolon if it's a standalone array lookup expression
+    if (isOutermost && indent == 0) {
+        os << ";";
+    }
+}
 
 
 int main() {

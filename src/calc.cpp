@@ -79,21 +79,17 @@ void formatVariableNode(std::ostream& os, const VariableNode* node, int indent) 
 void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent) {
     os << indentString(indent) << "(";
 
-    // Handle both VariableNode and ArrayLookupNode on left-hand side
-    if (node->lhs->getType() == ASTNode::Type::VariableNode) {
-        auto variableNode = static_cast<const VariableNode*>(node->lhs.get());
-        os << variableNode->identifier.value << " = ";
-    } else if (node->lhs->getType() == ASTNode::Type::ArrayLookupNode) {
-        auto arrayLookupNode = static_cast<const ArrayLookupNode*>(node->lhs.get());
-        formatArrayLookupNode(os, arrayLookupNode, 0);
-        os << " = ";
-    } else {
-        throw std::runtime_error("Invalid left-hand side in assignment");
-    }
+    // Format left-hand side (LHS)
+    formatAST(os, node->lhs, 0, false);  // Format LHS regardless of its type
 
-        formatAST(os, node->rhs, 0, false);
-        os << ")";
+    os << " = ";
+
+    // Format right-hand side (RHS)
+    formatAST(os, node->rhs, 0, false);
+
+    os << ")";
 }
+
 
 // function to format block nodes
 void formatBlockNode(std::ostream& os, const BlockNode* node, int indent) {
@@ -338,6 +334,11 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
         throw std::runtime_error("Null assignment node passed to evaluateAssignment");
     }
 
+    if (assignmentNode->lhs->getType() != ASTNode::Type::VariableNode &&
+        assignmentNode->lhs->getType() != ASTNode::Type::ArrayLookupNode) {
+        throw std::runtime_error("Runtime error: invalid assignee.");
+    }
+
     // Evaluate the right-hand side (rhs) expression
     Value rhsValue = evaluateExpression(assignmentNode->rhs.get(), currentScope);
 
@@ -391,7 +392,6 @@ int main() {
             if (lexer.isSyntaxError(tokens)) {
                 continue;  // Go to the next iteration of the loop
             }
-
             Parser parser(tokens);
             auto ast = parser.parse();
 
