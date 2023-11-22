@@ -49,12 +49,31 @@ Value& Value::operator=(Value&& other) noexcept {
 }
 
 void Value::cleanUp() {
-    if (type == Type::Function) {
-        functionValue.~Function();
-    } else if (type == Type::Array) {
-        arrayValue.~vector();  // Explicitly call the destructor for the vector
+    switch (type) {
+        case Type::Double:
+            // Double doesn't require special handling.
+            break;
+        case Type::Bool:
+            // Bool doesn't require special handling.
+            break;
+        case Type::Function:
+            // Explicitly call the destructor for Function
+            functionValue.~Function();
+            break;
+        case Type::Array:
+            // Explicitly call the destructor for vector
+            arrayValue.~vector();
+            break;
+        case Type::BuiltinFunction:
+            // Explicitly call the destructor for FunctionPtr
+            builtinFunction.~FunctionPtr();
+            break;
+        case Type::Null:
+            // Null doesn't require special handling.
+            break;
     }
 }
+
 
 void Value::copyFrom(const Value& other) {
     type = other.type;
@@ -72,6 +91,9 @@ void Value::copyFrom(const Value& other) {
             new (&arrayValue) std::vector<Value>(other.arrayValue); // Correctly construct the array
             break;
         case Type::Null:
+            break;
+        case Type::BuiltinFunction:
+            new (&builtinFunction) FunctionPtr(other.builtinFunction); // Use placement new
             break;
     }
 }
@@ -115,6 +137,9 @@ void Value::moveFrom(Value&& other) {
             new (&arrayValue) std::vector<Value>(std::move(other.arrayValue)); // Correctly construct the array
             break;
         case Type::Null:
+            break;
+        case Type::BuiltinFunction:
+            new (&builtinFunction) FunctionPtr(std::move(other.builtinFunction)); // Use placement new
             break;
     }
     other.type = Type::Null; // Set the moved-from object to null state
@@ -171,6 +196,8 @@ bool Value::equals(const Value& other) const {
             }
             return true;
         }
+        case Type::BuiltinFunction:
+            return this->builtinFunction.target<Value::FunctionPtr>() == other.builtinFunction.target<Value::FunctionPtr>();
         // Add cases for other types your Value class supports
         default:
             throw std::runtime_error("Unsupported type in Value::equals");
