@@ -49,18 +49,37 @@ void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent) 
 void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
     double value = std::stod(node->value.value);
     if (std::floor(value) == value) {
+        // For integers
         os << indentString(indent) << static_cast<long>(value);
     } else {
-        std::ostringstream tempStream;
-        tempStream << std::fixed << std::setprecision(2) << value;
-        std::string str = tempStream.str();
-        str.erase(str.find_last_not_of('0') + 1, std::string::npos); 
-        if (str.back() == '.') {
-            str.pop_back(); 
+        // Check if value is in a range that requires scientific notation
+        if (std::abs(value) < 0.0001 || std::abs(value) > 9999) {
+            std::ostringstream tempStream;
+            tempStream << std::scientific << value;
+            std::string str = tempStream.str();
+            // Remove trailing zeros in the exponent part
+            size_t ePos = str.find('e');
+            if (ePos != std::string::npos) {
+                size_t lastNonZeroPos = str.find_last_not_of('0', ePos - 1);
+                if (lastNonZeroPos != std::string::npos && lastNonZeroPos + 1 < ePos) {
+                    str.erase(lastNonZeroPos + 1, ePos - lastNonZeroPos - 1);
+                }
+            }
+            os << indentString(indent) << str;
+        } else {
+            // For normal floating-point numbers
+            std::ostringstream tempStream;
+            tempStream << std::fixed << std::setprecision(2) << value;
+            std::string str = tempStream.str();
+            str.erase(str.find_last_not_of('0') + 1, std::string::npos); 
+            if (str.back() == '.') {
+                str.pop_back(); 
+            }
+            os << indentString(indent) << str;
         }
-        os << indentString(indent) << str;
     }
 }
+
 
 // function to format Booleans
 void formatBooleanNode(std::ostream& os, const BooleanNode* node, int indent) {
