@@ -1,3 +1,4 @@
+
 #include "lib/mParser.h"
 #include "lib/ASTNodes.h" 
 #include "lib/lex.h"
@@ -529,14 +530,14 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
 
 Value lenFunction(const std::vector<Value>& args) {
     if (args.size() != 1 || !args[0].isArray()) {
-        throw std::runtime_error("len function expects a single array argument.");
+        throw std::runtime_error("Runtime error: incorrect argument count.");
     }
     return Value(static_cast<double>(args[0].asArray().size()));
 }
 
 Value popFunction(std::vector<Value>& args) {
     if (args.size() != 1 || !args[0].isArray()) {
-        throw std::runtime_error("pop function expects a single array argument.");
+        throw std::runtime_error("Runtime error: incorrect argument count.");
     }
     auto& array = args[0].asArray();
     if (array.empty()) {
@@ -549,7 +550,7 @@ Value popFunction(std::vector<Value>& args) {
 
 Value pushFunction(std::vector<Value>& args) {
     if (args.size() != 2 || !args[0].isArray()) {
-        throw std::runtime_error("push function expects an array and a value argument.");
+        throw std::runtime_error("Runtime error: incorrect argument count.");
     }
     args[0].asArray().push_back(args[1]);
     return Value();
