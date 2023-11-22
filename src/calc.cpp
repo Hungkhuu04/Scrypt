@@ -51,19 +51,42 @@ void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent) 
 // function to format numbers (especially doubles)
 void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
     double value = std::stod(node->value.value);
-    if (std::floor(value) == value) {
-        os << indentString(indent) << static_cast<long>(value);
+    
+    // Check for a non-zero fractional part
+    double intPart;
+    double fracPart = modf(value, &intPart);
+    
+    if (fracPart == 0.0) {
+        // No fractional part, treat as integer
+        os << indentString(indent) << static_cast<long>(intPart);
     } else {
-        std::ostringstream tempStream;
-        tempStream << std::fixed << std::setprecision(2) << value;
-        std::string str = tempStream.str();
-        str.erase(str.find_last_not_of('0') + 1, std::string::npos); 
-        if (str.back() == '.') {
-            str.pop_back(); 
+        // Use scientific notation for very small values
+        if (abs(value) < 1e-4 || abs(value) > 1e4) {
+            std::ostringstream tempStream;
+            tempStream << std::scientific << std::setprecision(0) << value;
+            std::string str = tempStream.str();
+            // Remove trailing zeros and decimal point from exponent part
+            size_t ePos = str.find('e');
+            size_t lastNonZeroPos = str.find_last_not_of('0', ePos - 1);
+            if (lastNonZeroPos != std::string::npos && lastNonZeroPos + 1 < ePos) {
+                str.erase(lastNonZeroPos + 1, ePos - lastNonZeroPos - 1);
+            }
+            os << indentString(indent) << str;
+        } else {
+            // Regular formatting for other cases
+            std::ostringstream tempStream;
+            tempStream << std::fixed << std::setprecision(1) << value;
+            std::string str = tempStream.str();
+            str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+            if (str.back() == '.') {
+                str.pop_back();
+            }
+            os << indentString(indent) << str;
         }
-        os << indentString(indent) << str;
     }
 }
+
+
 
 // function to format Booleans
 void formatBooleanNode(std::ostream& os, const BooleanNode* node, int indent) {
@@ -298,25 +321,15 @@ Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScop
                     throw std::runtime_error("Runtime error: index is not a number.");
                 }
 
-                double indexDouble = indexValue.asDouble();
                 double intPart;
-                double fracPart = modf(indexDouble, &intPart);
-
-                // Check if fractional part is exactly zero or within a very small range of an integer
-                if (fracPart != 0.0 && fabs(fracPart) > 1e-9) {
+                if (modf(indexValue.asDouble(), &intPart) != 0.0) {
                     throw std::runtime_error("Runtime error: index is not an integer.");
-                }
-
-                // Round to nearest integer if within threshold
-                if (fabs(fracPart) <= 1e-9) {
-                    intPart = round(indexDouble);
                 }
 
                 int index = static_cast<int>(intPart);
                 if (index < 0 || index >= static_cast<int>(arrayValue.asArray().size())) {
                     throw std::runtime_error("Runtime error: index out of bounds.");
                 }
-
                 return arrayValue.asArray()[index];
             }
             default:
@@ -429,27 +442,22 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
         // Evaluate the index expression
         Value indexValue = evaluateExpression(arrayLookupNode->index.get(), currentScope);
         if (indexValue.getType() != Value::Type::Double) {
-            throw std::runtime_error("Runtime error: index is not a number.");
+        throw std::runtime_error("Runtime error: index is not a number.");
         }
 
-        double indexDouble = indexValue.asDouble();
+        // Check for non-integer index using modf
         double intPart;
-        double fracPart = modf(indexDouble, &intPart);
-
-        // Check if fractional part is exactly zero or within a very small range of an integer
-        if (fracPart != 0.0 && fabs(fracPart) > 1e-9) {
+        if (modf(indexValue.asDouble(), &intPart) != 0.0) {
             throw std::runtime_error("Runtime error: index is not an integer.");
-        }
-
-        // Round to nearest integer if within threshold
-        if (fabs(fracPart) <= 1e-9) {
-            intPart = round(indexDouble);
         }
 
         int index = static_cast<int>(intPart);
         if (index < 0 || index >= static_cast<int>(array.size())) {
             throw std::runtime_error("Runtime error: index out of bounds.");
         }
+
+        // Evaluate the right-hand side (rhs) expression
+        Value rhsValue = evaluateExpression(assignmentNode->rhs.get(), currentScope);
 
         // Perform the assignment
         array[index] = rhsValue;
