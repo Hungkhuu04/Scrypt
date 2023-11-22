@@ -1,3 +1,4 @@
+
 #include "ScryptComponents.h"
 #include <stdexcept>
 #include <cmath>
