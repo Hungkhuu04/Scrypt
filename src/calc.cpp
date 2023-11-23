@@ -518,7 +518,7 @@ Value popFunction(std::vector<Value>& args) {
 
 // Push function of Arrays
 Value pushFunction(std::vector<Value>& args) {
-    if (args.size() != 1){
+    if (args.size() != 2){
         if(args.size() == 0) {
             throw std::runtime_error("Runtime error: incorrect argument count.");
         } else if(!args[0].isArray()) {
