@@ -491,21 +491,20 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
 
 // Len Function of Arrays
 Value lenFunction(const std::vector<Value>& args) {
-    if (args.size() != 1) {
-        if (!args[0].isArray()) {
-            throw std::runtime_error("Runtime error: not an array.");
-        }
+    if (args.size() != 1 || !args[0].isArray()) {
         throw std::runtime_error("Runtime error: incorrect argument count.");
-    }
-    if (!args[0].isArray()) {
-        throw std::runtime_error("Runtime error: not an array.");
     }
     return Value(static_cast<double>(args[0].asArray().size()));
 }
 
 // Pop function of Arrays
 Value popFunction(std::vector<Value>& args) {
-    if (args.size() != 1 || !args[0].isArray()) {
+    if (args.size() != 1){
+        if(args.size() == 0) {
+            throw std::runtime_error("Runtime error: incorrect argument count.");
+        } else if(!args[0].isArray()) {
+            throw std::runtime_error("Runtime error: not an array.");
+        }
         throw std::runtime_error("Runtime error: incorrect argument count.");
     }
     auto& array = args[0].asArray();
@@ -519,7 +518,12 @@ Value popFunction(std::vector<Value>& args) {
 
 // Push function of Arrays
 Value pushFunction(std::vector<Value>& args) {
-    if (args.size() != 2 || !args[0].isArray()) {
+    if (args.size() != 1){
+        if(args.size() == 0) {
+            throw std::runtime_error("Runtime error: incorrect argument count.");
+        } else if(!args[0].isArray()) {
+            throw std::runtime_error("Runtime error: not an array.");
+        }
         throw std::runtime_error("Runtime error: incorrect argument count.");
     }
     args[0].asArray().push_back(args[1]);
