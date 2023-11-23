@@ -29,7 +29,7 @@ void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int in
 
 // function to create an indentation string
 std::string indentString(int indentLevel) {
-    return std::string(indentLevel * 4, ' '); // 4 spaces per indent level
+    return std::string(indentLevel * 4, ' ');
 }
 
 void formatNullNode(std::ostream& os, const NullNode* node, int indent) {
@@ -39,9 +39,9 @@ void formatNullNode(std::ostream& os, const NullNode* node, int indent) {
 // function to format operation types
 void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent) {
     os << '(';
-    formatAST(os, node->left, 0, false); // Passing false for isOutermost
+    formatAST(os, node->left, 0, false);
     os << ' ' << node->op.value << ' ';
-    formatAST(os, node->right, 0, false); // Passing false for isOutermost
+    formatAST(os, node->right, 0, false);
     os << ')';
 }
 
@@ -49,15 +49,12 @@ void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent) 
 void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
     double value = std::stod(node->value.value);
     if (std::floor(value) == value) {
-        // For integers
         os << indentString(indent) << static_cast<long>(value);
     } else {
-        // Check if value is in a range that requires scientific notation
         if (std::abs(value) < 0.0001 || std::abs(value) > 9999) {
             std::ostringstream tempStream;
             tempStream << std::scientific << value;
             std::string str = tempStream.str();
-            // Remove trailing zeros in the exponent part
             size_t ePos = str.find('e');
             if (ePos != std::string::npos) {
                 size_t lastNonZeroPos = str.find_last_not_of('0', ePos - 1);
@@ -67,7 +64,6 @@ void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
             }
             os << indentString(indent) << str;
         } else {
-            // For normal floating-point numbers
             std::ostringstream tempStream;
             tempStream << std::fixed << std::setprecision(2) << value;
             std::string str = tempStream.str();
@@ -109,12 +105,10 @@ void formatIfNode(std::ostream& os, const IfNode* node, int indent) {
 void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent) {
     os << indentString(indent) << "(";
 
-    // Format left-hand side (LHS)
-    formatAST(os, node->lhs, 0, false);  // Format LHS regardless of its type
+    formatAST(os, node->lhs, 0, false);
 
     os << " = ";
 
-    // Format right-hand side (RHS)
     formatAST(os, node->rhs, 0, false);
 
     os << ")";
@@ -135,7 +129,7 @@ void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
 // function to format print nodes
 void formatPrintNode(std::ostream& os, const PrintNode* node, int indent) {
     os << indentString(indent) << "print ";
-    formatAST(os, node->expression, 0, false); // Already correctly passing false for isOutermost
+    formatAST(os, node->expression, 0, false);
     os << ";";
 }
 
@@ -151,7 +145,6 @@ void formatBlockNode(std::ostream& os, const BlockNode* node, int indent) {
     }
 }
 
-// main format function
 // main format function
 void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent, bool isOutermost)  {
     if (!node) return;
@@ -226,9 +219,9 @@ void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent) 
         formatAST(os, node->body, indent + 1);
         os << "\n" << indentString(indent);
     } else {
-        os << "\n" << indentString(indent); // Add newline and indentation for empty body
+        os << "\n" << indentString(indent);
     }
-    os << "}"; // Closing brace
+    os << "}";
 }
 
 
@@ -241,11 +234,11 @@ void formatReturnNode(std::ostream& os, const ReturnNode* node, int indent) {
         os << " ";
         formatAST(os, node->value, 0);
     }
-    os << ";"; // Ensure semicolon is outside of the conditional
+    os << ";";
 }
 
-// Function to format CallNode (function calls)
 
+// Function to format CallNode (function calls)
 void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isOutermost) {
     formatAST(os, node->callee, indent, false);
     os << '(';
@@ -255,9 +248,7 @@ void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isO
             os << ", ";
         }
     }
-    os << ")"; // Close the function call parentheses
-
-    // Add a semicolon only if it's the outermost function call and not within an expression
+    os << ")";
     if (isOutermost && indent == 0) {
         os << ";";
     }
@@ -267,12 +258,11 @@ void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isO
 void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent, bool isOutermost = true) {;
     os << indentString(indent) << "[";
     for (size_t i = 0; i < node->elements.size(); ++i) {
-        formatAST(os, node->elements[i], 0, false); // Passing false for isOutermost
+        formatAST(os, node->elements[i], 0, false);
         if (i < node->elements.size() - 1) os << ", ";
     }
     os << "]";
 
-    // Add a semicolon only if it's the outermost array literal
     if (isOutermost && indent == 0) {
         os << ";";
     }
@@ -280,11 +270,11 @@ void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int 
 // Function to format ArrayLookupNode (array access)
 void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent, bool isOutermost) {
     // Format the array part
-    formatAST(os, node->array, indent, false); // Pass false to isOutermost
+    formatAST(os, node->array, indent, false);
 
     // Format the index part
     os << "[";
-    formatAST(os, node->index, 0, false); // Pass false to isOutermost
+    formatAST(os, node->index, 0, false);
     os << "]";
 
     // Append a semicolon if it's a standalone array lookup expression

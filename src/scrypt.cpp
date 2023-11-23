@@ -108,8 +108,7 @@ Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentS
             return e.getValue();
         }
 
-        // No need to propagate changes, as the scope shares variables with parent
-        return Value(); // Return null if no return statement was executed
+        return Value();
     }
 }
 
@@ -232,8 +231,6 @@ void evaluateWhile(const WhileNode* whileNode, std::shared_ptr<Scope> currentSco
             }
             auto loopScope = std::make_shared<Scope>(currentScope);
             evaluateBlock(static_cast<const BlockNode*>(whileNode->body.get()), loopScope);
-
-            // Propagate changes back to the current scope
             for (const auto& var : loopScope->getVariables()) {
                 if (currentScope->hasVariable(var.first)) {
                     currentScope->setVariable(var.first, var.second);
@@ -252,15 +249,12 @@ void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> current
         throw std::runtime_error("Null return node passed to evaluateReturn");
     }
 
-    // Evaluate the expression of the return statement, if present
     Value returnValue;
     if (returnNode->value) {
         returnValue = evaluateExpression(returnNode->value.get(), currentScope);
     } else {
-        throw ReturnException(Value());  // Returning null if no expression is present
+        throw ReturnException(Value());
     }
-
-    // Throw a ReturnException to signal a return from the function
     throw ReturnException(std::move(returnValue));
 }
 
@@ -283,7 +277,7 @@ void printValue(const Value& value) {
             const auto& array = value.asArray();
             for (size_t i = 0; i < array.size(); ++i) {
                 if (i > 0) std::cout << ", ";
-                printValue(array[i]);  // Recursive call
+                printValue(array[i]);
             }
             std::cout << "]";
             break;
@@ -298,8 +292,8 @@ void printValue(const Value& value) {
 // Evaluate the print node
 void evaluatePrint(const PrintNode* printNode, std::shared_ptr<Scope> currentScope) {
     Value value = evaluateExpression(printNode->expression.get(), currentScope);
-    printValue(value);  // Use the existing function to handle printing
-    std::cout << std::endl; // Add a new line after printing the value
+    printValue(value);
+    std::cout << std::endl;
 }
 
 // Evaluate Operations
@@ -379,16 +373,13 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
         throw std::runtime_error("Null assignment node passed to evaluateAssignment");
     }
 
-    // Evaluate the right-hand side (rhs) expression first
     Value rhsValue = evaluateExpression(assignmentNode->rhs.get(), currentScope);
 
     if (assignmentNode->lhs->getType() == ASTNode::Type::ArrayLookupNode &&
         assignmentNode->rhs->getType() == ASTNode::Type::ArrayLiteralNode) {
         return rhsValue;
     }
-    // Handle assignment based on the type of the left-hand side (lhs)
     if (assignmentNode->lhs->getType() == ASTNode::Type::VariableNode) {
-        // Variable assignment
         auto variableNode = static_cast<const VariableNode*>(assignmentNode->lhs.get());
         currentScope->setVariable(variableNode->identifier.value, rhsValue);
     } else if (assignmentNode->lhs->getType() == ASTNode::Type::ArrayLookupNode) {
@@ -549,7 +540,7 @@ int main() {
             exit(2);
         }
     } catch (...){
-        os << "Unknown error" << std::endl;
+        os << "Runtime error: unexpected return." << std::endl;
         exit(2);
     }
     return 0;

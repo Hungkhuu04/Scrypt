@@ -48,29 +48,25 @@ void formatNullNode(std::ostream& os, const NullNode* node, int indent) {
 // function to format operation types
 void formatBinaryOpNode(std::ostream& os, const BinaryOpNode* node, int indent) {
     os << '(';
-    formatAST(os, node->left, 0, false); // Passing false for isOutermost
+    formatAST(os, node->left, 0, false);
     os << ' ' << node->op.value << ' ';
-    formatAST(os, node->right, 0, false); // Passing false for isOutermost
+    formatAST(os, node->right, 0, false);
     os << ')';
 }
 
 // function to format numbers (especially doubles)
 void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
     double value = std::stod(node->value.value);
-    
-    // Check for a non-zero fractional part
     double intPart;
     double fracPart = modf(value, &intPart);
     
     if (fracPart == 0.0) {
         os << indentString(indent) << static_cast<long>(intPart);
     } else {
-        // Use scientific notation for very small values
         if (abs(value) < 1e-4 || abs(value) > 1e4) {
             std::ostringstream tempStream;
             tempStream << std::scientific << std::setprecision(0) << value;
             std::string str = tempStream.str();
-            // Remove trailing zeros and decimal point from exponent part
             size_t ePos = str.find('e');
             size_t lastNonZeroPos = str.find_last_not_of('0', ePos - 1);
             if (lastNonZeroPos != std::string::npos && lastNonZeroPos + 1 < ePos) {
@@ -78,7 +74,6 @@ void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
             }
             os << indentString(indent) << str;
         } else {
-            // Regular formatting for other cases
             std::ostringstream tempStream;
             tempStream << std::fixed << std::setprecision(1) << value;
             std::string str = tempStream.str();
@@ -259,12 +254,9 @@ void printValue(const Value& value) {
 }
 
 void formatAndEvaluateAST(const std::unique_ptr<ASTNode>& ast, std::shared_ptr<Scope> scope) {
-    // Format the AST
     std::ostringstream formattedOutput;
     formatAST(formattedOutput, ast, 0, true);
     std::cout << formattedOutput.str() << std::endl;
-
-    // Evaluate the AST
     try {
         Value result = evaluateExpression(ast.get(), scope);
         printValue(result);
@@ -447,43 +439,33 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
     if (!assignmentNode) {
         throw std::runtime_error("Null assignment node passed to evaluateAssignment");
     }
-
-    // Evaluate the right-hand side (rhs) expression first
     Value rhsValue = evaluateExpression(assignmentNode->rhs.get(), currentScope);
 
     if (assignmentNode->lhs->getType() == ASTNode::Type::ArrayLookupNode &&
         assignmentNode->rhs->getType() == ASTNode::Type::ArrayLiteralNode) {
         return rhsValue;
     }
-    // Handle assignment based on the type of the left-hand side (lhs)
     if (assignmentNode->lhs->getType() == ASTNode::Type::VariableNode) {
-        // Variable assignment
         auto variableNode = static_cast<const VariableNode*>(assignmentNode->lhs.get());
         currentScope->setVariable(variableNode->identifier.value, rhsValue);
     } else if (assignmentNode->lhs->getType() == ASTNode::Type::ArrayLookupNode) {
         auto arrayLookupNode = static_cast<const ArrayLookupNode*>(assignmentNode->lhs.get());
 
-        // Evaluate the array part to get the variable name
         if (arrayLookupNode->array->getType() != ASTNode::Type::VariableNode) {
             throw std::runtime_error("Runtime error: not an array.");
         }
         auto variableNode = static_cast<const VariableNode*>(arrayLookupNode->array.get());
         std::string arrayName = variableNode->identifier.value;
 
-        // Fetch the array from the current scope
         Value* arrayValuePtr = currentScope->getVariable(arrayName);
         if (!arrayValuePtr || arrayValuePtr->getType() != Value::Type::Array) {
             throw std::runtime_error("Runtime error: not an array.");
         }
         std::vector<Value>& array = arrayValuePtr->asArray();
-
-        // Evaluate the index expression
         Value indexValue = evaluateExpression(arrayLookupNode->index.get(), currentScope);
         if (indexValue.getType() != Value::Type::Double) {
         throw std::runtime_error("Runtime error: index is not a number.");
         }
-
-        // Check for non-integer index using modf
         double intPart;
         if (modf(indexValue.asDouble(), &intPart) != 0.0) {
             throw std::runtime_error("Runtime error: index is not an integer.");
@@ -493,22 +475,14 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
         if (index < 0 || index >= static_cast<int>(array.size())) {
             throw std::runtime_error("Runtime error: index out of bounds.");
         }
-
-        // Evaluate the right-hand side (rhs) expression
         Value rhsValue = evaluateExpression(assignmentNode->rhs.get(), currentScope);
-
-        // Perform the assignment
         array[index] = rhsValue;
-
-        // Return the assigned value
         return rhsValue;
     }
     else {
-        // If lhs is neither a variable nor an array lookup, throw an error
         throw std::runtime_error("Runtime error: invalid assignee.");
     }
 
-    // Return the rhs value, which is the result of the assignment expression
     return rhsValue;
 }
 
