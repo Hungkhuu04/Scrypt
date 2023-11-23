@@ -276,7 +276,12 @@ std::unique_ptr<ASTNode> Parser::parsePrimary() {
     } else if (match(TokenType::BOOLEAN_TRUE) || match(TokenType::BOOLEAN_FALSE) || match(TokenType::NULL_TOKEN)) {
         node = std::make_unique<BooleanNode>(previous());
     } else {
-        throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
+        try{
+            throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
+        }
+        catch(...){
+            throw;
+        }
     }
 
     // Handle repeated array lookups
