@@ -17,7 +17,8 @@ Value::Value(Function function)
 }
 
 Value::Value(std::vector<Value> array)
-    : type(Type::Array), arrayValue(std::move(array)) {}
+    : type(Type::Array), arrayValue(std::make_shared<std::vector<Value>>(std::move(array))) {}
+
 
 Value::Value(FunctionPtr func) : type(Type::BuiltinFunction), builtinFunction(func) {}
 
@@ -62,8 +63,7 @@ void Value::cleanUp() {
             functionValue.~Function();
             break;
         case Type::Array:
-            // Explicitly call the destructor for vector
-            arrayValue.~vector();
+            arrayValue.reset(); // Reset the shared pointer
             break;
         case Type::BuiltinFunction:
             // Explicitly call the destructor for FunctionPtr
@@ -89,7 +89,7 @@ void Value::copyFrom(const Value& other) {
             new (&functionValue) Function(other.functionValue);
             break;
         case Type::Array:
-            new (&arrayValue) std::vector<Value>(other.arrayValue); // Correctly construct the array
+            arrayValue = other.arrayValue; // Shared pointer copy
             break;
         case Type::Null:
             break;
@@ -106,11 +106,11 @@ Value Value::deepCopy() const {
         case Type::Bool:
             return Value(boolValue);
         case Type::Array: {
-            std::vector<Value> copiedArray;
-            for (const auto& element : arrayValue) {
-                copiedArray.push_back(element.deepCopy());
+            auto copiedArray = std::make_shared<std::vector<Value>>();
+            for (const auto& element : *arrayValue) {
+                copiedArray->push_back(element.deepCopy());
             }
-            return Value(copiedArray);
+            return Value(*copiedArray);
         }
         case Type::Null:
             return Value();
@@ -135,7 +135,7 @@ void Value::moveFrom(Value&& other) {
             new (&functionValue) Function(std::move(other.functionValue));
             break;
         case Type::Array:
-            new (&arrayValue) std::vector<Value>(std::move(other.arrayValue)); // Correctly construct the array
+            arrayValue = std::move(other.arrayValue); // Move the shared_ptr
             break;
         case Type::Null:
             break;
@@ -227,19 +227,22 @@ std::vector<Value>& Value::asArray() {
     if (type != Type::Array) {
         throw std::runtime_error("Runtime error: not an array.");
     }
-    return arrayValue;
+    return *arrayValue;
 }
-
 
 const std::vector<Value>& Value::asArray() const {
     if (type != Type::Array) {
         throw std::runtime_error("Runtime error: not an array.");
     }
-    return arrayValue;
+    return *arrayValue;
 }
 
 void Scope::setVariable(const std::string& name, const Value& value) {
-    variables[name] = value;
+    if (parentScope && parentScope->hasVariable(name)) {
+        parentScope->setVariable(name, value);
+    } else {
+        variables[name] = value;
+    }
 }
 
 // Get a variable from this scope or parent scopes
