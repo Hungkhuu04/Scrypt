@@ -83,8 +83,6 @@ void Value::cleanUp() {
 
 void Value::copyFrom(const Value& other) {
     // Clean up existing content
-    cleanUp();
-
     type = other.type;
     switch (type) {
         case Type::Double:
@@ -133,8 +131,6 @@ Value Value::deepCopy() const {
 
 void Value::moveFrom(Value&& other) {
     // Clean up existing content
-    cleanUp();
-
     type = other.type;
     switch (type) {
         case Type::Double:
