@@ -55,25 +55,19 @@ void Value::cleanUp() {
         switch (type) {
             case Type::Double:
             case Type::Bool:
-                // These types don't require special handling.
                 break;
             case Type::Function:
-                // Explicitly call the destructor for Function
                 functionValue.~Function();
                 break;
             case Type::Array:
-                // Reset the shared pointer
                 arrayValue.reset();
                 break;
             case Type::BuiltinFunction:
-                // Explicitly call the destructor for FunctionPtr
                 builtinFunction.~FunctionPtr();
                 break;
             case Type::Null:
-                // Null doesn't require special handling.
                 break;
         }
-        // Set type to Null after cleanup
         type = Type::Null;
     }
 }
@@ -82,7 +76,6 @@ void Value::cleanUp() {
 
 
 void Value::copyFrom(const Value& other) {
-    // Clean up existing content
     type = other.type;
     switch (type) {
         case Type::Double:
@@ -92,15 +85,15 @@ void Value::copyFrom(const Value& other) {
             boolValue = other.boolValue;
             break;
         case Type::Function:
-            new (&functionValue) Function(other.functionValue); // Placement new
+            new (&functionValue) Function(other.functionValue); 
             break;
         case Type::Array:
-            new (&arrayValue) std::shared_ptr<std::vector<Value>>(other.arrayValue); // Placement new for shared_ptr
+            new (&arrayValue) std::shared_ptr<std::vector<Value>>(other.arrayValue);
             break;
         case Type::Null:
             break;
         case Type::BuiltinFunction:
-            new (&builtinFunction) FunctionPtr(other.builtinFunction); // Placement new
+            new (&builtinFunction) FunctionPtr(other.builtinFunction);
             break;
     }
 }
@@ -121,16 +114,13 @@ Value Value::deepCopy() const {
         }
         case Type::Null:
             return Value();
-        // Add cases for other types as necessary
 
         default:
-            // Handle unexpected type, perhaps by throwing an exception
             throw std::runtime_error("Unknown or unsupported type for deepCopy");
     }
 }
 
 void Value::moveFrom(Value&& other) {
-    // Clean up existing content
     type = other.type;
     switch (type) {
         case Type::Double:
@@ -140,18 +130,18 @@ void Value::moveFrom(Value&& other) {
             boolValue = other.boolValue;
             break;
         case Type::Function:
-            new (&functionValue) Function(std::move(other.functionValue)); // Placement new for move
+            new (&functionValue) Function(std::move(other.functionValue)); 
             break;
         case Type::Array:
-            new (&arrayValue) std::shared_ptr<std::vector<Value>>(std::move(other.arrayValue)); // Placement new for move
+            new (&arrayValue) std::shared_ptr<std::vector<Value>>(std::move(other.arrayValue));
             break;
         case Type::Null:
             break;
         case Type::BuiltinFunction:
-            new (&builtinFunction) FunctionPtr(std::move(other.builtinFunction)); // Placement new for move
+            new (&builtinFunction) FunctionPtr(std::move(other.builtinFunction));
             break;
     }
-    other.type = Type::Null; // Set the moved-from object to null state
+    other.type = Type::Null;
 }
 
 
@@ -182,13 +172,11 @@ const Value::Function& Value::asFunction() const {
 }
 
 bool Value::equals(const Value& other) const {
-    // First, check if the types of the two values are the same
     if (this->type != other.type) return false;
 
-    // Compare based on type
     switch (this->type) {
         case Type::Null:
-            return true; // If both are Null, they are equal
+            return true;
         case Type::Bool:
             return this->boolValue == other.boolValue;
         case Type::Double:
@@ -208,7 +196,6 @@ bool Value::equals(const Value& other) const {
         }
         case Type::BuiltinFunction:
             return this->builtinFunction.target<Value::FunctionPtr>() == other.builtinFunction.target<Value::FunctionPtr>();
-        // Add cases for other types your Value class supports
         default:
             throw std::runtime_error("Unsupported type in Value::equals");
     }
@@ -262,7 +249,7 @@ Value* Scope::getVariable(const std::string& name) {
     } else if (parentScope) {
         return parentScope->getVariable(name);
     }
-    return nullptr;  // Variable not found in any scope
+    return nullptr; 
 }
 
 bool Scope::hasVariable(const std::string& name) {
@@ -281,9 +268,9 @@ const std::unordered_map<std::string, Value>& Scope::getVariables() const{
 std::shared_ptr<Scope> Scope::getParent() const { return parentScope; }
 
 std::shared_ptr<Scope> Scope::copyScope() const {
-    auto newScope = std::make_shared<Scope>(parentScope); // Copy the parent scope reference
+    auto newScope = std::make_shared<Scope>(parentScope);
     for (const auto& var : variables) {
-        newScope->variables[var.first] = var.second; // Copy each variable
+        newScope->variables[var.first] = var.second;
     }
     return newScope;
 }
@@ -298,7 +285,6 @@ std::shared_ptr<Scope> Scope::deepCopy() const {
         copiedScope->variables[name] = value;
     }
 
-    // Recursively copy parent scope if it exists
     if (this->parentScope) {
         copiedScope->parentScope = this->parentScope->deepCopy();
     }

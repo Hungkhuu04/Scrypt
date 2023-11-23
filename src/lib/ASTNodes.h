@@ -96,8 +96,8 @@ struct VariableNode : ASTNode {
 
 // Node for assignment statements
 struct AssignmentNode : ASTNode {
-    std::unique_ptr<ASTNode> lhs; // Left-hand side can be a variable or array lookup
-    std::unique_ptr<ASTNode> rhs; // Right-hand side
+    std::unique_ptr<ASTNode> lhs; 
+    std::unique_ptr<ASTNode> rhs; 
 
     AssignmentNode(std::unique_ptr<ASTNode> lhs, std::unique_ptr<ASTNode> rhs)
         : ASTNode(Type::AssignmentNode), lhs(std::move(lhs)), rhs(std::move(rhs)) {}
@@ -206,7 +206,6 @@ struct FunctionNode : ASTNode {
         }
     }
 
-    // Copy assignment operator
     FunctionNode& operator=(const FunctionNode& other) {
         if (this != &other) {
             name = other.name;
@@ -216,7 +215,6 @@ struct FunctionNode : ASTNode {
         return *this;
     }
 
-    // Helper function for cloning
     ASTNode* clone() const override {
         return new FunctionNode(*this);
     }

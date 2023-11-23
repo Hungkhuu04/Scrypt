@@ -65,7 +65,7 @@ void evaluateBlock(const BlockNode* blockNode, std::shared_ptr<Scope> currentSco
 }
 
 
-
+// Evaluate function calls
 Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentScope) {
     std::string functionName = static_cast<const VariableNode*>(node->callee.get())->identifier.value;
     std::vector<Value> args;
@@ -108,7 +108,7 @@ Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentS
 
 
 
-
+// Evaluate Function Definitions
 void evaluateFunctionDefinition(const FunctionNode* functionNode, std::shared_ptr<Scope> currentScope) {
     if (!functionNode) {
         throw std::runtime_error("Null function node passed to evaluateFunctionDefinition");
@@ -127,7 +127,7 @@ void evaluateFunctionDefinition(const FunctionNode* functionNode, std::shared_pt
 }
 
 
-
+// Evaluate Statements
 void evaluateStatement(const ASTNode* stmt, std::shared_ptr<Scope> currentScope) {
     switch (stmt->getType()) {
         case ASTNode::Type::IfNode:
@@ -159,7 +159,7 @@ void evaluateStatement(const ASTNode* stmt, std::shared_ptr<Scope> currentScope)
     }
 }
 
-
+// Evaluate Expressions
 Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScope) {
     if (!node) {
         throw std::runtime_error("Null expression node");
@@ -237,7 +237,7 @@ void evaluateWhile(const WhileNode* whileNode, std::shared_ptr<Scope> currentSco
 }
 
 
-
+// Evaluate Return (functions)
 void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> currentScope) {
     if (!returnNode) {
         throw std::runtime_error("Null return node passed to evaluateReturn");
@@ -252,6 +252,7 @@ void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> current
     throw ReturnException(std::move(returnValue));
 }
 
+//helper function with print
 void printValue(const Value& value) {
     switch (value.getType()) {
         case Value::Type::Double:
@@ -419,6 +420,7 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
     return rhsValue;
 }
 
+// Evaluate Array Literals
 Value evaluateArrayLiteralNode(const ArrayLiteralNode* arrayLiteralNode, std::shared_ptr<Scope> currentScope) {
     if (!arrayLiteralNode) {
         throw std::runtime_error("Null ArrayLiteralNode passed to evaluateArrayLiteralNode");
@@ -432,6 +434,7 @@ Value evaluateArrayLiteralNode(const ArrayLiteralNode* arrayLiteralNode, std::sh
     return Value(arrayValues);
 }
 
+// Evaluate and return the Array Literals
 Value evaluateArrayLookupNode(const ArrayLookupNode* arrayLookupNode, std::shared_ptr<Scope> currentScope) {
     if (!arrayLookupNode) {
         throw std::runtime_error("Null ArrayLookupNode passed to evaluateArrayLookupNode");
@@ -456,6 +459,7 @@ Value evaluateArrayLookupNode(const ArrayLookupNode* arrayLookupNode, std::share
     return arrayValue.asArray()[index];
 }
 
+// Len Function of Arrays
 Value lenFunction(const std::vector<Value>& args) {
     if (args.size() != 1 || !args[0].isArray()) {
         throw std::runtime_error("Runtime error: incorrect argument count.");
@@ -463,6 +467,7 @@ Value lenFunction(const std::vector<Value>& args) {
     return Value(static_cast<double>(args[0].asArray().size()));
 }
 
+// Pop function of arrays
 Value popFunction(std::vector<Value>& args) {
     if (args.size() != 1 || !args[0].isArray()) {
         throw std::runtime_error("Runtime error: incorrect argument count.");
@@ -476,6 +481,7 @@ Value popFunction(std::vector<Value>& args) {
     return poppedValue;
 }
 
+// push function of arrays
 Value pushFunction(std::vector<Value>& args) {
     if (args.size() != 2 || !args[0].isArray()) {
         throw std::runtime_error("Runtime error: incorrect argument count.");

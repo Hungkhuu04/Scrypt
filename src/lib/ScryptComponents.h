@@ -8,7 +8,7 @@
 #include <vector>
 #include "ASTNodes.h"
 #include <functional>
-// Forward declaration for Scope class
+
 class Scope;
 
 // Value class to represent different types of values in your script
@@ -18,7 +18,7 @@ public:
     enum class Type { Double, Bool, Function, Null, Array, BuiltinFunction};
 
     struct Function {
-        std::shared_ptr<FunctionNode> definition; // Changed to shared_ptr
+        std::shared_ptr<FunctionNode> definition; 
         std::shared_ptr<Scope> capturedScope;
 
         Function() = default;
