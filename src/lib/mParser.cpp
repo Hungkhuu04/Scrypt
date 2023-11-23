@@ -135,10 +135,8 @@ std::unique_ptr<ASTNode> Parser::parseIfStatement()
 // parses while statements and blocks
 std::unique_ptr<ASTNode> Parser::parseWhileStatement()
 {
-    
     while (match(TokenType::NEWLINE))
     {
-        //  consuming the newline
     }
 
     auto condition = parseExpression(); 
@@ -146,7 +144,6 @@ std::unique_ptr<ASTNode> Parser::parseWhileStatement()
    
     while (match(TokenType::NEWLINE))
     {
-        //  consuming the newline
     }
 
     
@@ -185,7 +182,6 @@ std::unique_ptr<ASTNode> Parser::parseBlock()
     {
         while (match(TokenType::NEWLINE))
         {
-            // consuming the newline
         }
         statements.push_back(parseStatement());
         
@@ -194,7 +190,6 @@ std::unique_ptr<ASTNode> Parser::parseBlock()
     consume(TokenType::RIGHT_BRACE);
     while (match(TokenType::NEWLINE))
     {
-        // consuming the newline
     }
     
     return std::make_unique<BlockNode>(std::move(statements));
@@ -279,7 +274,6 @@ std::unique_ptr<ASTNode> Parser::parsePrimary() {
         throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
     }
 
-    // Handle repeated array lookups
     while (check(TokenType::LBRACK)) {
         advance();
         auto index = parseExpression();
@@ -342,7 +336,6 @@ std::unique_ptr<ASTNode> Parser::parseEquality() {
         while (match(TokenType::EQUAL) || match(TokenType::NOT_EQUAL)) {
             Token op = previous();
             auto right = parseComparison();
-            // Simply create a BinaryOpNode for the equality/inequality check
             node = std::make_unique<BinaryOpNode>(op, std::move(node), std::move(right));
         }
         return node;
