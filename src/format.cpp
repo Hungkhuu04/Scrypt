@@ -117,7 +117,7 @@ void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int inde
 
 
 
-// function to format while nodes
+/*FormatWhileNode is a funciton that is used */
 void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
     os << indentString(indent) << "while ";
     formatAST(os, node->condition, 0);
