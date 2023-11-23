@@ -207,11 +207,15 @@ Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScop
 
 // Evaluate the if node
 void evaluateIf(const IfNode* ifNode, std::shared_ptr<Scope> currentScope) {
-    Value conditionValue = evaluateExpression(ifNode->condition.get(), currentScope);
-    if (conditionValue.asBool()) {
-        evaluateBlock(static_cast<const BlockNode*>(ifNode->trueBranch.get()), currentScope);
-    } else if (ifNode->falseBranch) {
-        evaluateStatement(ifNode->falseBranch.get(), currentScope);
+    try {
+        Value conditionValue = evaluateExpression(ifNode->condition.get(), currentScope);
+        if (conditionValue.asBool()) {
+            evaluateBlock(static_cast<const BlockNode*>(ifNode->trueBranch.get()), currentScope);
+        } else if (ifNode->falseBranch) {
+            evaluateStatement(ifNode->falseBranch.get(), currentScope);
+        }
+    } catch (...) {
+        throw;
     }
 }
 
