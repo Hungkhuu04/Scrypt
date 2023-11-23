@@ -98,8 +98,8 @@ Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentS
 
         try {
             evaluateBlock(static_cast<const BlockNode*>(function.definition->body.get()), callScope);
-        } catch (const ReturnException& e) {
-            return e.getValue();
+        } catch (...) {
+            throw;
         }
 
         return Value();
@@ -254,9 +254,9 @@ void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> current
     if (returnNode->value) {
         returnValue = evaluateExpression(returnNode->value.get(), currentScope);
     } else {
-        throw ReturnException(Value());
+        throw std::runtime_error("Runtime error: unexpected return.");
     }
-    throw ReturnException(std::move(returnValue));
+    throw std::runtime_error("Runtime error: unexpected return.");
 }
 
 //helper function with print
