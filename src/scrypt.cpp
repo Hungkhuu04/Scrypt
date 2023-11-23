@@ -385,27 +385,23 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
     } else if (assignmentNode->lhs->getType() == ASTNode::Type::ArrayLookupNode) {
         auto arrayLookupNode = static_cast<const ArrayLookupNode*>(assignmentNode->lhs.get());
 
-        // Evaluate the array part to get the variable name
         if (arrayLookupNode->array->getType() != ASTNode::Type::VariableNode) {
             throw std::runtime_error("Runtime error: not an array.");
         }
         auto variableNode = static_cast<const VariableNode*>(arrayLookupNode->array.get());
         std::string arrayName = variableNode->identifier.value;
-
-        // Fetch the array from the current scope
         Value* arrayValuePtr = currentScope->getVariable(arrayName);
+
         if (!arrayValuePtr || arrayValuePtr->getType() != Value::Type::Array) {
             throw std::runtime_error("Runtime error: not an array.");
         }
         std::vector<Value>& array = arrayValuePtr->asArray();
 
-        // Evaluate the index expression
         Value indexValue = evaluateExpression(arrayLookupNode->index.get(), currentScope);
         if (indexValue.getType() != Value::Type::Double) {
         throw std::runtime_error("Runtime error: index is not a number.");
         }
 
-        // Check for non-integer index using modf
         double intPart;
         if (modf(indexValue.asDouble(), &intPart) != 0.0) {
             throw std::runtime_error("Runtime error: index is not an integer.");
@@ -416,21 +412,16 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
             throw std::runtime_error("Runtime error: index out of bounds.");
         }
 
-        // Evaluate the right-hand side (rhs) expression
         Value rhsValue = evaluateExpression(assignmentNode->rhs.get(), currentScope);
 
-        // Perform the assignment
         array[index] = rhsValue;
 
-        // Return the assigned value
         return rhsValue;
     }
     else {
-        // If lhs is neither a variable nor an array lookup, throw an error
         throw std::runtime_error("Runtime error: invalid assignee.");
     }
 
-    // Return the rhs value, which is the result of the assignment expression
     return rhsValue;
 }
 
@@ -523,7 +514,6 @@ int main() {
         auto ast = parser.parse();
 
         if (ast->getType() == ASTNode::Type::BlockNode) {
-            // Start evaluation with the global scope
             evaluateBlock(static_cast<const BlockNode*>(ast.get()), globalScope);
         } else {
             throw std::runtime_error("Invalid AST node type");
@@ -541,7 +531,7 @@ int main() {
         }
     } catch (...){
         os << "Runtime error: unexpected return." << std::endl;
-        exit(2);
+        exit(3);
     }
     return 0;
 }

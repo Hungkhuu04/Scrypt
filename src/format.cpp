@@ -269,15 +269,10 @@ void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int 
 }
 // Function to format ArrayLookupNode (array access)
 void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent, bool isOutermost) {
-    // Format the array part
     formatAST(os, node->array, indent, false);
-
-    // Format the index part
     os << "[";
     formatAST(os, node->index, 0, false);
     os << "]";
-
-    // Append a semicolon if it's a standalone array lookup expression
     if (isOutermost && indent == 0) {
         os << ";";
     }
