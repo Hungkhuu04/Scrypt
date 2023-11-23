@@ -109,22 +109,34 @@ Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentS
 
 
 // Evaluate Function Definitions
+// Evaluate Function Definitions
 void evaluateFunctionDefinition(const FunctionNode* functionNode, std::shared_ptr<Scope> currentScope) {
     if (!functionNode) {
         throw std::runtime_error("Null function node passed to evaluateFunctionDefinition");
     }
 
     try {
-        std::shared_ptr<Scope> capturedScope = currentScope->copyScope();
+        // Create a new scope for the function, copying the current scope
+        std::shared_ptr<Scope> functionScope = currentScope->copyScope();
+
+        // Create a Function Value
         Value::Function functionValue;
         functionValue.definition = std::make_unique<FunctionNode>(*functionNode);
-        functionValue.capturedScope = capturedScope;
+        functionValue.capturedScope = functionScope; // Use the new scope
+
+        // Create a Value with the function
         Value value(std::move(functionValue));
+
+        // Set the function in its own scope
+        functionScope->setVariable(functionNode->name.value, value);
+
+        // Also set the function in the current scope
         currentScope->setVariable(functionNode->name.value, std::move(value));
     } catch (...) {
         throw;
     }
 }
+
 
 
 // Evaluate Statements
@@ -481,7 +493,7 @@ Value popFunction(std::vector<Value>& args) {
     return poppedValue;
 }
 
-// push function of arrays
+// push function of arrays 
 Value pushFunction(std::vector<Value>& args) {
     if (args.size() != 2 || !args[0].isArray()) {
         throw std::runtime_error("Runtime error: incorrect argument count.");
