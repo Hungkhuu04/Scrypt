@@ -67,6 +67,7 @@ void evaluateBlock(const BlockNode* blockNode, std::shared_ptr<Scope> currentSco
 
 // Evaluate function calls
 Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentScope) {
+try{
     std::string functionName = static_cast<const VariableNode*>(node->callee.get())->identifier.value;
     std::vector<Value> args;
     for (const auto& arg : node->arguments) {
@@ -104,6 +105,9 @@ Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentS
 
         return Value();
     }
+} catch (...) {
+    throw;
+}
 }
 
 
@@ -129,6 +133,7 @@ void evaluateFunctionDefinition(const FunctionNode* functionNode, std::shared_pt
 
 // Evaluate Statements
 void evaluateStatement(const ASTNode* stmt, std::shared_ptr<Scope> currentScope) {
+    try{
     switch (stmt->getType()) {
         case ASTNode::Type::IfNode:
             evaluateIf(static_cast<const IfNode*>(stmt), currentScope);
@@ -157,6 +162,9 @@ void evaluateStatement(const ASTNode* stmt, std::shared_ptr<Scope> currentScope)
         default:
             throw std::runtime_error("Unknown Node Type in evaluateStatement");
     }
+} catch (...) {
+    throw;
+}
 }
 
 // Evaluate Expressions
@@ -243,6 +251,7 @@ void evaluateWhile(const WhileNode* whileNode, std::shared_ptr<Scope> currentSco
 
 // Evaluate Return (functions)
 void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> currentScope) {
+    try{
     if (!returnNode) {
         throw std::runtime_error("Null return node passed to evaluateReturn");
     }
@@ -254,6 +263,10 @@ void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> current
         throw std::runtime_error("Runtime error: unexpected return.");
     }
     throw std::runtime_error("Runtime error: unexpected return.");
+}
+catch (...) {
+    throw;
+}
 }
 
 //helper function with print
