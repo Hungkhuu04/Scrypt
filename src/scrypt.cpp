@@ -209,10 +209,7 @@ Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScop
 void evaluateIf(const IfNode* ifNode, std::shared_ptr<Scope> currentScope) {
     try {
         Value conditionValue = evaluateExpression(ifNode->condition.get(), currentScope);
-        if(!conditionValue.asBool()) {
-            throw std::runtime_error("Runtime error: condition is not a bool.");
-        } 
-        else if (conditionValue.asBool()) {
+        if (conditionValue.asBool()) {
             evaluateBlock(static_cast<const BlockNode*>(ifNode->trueBranch.get()), currentScope);
         } else if (ifNode->falseBranch) {
             evaluateStatement(ifNode->falseBranch.get(), currentScope);
