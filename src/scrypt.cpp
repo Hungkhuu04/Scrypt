@@ -79,14 +79,12 @@ Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentS
     } else if (functionName == "len") {
         return lenFunction(args);
     } else {
-        // Handling user-defined functions
         auto funcValue = evaluateExpression(node->callee.get(), currentScope);
         if (funcValue.getType() != Value::Type::Function) {
             throw std::runtime_error("Runtime error: not a function.");
         }
 
         const auto& function = funcValue.asFunction();
-        // Using the captured scope directly
         auto callScope = function.capturedScope;
 
         const auto& params = function.definition->parameters;
