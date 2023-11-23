@@ -62,7 +62,7 @@ std::unique_ptr<ASTNode> Parser::parseStatement()
 
 }
 
-
+// Parses Function Definitions
 std::unique_ptr<ASTNode> Parser::parseFunctionDefinition() {
     Token name = consume(TokenType::IDENTIFIER);
     consume(TokenType::LEFT_PAREN);
@@ -80,6 +80,7 @@ std::unique_ptr<ASTNode> Parser::parseFunctionDefinition() {
     return std::make_unique<FunctionNode>(name, std::move(parameters), std::move(body));
 }
 
+// Parses the Return of Functions
 std::unique_ptr<ASTNode> Parser::parseReturnStatement() {
     std::unique_ptr<ASTNode> value = nullptr;
     if (!check(TokenType::SEMICOLON)) {
@@ -89,6 +90,7 @@ std::unique_ptr<ASTNode> Parser::parseReturnStatement() {
     return std::make_unique<ReturnNode>(std::move(value));
 }
 
+//Parses 
 std::unique_ptr<ASTNode> Parser::parseCall(std::unique_ptr<ASTNode> callee) {
     std::vector<std::unique_ptr<ASTNode>> arguments;
     if (!check(TokenType::RIGHT_PAREN)) {

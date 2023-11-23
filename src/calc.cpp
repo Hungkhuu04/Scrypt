@@ -249,7 +249,7 @@ void printValue(const Value& value) {
     }
 }
 
-// 
+// Format and evaluate the Abstract Syntax Tree (AST)
 void formatAndEvaluateAST(const std::unique_ptr<ASTNode>& ast, std::shared_ptr<Scope> scope) {
     std::ostringstream formattedOutput;
     formatAST(formattedOutput, ast, 0, true);
@@ -263,7 +263,7 @@ void formatAndEvaluateAST(const std::unique_ptr<ASTNode>& ast, std::shared_ptr<S
     }
 }
 
-
+// Evaluate normal Expressions
 Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScope) {
     if (!node) {
         throw std::runtime_error("Null expression node");
@@ -341,6 +341,7 @@ Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScop
     }
 }
 
+// Evaluate Variables
 Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> currentScope) {
     if (!variableNode) {
         throw std::runtime_error("Null VariableNode passed to evaluateVariable");
@@ -354,6 +355,8 @@ Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> 
     }
 }
 
+
+// Valuate Operations
 Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<Scope> currentScope) {
     if (!binaryOpNode) {
         throw std::runtime_error("Null BinaryOpNode passed to evaluateBinaryOperation");
@@ -410,6 +413,7 @@ Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<
     }
 }
 
+// Evaluate Function Calls
 Value evaluateFunctionCall(const CallNode* callNode, std::shared_ptr<Scope> currentScope) {
     if (!callNode) {
         throw std::runtime_error("Null CallNode passed to evaluateFunctionCall");
@@ -432,6 +436,8 @@ Value evaluateFunctionCall(const CallNode* callNode, std::shared_ptr<Scope> curr
     }
 }
 
+
+// Evaluate Assignments
 Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<Scope> currentScope) {
     if (!assignmentNode) {
         throw std::runtime_error("Null assignment node passed to evaluateAssignment");
@@ -483,26 +489,32 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
     return rhsValue;
 }
 
+// Len Function of Arrays
 Value lenFunction(const std::vector<Value>& args) {
-    if (args.size() != 1 || !args[0].isArray()) {
+    if (args.size() != 1) {
         throw std::runtime_error("Runtime error: incorrect argument count.");
+    }
+    if (!args[0].isArray()) {
+        throw std::runtime_error("Runtime error: not an array.");
     }
     return Value(static_cast<double>(args[0].asArray().size()));
 }
 
+// Pop function of Arrays
 Value popFunction(std::vector<Value>& args) {
     if (args.size() != 1 || !args[0].isArray()) {
         throw std::runtime_error("Runtime error: incorrect argument count.");
     }
     auto& array = args[0].asArray();
     if (array.empty()) {
-        throw std::runtime_error("pop from an empty array.");
+        throw std::runtime_error("Runtime error: underflow.");
     }
     Value poppedValue = std::move(array.back());
     array.pop_back();
     return poppedValue;
 }
 
+// Push function of Arrays
 Value pushFunction(std::vector<Value>& args) {
     if (args.size() != 2 || !args[0].isArray()) {
         throw std::runtime_error("Runtime error: incorrect argument count.");
