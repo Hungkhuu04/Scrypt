@@ -253,46 +253,48 @@ std::unique_ptr<ASTNode> Parser::parseArrayLookup(std::unique_ptr<ASTNode> array
 }
 
 std::unique_ptr<ASTNode> Parser::parsePrimary() {
-    std::unique_ptr<ASTNode> node;
+    try {
+        std::unique_ptr<ASTNode> node;
 
-    if (match(TokenType::NUMBER)) {
-        node = std::make_unique<NumberNode>(previous());
-    }  else if (match(TokenType::NULL_TOKEN)) {
-        return std::make_unique<NullNode>();
-    }
-    else if (match(TokenType::LEFT_PAREN)) {
-        node = parseExpression();
-        consume(TokenType::RIGHT_PAREN);
-    } else if (match(TokenType::LBRACK)) {
-        node = parseArrayLiteral();
-    } else if (match(TokenType::IDENTIFIER) || match(TokenType::PUSH) || match(TokenType::POP) || match(TokenType::LEN)) {
-        Token identifier = previous();
-        if (check(TokenType::LEFT_PAREN)) {
-            advance();
-            node = parseCall(std::make_unique<VariableNode>(identifier));
+        if (match(TokenType::NUMBER)) {
+            node = std::make_unique<NumberNode>(previous());
+        } else if (match(TokenType::NULL_TOKEN)) {
+            return std::make_unique<NullNode>();
+        }
+        else if (match(TokenType::LEFT_PAREN)) {
+            node = parseExpression();
+            consume(TokenType::RIGHT_PAREN);
+        } else if (match(TokenType::LBRACK)) {
+            node = parseArrayLiteral();
+        } else if (match(TokenType::IDENTIFIER)) {
+            Token identifier = previous();
+            if (check(TokenType::LEFT_PAREN)) {
+                advance(); // Consume LEFT_PAREN
+                node = parseCall(std::make_unique<VariableNode>(identifier));
+            } else {
+                node = std::make_unique<VariableNode>(identifier);
+            }
+        } else if (match(TokenType::BOOLEAN_TRUE) || match(TokenType::BOOLEAN_FALSE) || match(TokenType::NULL_TOKEN)) {
+            node = std::make_unique<BooleanNode>(previous());
         } else {
-            node = std::make_unique<VariableNode>(identifier);
+            throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + 
+                                     " column " + std::to_string(tokens[current].column) + 
+                                     ": " + tokens[current].value);
         }
-    } else if (match(TokenType::BOOLEAN_TRUE) || match(TokenType::BOOLEAN_FALSE) || match(TokenType::NULL_TOKEN)) {
-        node = std::make_unique<BooleanNode>(previous());
-    } else {
-        try{
-            throw std::runtime_error("Unexpected token at line " + std::to_string(tokens[current].line) + " column " + std::to_string(tokens[current].column) + ": " + tokens[current].value);
-        }
-        catch(...){
-            throw;
-        }
-    }
 
-    // Handle repeated array lookups
-    while (check(TokenType::LBRACK)) {
-        advance();
-        auto index = parseExpression();
-        consume(TokenType::RBRACK);
-        node = std::make_unique<ArrayLookupNode>(std::move(node), std::move(index));
-    }
+        // Handle repeated array lookups
+        while (check(TokenType::LBRACK)) {
+            advance(); // Consume LBRACK
+            auto index = parseExpression();
+            consume(TokenType::RBRACK);
+            node = std::make_unique<ArrayLookupNode>(std::move(node), std::move(index));
+        }
 
-    return node;
+        return node;
+    } catch (...) {
+        // Any cleanup if needed
+        throw; // Rethrow the current exception
+    }
 }
 
 
