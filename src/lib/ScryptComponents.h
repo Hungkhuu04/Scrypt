@@ -76,7 +76,7 @@ private:
         double doubleValue;
         bool boolValue;
         Function functionValue; // Raw storage, will be constructed/destructed manually
-        std::vector<Value> arrayValue;
+        std::shared_ptr<std::vector<Value>> arrayValue;
         FunctionPtr builtinFunction; 
     };
 

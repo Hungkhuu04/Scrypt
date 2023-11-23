@@ -18,6 +18,7 @@ Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScop
 void evaluateBlock(const BlockNode* blockNode, std::shared_ptr<Scope> currentScope);
 void evaluateIf(const IfNode* ifNode, std::shared_ptr<Scope> currentScope);
 void evaluateWhile(const WhileNode* whileNode, std::shared_ptr<Scope> currentScope);
+void printValue(const Value& value);
 void evaluatePrint(const PrintNode* printNode, std::shared_ptr<Scope> currentScope);
 Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<Scope> currentScope);
 Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> currentScope);
@@ -66,51 +67,52 @@ void evaluateBlock(const BlockNode* blockNode, std::shared_ptr<Scope> currentSco
 
 
 Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentScope) {
-    try {
-        std::string functionName = static_cast<const VariableNode*>(node->callee.get())->identifier.value;
+    std::string functionName = static_cast<const VariableNode*>(node->callee.get())->identifier.value;
 
-        std::vector<Value> args;
-        for (const auto& arg : node->arguments) {
-            args.push_back(evaluateExpression(arg.get(), currentScope));
+    // Evaluate arguments
+    std::vector<Value> args;
+    for (const auto& arg : node->arguments) {
+        args.push_back(evaluateExpression(arg.get(), currentScope));
+    }
+
+    // Handling built-in functions
+    if (functionName == "push") {
+        return pushFunction(args);
+    } else if (functionName == "pop") {
+        return popFunction(args);
+    } else if (functionName == "len") {
+        return lenFunction(args);
+    } else {
+        // Handling user-defined functions
+        auto funcValue = evaluateExpression(node->callee.get(), currentScope);
+        if (funcValue.getType() != Value::Type::Function) {
+            throw std::runtime_error("Runtime error: not a function.");
         }
 
-        if (functionName == "push") {
-            return pushFunction(args);
-        } else if (functionName == "pop") {
-            return popFunction(args);
-        } else if (functionName == "len") {
-            return lenFunction(args);
-        } else {
-            // For other functions, proceed with the existing logic
-            auto funcValue = evaluateExpression(node->callee.get(), currentScope);
-            if (funcValue.getType() != Value::Type::Function) {
-                throw std::runtime_error("Runtime error: not a function.");
-            }
+        const auto& function = funcValue.asFunction();
+        // Using the captured scope directly
+        auto callScope = function.capturedScope;
 
-            const auto& function = funcValue.asFunction();
-            auto callScope = std::make_shared<Scope>(function.capturedScope);
-
-            const auto& params = function.definition->parameters;
-            if (params.size() != args.size()) {
-                throw std::runtime_error("Runtime error: incorrect argument count.");
-            }
-
-            for (size_t i = 0; i < params.size(); ++i) {
-                callScope->setVariable(params[i].value, args[i]);
-            }
-
-            try {
-                evaluateBlock(static_cast<const BlockNode*>(function.definition->body.get()), callScope);
-            } catch (const ReturnException& e) {
-                return e.getValue();
-            }
-
-            return Value(); // Return null if no return statement was executed
+        const auto& params = function.definition->parameters;
+        if (params.size() != args.size()) {
+            throw std::runtime_error("Runtime error: incorrect argument count.");
         }
-    } catch (...) {
-        throw;
+
+        for (size_t i = 0; i < params.size(); ++i) {
+            callScope->setVariable(params[i].value, args[i]);
+        }
+
+        try {
+            evaluateBlock(static_cast<const BlockNode*>(function.definition->body.get()), callScope);
+        } catch (const ReturnException& e) {
+            return e.getValue();
+        }
+
+        // No need to propagate changes, as the scope shares variables with parent
+        return Value(); // Return null if no return statement was executed
     }
 }
+
 
 
 
@@ -262,20 +264,44 @@ void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> current
     throw ReturnException(std::move(returnValue));
 }
 
+void printValue(const Value& value) {
+    switch (value.getType()) {
+        case Value::Type::Double:
+            std::cout << value.asDouble();
+            break;
+
+        case Value::Type::Bool:
+            std::cout << std::boolalpha << value.asBool();
+            break;
+
+        case Value::Type::Null:
+            std::cout << "null";
+            break;
+
+        case Value::Type::Array: {
+            std::cout << "[";
+            const auto& array = value.asArray();
+            for (size_t i = 0; i < array.size(); ++i) {
+                if (i > 0) std::cout << ", ";
+                printValue(array[i]);  // Recursive call
+            }
+            std::cout << "]";
+            break;
+        }
+
+        default:
+            std::cout << "/* Unsupported type */";
+            break;
+    }
+}
 
 // Evaluate the print node
 void evaluatePrint(const PrintNode* printNode, std::shared_ptr<Scope> currentScope) {
     Value value = evaluateExpression(printNode->expression.get(), currentScope);
-    if (value.getType() == Value::Type::Double) {
-        std::cout << value.asDouble() << std::endl;
-    } else if (value.getType() == Value::Type::Bool) {
-        std::cout << std::boolalpha << value.asBool() << std::endl;
-    } else if (value.getType() == Value::Type::Null) {
-        std::cout << "null" << std::endl;
-    } else {
-        throw std::runtime_error("Invalid type in print statement");
-    }
-};
+    printValue(value);  // Use the existing function to handle printing
+    std::cout << std::endl; // Add a new line after printing the value
+}
+
 // Evaluate Operations
 Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<Scope> currentScope) {
     if (!binaryOpNode) {
