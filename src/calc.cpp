@@ -36,7 +36,6 @@ Value pushFunction(std::vector<Value>& args);
 
 std::shared_ptr<Scope> globalScope = std::make_shared<Scope>();
 
-//FROM HERE DOWN IS FORMAT.CPP
 // function to create an indentation string
 std::string indentString(int indentLevel) {
     return std::string(indentLevel * 4, ' '); // 4 spaces per indent level
@@ -64,7 +63,6 @@ void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
     double fracPart = modf(value, &intPart);
     
     if (fracPart == 0.0) {
-        // No fractional part, treat as integer
         os << indentString(indent) << static_cast<long>(intPart);
     } else {
         // Use scientific notation for very small values
@@ -108,13 +106,9 @@ void formatVariableNode(std::ostream& os, const VariableNode* node, int indent) 
 // function to format assignment nodes
 void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent) {
     os << indentString(indent) << "(";
-
-    // Format left-hand side (LHS)
-    formatAST(os, node->lhs, 0, false);  // Format LHS regardless of its type
+    formatAST(os, node->lhs, 0, false);
 
     os << " = ";
-
-    // Format right-hand side (RHS)
     formatAST(os, node->rhs, 0, false);
 
     os << ")";
@@ -133,7 +127,6 @@ void formatBlockNode(std::ostream& os, const BlockNode* node, int indent) {
     }
 }
 
-// main format function
 // main format function
 void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent, bool isOutermost)  {
     if (!node) return;
@@ -184,7 +177,7 @@ void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isO
             os << ", ";
         }
     }
-    os << ")"; // Close the function call parentheses
+    os << ")";
 }
 
 // Function to format FunctionNode (function definitions)
@@ -204,9 +197,9 @@ void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent) 
         formatAST(os, node->body, indent + 1);
         os << "\n" << indentString(indent);
     } else {
-        os << "\n" << indentString(indent); // Add newline and indentation for empty body
+        os << "\n" << indentString(indent);
     }
-    os << "}"; // Closing brace
+    os << "}";
 }
 
 
@@ -219,24 +212,19 @@ void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent) 
 void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent, bool isOutermost = true) {;
     os << indentString(indent) << "[";
     for (size_t i = 0; i < node->elements.size(); ++i) {
-        formatAST(os, node->elements[i], 0, false); // Passing false for isOutermost
+        formatAST(os, node->elements[i], 0, false); 
         if (i < node->elements.size() - 1) os << ", ";
     }
     os << "]";
-
-    // Add a semicolon only if it's the outermost array literal
 }
+
 // Function to format ArrayLookupNode (array access)
 void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent, bool isOutermost) {
-    // Format the array part
-    formatAST(os, node->array, indent, false); // Pass false to isOutermost
+    formatAST(os, node->array, indent, false);
 
-    // Format the index part
     os << "[";
-    formatAST(os, node->index, 0, false); // Pass false to isOutermost
+    formatAST(os, node->index, 0, false);
     os << "]";
-
-    // Append a semicolon if it's a standalone array lookup expression
 }
 
 void printValue(const Value& value) {
@@ -258,7 +246,7 @@ void printValue(const Value& value) {
             const auto& array = value.asArray();
             for (size_t i = 0; i < array.size(); ++i) {
                 if (i > 0) std::cout << ", ";
-                printValue(array[i]);  // Recursive call
+                printValue(array[i]);
             }
             std::cout << "]";
             break;
@@ -279,10 +267,10 @@ void formatAndEvaluateAST(const std::unique_ptr<ASTNode>& ast, std::shared_ptr<S
     // Evaluate the AST
     try {
         Value result = evaluateExpression(ast.get(), scope);
-        printValue(result);  // Use the helper function to print the result
+        printValue(result);
         std::cout << std::endl;
     } catch (const std::exception& e) {
-        std::cout << e.what() << std::endl;  // Outputting the error message directly
+        std::cout << e.what() << std::endl;
     }
 }
 
@@ -319,7 +307,7 @@ Value evaluateExpression(const ASTNode* node, std::shared_ptr<Scope> currentScop
                 for (const auto& stmt : blockNode->statements) {
                     lastValue = evaluateExpression(stmt.get(), currentScope);
                 }
-                return lastValue; // Or decide how you want to handle the value of a block
+                return lastValue;
             }
             case ASTNode::Type::NullNode: {
                 return Value();
@@ -438,16 +426,12 @@ Value evaluateFunctionCall(const CallNode* callNode, std::shared_ptr<Scope> curr
         throw std::runtime_error("Null CallNode passed to evaluateFunctionCall");
     }
 
-    // Evaluate the callee to get the function name
     auto functionName = static_cast<const VariableNode*>(callNode->callee.get())->identifier.value;
 
-    // Evaluate arguments
     std::vector<Value> evaluatedArgs;
     for (const auto& arg : callNode->arguments) {
         evaluatedArgs.push_back(evaluateExpression(arg.get(), currentScope));
     }
-
-    // Handle specific function calls
     if (functionName == "push") {
         return pushFunction(evaluatedArgs);
     } else if (functionName == "pop") {
@@ -567,7 +551,7 @@ int main() {
     globalScope->setVariable("pop", Value(Value::FunctionPtr(popFunction)));
     globalScope->setVariable("push", Value(Value::FunctionPtr(pushFunction)));
 
-    while (true) {  // Infinite loop
+    while (true) { 
         if (!std::getline(std::cin, line)) {
             if (std::cin.eof()) {
                 break;
@@ -580,12 +564,11 @@ int main() {
             Lexer lexer(line);
             auto tokens = lexer.tokenize();
             if (lexer.isSyntaxError(tokens)) {
-                continue;  // Go to the next iteration of the loop
+                continue; 
             }
             Parser parser(tokens);
             auto ast = parser.parse();
 
-            // Format and evaluate the AST
             formatAndEvaluateAST(ast, globalScope);
         } catch (const std::exception& e) {
             os << e.what() << std::endl;
