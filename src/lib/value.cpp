@@ -77,6 +77,9 @@ void Value::cleanUp() {
 
 
 void Value::copyFrom(const Value& other) {
+    // Clean up existing content
+    cleanUp();
+
     type = other.type;
     switch (type) {
         case Type::Double:
@@ -86,18 +89,19 @@ void Value::copyFrom(const Value& other) {
             boolValue = other.boolValue;
             break;
         case Type::Function:
-            new (&functionValue) Function(other.functionValue);
+            new (&functionValue) Function(other.functionValue); // Placement new
             break;
         case Type::Array:
-            arrayValue = other.arrayValue; // Shared pointer copy
+            new (&arrayValue) std::shared_ptr<std::vector<Value>>(other.arrayValue); // Placement new for shared_ptr
             break;
         case Type::Null:
             break;
         case Type::BuiltinFunction:
-            new (&builtinFunction) FunctionPtr(other.builtinFunction); // Use placement new
+            new (&builtinFunction) FunctionPtr(other.builtinFunction); // Placement new
             break;
     }
 }
+
 
 Value Value::deepCopy() const {
     switch (type) {
@@ -123,6 +127,9 @@ Value Value::deepCopy() const {
 }
 
 void Value::moveFrom(Value&& other) {
+    // Clean up existing content
+    cleanUp();
+
     type = other.type;
     switch (type) {
         case Type::Double:
@@ -132,19 +139,20 @@ void Value::moveFrom(Value&& other) {
             boolValue = other.boolValue;
             break;
         case Type::Function:
-            new (&functionValue) Function(std::move(other.functionValue));
+            new (&functionValue) Function(std::move(other.functionValue)); // Placement new for move
             break;
         case Type::Array:
-            arrayValue = std::move(other.arrayValue); // Move the shared_ptr
+            new (&arrayValue) std::shared_ptr<std::vector<Value>>(std::move(other.arrayValue)); // Placement new for move
             break;
         case Type::Null:
             break;
         case Type::BuiltinFunction:
-            new (&builtinFunction) FunctionPtr(std::move(other.builtinFunction)); // Use placement new
+            new (&builtinFunction) FunctionPtr(std::move(other.builtinFunction)); // Placement new for move
             break;
     }
     other.type = Type::Null; // Set the moved-from object to null state
 }
+
 
 
 Value::Type Value::getType() const {
