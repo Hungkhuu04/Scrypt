@@ -38,7 +38,7 @@ std::shared_ptr<Scope> globalScope = std::make_shared<Scope>();
 
 // function to create an indentation string
 std::string indentString(int indentLevel) {
-    return std::string(indentLevel * 4, ' '); // 4 spaces per indent level
+    return std::string(indentLevel * 4, ' ');
 }
 
 // function to format NULL
