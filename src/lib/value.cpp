@@ -51,29 +51,31 @@ Value& Value::operator=(Value&& other) noexcept {
 }
 
 void Value::cleanUp() {
-    switch (type) {
-        case Type::Double:
-            // Double doesn't require special handling.
-            break;
-        case Type::Bool:
-            // Bool doesn't require special handling.
-            break;
-        case Type::Function:
-            // Explicitly call the destructor for Function
-            functionValue.~Function();
-            break;
-        case Type::Array:
-            arrayValue.reset(); // Reset the shared pointer
-            break;
-        case Type::BuiltinFunction:
-            // Explicitly call the destructor for FunctionPtr
-            builtinFunction.~FunctionPtr();
-            break;
-        case Type::Null:
-            // Null doesn't require special handling.
-            break;
+    // Only clean up if the type is not Null
+    if (type != Type::Null) {
+        switch (type) {
+            case Type::Double:
+            case Type::Bool:
+                // These types don't require special handling.
+                break;
+            case Type::Function:
+                // Explicitly call the destructor for Function
+                functionValue.~Function();
+                break;
+            case Type::Array:
+                // Reset the shared pointer
+                arrayValue.reset();
+                break;
+            case Type::BuiltinFunction:
+                // Explicitly call the destructor for FunctionPtr
+                builtinFunction.~FunctionPtr();
+                break;
+        }
+        // Set type to Null after cleanup
+        type = Type::Null;
     }
 }
+
 
 
 void Value::copyFrom(const Value& other) {
