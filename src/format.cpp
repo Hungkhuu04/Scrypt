@@ -117,7 +117,7 @@ void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int inde
 
 
 
-/*FormatWhileNode is a funciton that is used */
+/*FormatWhileNode is a funciton that is used to format While nodes*/
 void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
     os << indentString(indent) << "while ";
     formatAST(os, node->condition, 0);
@@ -126,7 +126,7 @@ void formatWhileNode(std::ostream& os, const WhileNode* node, int indent) {
     os << "\n" << indentString(indent) << "}";
 }
 
-// function to format print nodes
+/*FormatPrintNode is a function that is used to format Print nodes*/
 void formatPrintNode(std::ostream& os, const PrintNode* node, int indent) {
     os << indentString(indent) << "print ";
     formatAST(os, node->expression, 0, false);
@@ -145,7 +145,7 @@ void formatBlockNode(std::ostream& os, const BlockNode* node, int indent) {
     }
 }
 
-// main format function
+/*This is the main format function. Formats and Prints the AST. */
 void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent, bool isOutermost)  {
     if (!node) return;
 

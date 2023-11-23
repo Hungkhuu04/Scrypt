@@ -68,14 +68,10 @@ void evaluateBlock(const BlockNode* blockNode, std::shared_ptr<Scope> currentSco
 
 Value evaluateFunctionCall(const CallNode* node, std::shared_ptr<Scope> currentScope) {
     std::string functionName = static_cast<const VariableNode*>(node->callee.get())->identifier.value;
-
-    // Evaluate arguments
     std::vector<Value> args;
     for (const auto& arg : node->arguments) {
         args.push_back(evaluateExpression(arg.get(), currentScope));
     }
-
-    // Handling built-in functions
     if (functionName == "push") {
         return pushFunction(args);
     } else if (functionName == "pop") {
