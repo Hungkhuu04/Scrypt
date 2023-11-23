@@ -150,7 +150,7 @@ int main() {
     int line_count = 0;
 
     while (getline(cin, line)) {
-        accumulated_line += line;  // accumulate lines
+        accumulated_line += line; 
         line_count++;
     }
 
