@@ -156,19 +156,13 @@ std::unique_ptr<ASTNode> Parser::parseWhileStatement()
 // parses print statements
 std::unique_ptr<ASTNode> Parser::parsePrintStatement() {
     auto expression = parseExpression();
-
-    // Look ahead to see if the next token is a left parenthesis, indicating a function call
     if (peek().type == TokenType::LEFT_PAREN) {
-        // Parse the rest of the function call
-        advance(); // Consume the LEFT_PAREN
+        advance();
         expression = parseCall(std::move(expression));
-
-        // Now, check for the semicolon
         if (!match(TokenType::SEMICOLON)) {
             throw std::runtime_error("Expected ';' after print statement");
         }
     } else {
-        // For other expressions, still expect a semicolon
         if (!match(TokenType::SEMICOLON)) {
             throw std::runtime_error("Expected ';' after print statement");
         }
@@ -272,7 +266,7 @@ std::unique_ptr<ASTNode> Parser::parsePrimary() {
     } else if (match(TokenType::IDENTIFIER) || match(TokenType::PUSH) || match(TokenType::POP) || match(TokenType::LEN)) {
         Token identifier = previous();
         if (check(TokenType::LEFT_PAREN)) {
-            advance(); // Consume LEFT_PAREN
+            advance();
             node = parseCall(std::make_unique<VariableNode>(identifier));
         } else {
             node = std::make_unique<VariableNode>(identifier);
@@ -285,7 +279,7 @@ std::unique_ptr<ASTNode> Parser::parsePrimary() {
 
     // Handle repeated array lookups
     while (check(TokenType::LBRACK)) {
-        advance(); // Consume LBRACK
+        advance();
         auto index = parseExpression();
         consume(TokenType::RBRACK);
         node = std::make_unique<ArrayLookupNode>(std::move(node), std::move(index));

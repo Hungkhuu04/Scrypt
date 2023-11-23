@@ -41,6 +41,7 @@ std::string indentString(int indentLevel) {
     return std::string(indentLevel * 4, ' '); // 4 spaces per indent level
 }
 
+// function to format NULL
 void formatNullNode(std::ostream& os, const NullNode* node, int indent) {
     os << indentString(indent) << "null";
 }
@@ -63,7 +64,7 @@ void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
     if (fracPart == 0.0) {
         os << indentString(indent) << static_cast<long>(intPart);
     } else {
-        if (abs(value) < 1e-4 || abs(value) > 1e4) {
+        if (abs(value) < 1e-6 || abs(value) > 1e6) {
             std::ostringstream tempStream;
             tempStream << std::scientific << std::setprecision(0) << value;
             std::string str = tempStream.str();
@@ -75,7 +76,7 @@ void formatNumberNode(std::ostream& os, const NumberNode* node, int indent) {
             os << indentString(indent) << str;
         } else {
             std::ostringstream tempStream;
-            tempStream << std::fixed << std::setprecision(1) << value;
+            tempStream << std::fixed << std::setprecision(4) << value;
             std::string str = tempStream.str();
             str.erase(str.find_last_not_of('0') + 1, std::string::npos);
             if (str.back() == '.') {
@@ -163,6 +164,7 @@ void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int inden
     }
 }
 
+// Function to format a function call
 void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isOutermost) {
     formatAST(os, node->callee, indent, false);
     os << '(';
@@ -197,13 +199,7 @@ void formatFunctionNode(std::ostream& os, const FunctionNode* node, int indent) 
     os << "}";
 }
 
-
-
-
-
-
 // Function to format CallNode (function calls)
-
 void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent, bool isOutermost = true) {;
     os << indentString(indent) << "[";
     for (size_t i = 0; i < node->elements.size(); ++i) {
@@ -253,6 +249,7 @@ void printValue(const Value& value) {
     }
 }
 
+// 
 void formatAndEvaluateAST(const std::unique_ptr<ASTNode>& ast, std::shared_ptr<Scope> scope) {
     std::ostringstream formattedOutput;
     formatAST(formattedOutput, ast, 0, true);

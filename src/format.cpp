@@ -32,6 +32,7 @@ std::string indentString(int indentLevel) {
     return std::string(indentLevel * 4, ' ');
 }
 
+// function to format NULL
 void formatNullNode(std::ostream& os, const NullNode* node, int indent) {
     os << indentString(indent) << "null";
 }
@@ -101,7 +102,6 @@ void formatIfNode(std::ostream& os, const IfNode* node, int indent) {
 }
 
 // function to format assignment nodes
-
 void formatAssignmentNode(std::ostream& os, const AssignmentNode* node, int indent) {
     os << indentString(indent) << "(";
 
@@ -254,7 +254,7 @@ void formatCallNode(std::ostream& os, const CallNode* node, int indent, bool isO
     }
 }
 
-
+// Function to format Array Literals
 void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int indent, bool isOutermost = true) {;
     os << indentString(indent) << "[";
     for (size_t i = 0; i < node->elements.size(); ++i) {
@@ -267,7 +267,7 @@ void formatArrayLiteralNode(std::ostream& os, const ArrayLiteralNode* node, int 
         os << ";";
     }
 }
-// Function to format ArrayLookupNode (array access)
+// Function to format ArrayLookupNode (array access and what it returns)
 void formatArrayLookupNode(std::ostream& os, const ArrayLookupNode* node, int indent, bool isOutermost) {
     formatAST(os, node->array, indent, false);
     os << "[";
