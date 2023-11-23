@@ -90,7 +90,7 @@ std::unique_ptr<ASTNode> Parser::parseReturnStatement() {
     return std::make_unique<ReturnNode>(std::move(value));
 }
 
-//Parses 
+//Parses Function Calls
 std::unique_ptr<ASTNode> Parser::parseCall(std::unique_ptr<ASTNode> callee) {
     std::vector<std::unique_ptr<ASTNode>> arguments;
     if (!check(TokenType::RIGHT_PAREN)) {

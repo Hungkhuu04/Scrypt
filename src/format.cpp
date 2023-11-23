@@ -145,7 +145,7 @@ void formatBlockNode(std::ostream& os, const BlockNode* node, int indent) {
     }
 }
 
-/*This is the main format function. Formats and Prints the AST. */
+/*This is the main format function. Formats and Prints the AST.*/
 void formatAST(std::ostream& os, const std::unique_ptr<ASTNode>& node, int indent, bool isOutermost)  {
     if (!node) return;
 
