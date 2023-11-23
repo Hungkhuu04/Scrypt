@@ -96,11 +96,11 @@ try{
         for (size_t i = 0; i < params.size(); ++i) {
             callScope->setVariable(params[i].value, args[i]);
         }
-
+        
         try {
             evaluateBlock(static_cast<const BlockNode*>(function.definition->body.get()), callScope);
-        } catch (...) {
-            throw;
+        } catch (const ReturnException& e) {
+            return e.getValue();
         }
 
         return Value();
@@ -251,22 +251,17 @@ void evaluateWhile(const WhileNode* whileNode, std::shared_ptr<Scope> currentSco
 
 // Evaluate Return (functions)
 void evaluateReturn(const ReturnNode* returnNode, std::shared_ptr<Scope> currentScope) {
-    try{
-    if (!returnNode) {
-        throw std::runtime_error("Null return node passed to evaluateReturn");
+    try {
+        Value returnValue;
+        if (returnNode->value) {
+            returnValue = evaluateExpression(returnNode->value.get(), currentScope);
+        } else {
+            throw ReturnException(Value());
+        }
+        throw ReturnException(std::move(returnValue));
+    } catch (...) {
+        throw;
     }
-
-    Value returnValue;
-    if (returnNode->value) {
-        returnValue = evaluateExpression(returnNode->value.get(), currentScope);
-    } else {
-        throw std::runtime_error("Runtime error: unexpected return.");
-    }
-    throw std::runtime_error("Runtime error: unexpected return.");
-}
-catch (...) {
-    throw;
-}
 }
 
 //helper function with print
@@ -310,6 +305,7 @@ void evaluatePrint(const PrintNode* printNode, std::shared_ptr<Scope> currentSco
 
 // Evaluate Operations
 Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<Scope> currentScope) {
+try{
     if (!binaryOpNode) {
         throw std::runtime_error("Null BinaryOpNode passed to evaluateBinaryOperation");
     }
@@ -363,6 +359,9 @@ Value evaluateBinaryOperation(const BinaryOpNode* binaryOpNode, std::shared_ptr<
         default:
             throw std::runtime_error("Unsupported binary operator in evaluateBinaryOperation");
     }
+} catch (...) {
+    throw;
+}
 }
 // Evaluate variables
 Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> currentScope) {
@@ -381,6 +380,7 @@ Value evaluateVariable(const VariableNode* variableNode, std::shared_ptr<Scope> 
 
 // Evaluate Assignments
 Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<Scope> currentScope) {
+    try {
     if (!assignmentNode) {
         throw std::runtime_error("Null assignment node passed to evaluateAssignment");
     }
@@ -436,9 +436,14 @@ Value evaluateAssignment(const AssignmentNode* assignmentNode, std::shared_ptr<S
 
     return rhsValue;
 }
+catch (...) {
+    throw;
+}
+}
 
 // Evaluate Array Literals
 Value evaluateArrayLiteralNode(const ArrayLiteralNode* arrayLiteralNode, std::shared_ptr<Scope> currentScope) {
+    try{
     if (!arrayLiteralNode) {
         throw std::runtime_error("Null ArrayLiteralNode passed to evaluateArrayLiteralNode");
     }
@@ -449,10 +454,14 @@ Value evaluateArrayLiteralNode(const ArrayLiteralNode* arrayLiteralNode, std::sh
         arrayValues.push_back(copiedElement);
     }
     return Value(arrayValues);
+    } catch (...) {
+        throw;
+    }
 }
 
 // Evaluate and return the Array Literals
 Value evaluateArrayLookupNode(const ArrayLookupNode* arrayLookupNode, std::shared_ptr<Scope> currentScope) {
+    try{
     if (!arrayLookupNode) {
         throw std::runtime_error("Null ArrayLookupNode passed to evaluateArrayLookupNode");
     }
@@ -474,6 +483,10 @@ Value evaluateArrayLookupNode(const ArrayLookupNode* arrayLookupNode, std::share
         throw std::runtime_error("Runtime error: index out of bounds.");
     }
     return arrayValue.asArray()[index];
+}
+catch (...) {
+    throw;
+}
 }
 
 // Len Function of Arrays
