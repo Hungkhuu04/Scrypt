@@ -51,7 +51,6 @@ Value& Value::operator=(Value&& other) noexcept {
 }
 
 void Value::cleanUp() {
-    // Only clean up if the type is not Null
     if (type != Type::Null) {
         switch (type) {
             case Type::Double:
@@ -70,11 +69,15 @@ void Value::cleanUp() {
                 // Explicitly call the destructor for FunctionPtr
                 builtinFunction.~FunctionPtr();
                 break;
+            case Type::Null:
+                // Null doesn't require special handling.
+                break;
         }
         // Set type to Null after cleanup
         type = Type::Null;
     }
 }
+
 
 
 
