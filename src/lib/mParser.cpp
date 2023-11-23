@@ -137,18 +137,19 @@ std::unique_ptr<ASTNode> Parser::parseWhileStatement()
 {
     while (match(TokenType::NEWLINE))
     {
+        // consuming the newline
+
     }
 
     auto condition = parseExpression(); 
-
    
     while (match(TokenType::NEWLINE))
     {
+        //consuming the newline
+
     }
-
-    
+ 
     auto body = parseBlock();
-
     return std::make_unique<WhileNode>(std::move(condition), std::move(body));
 }
 
@@ -182,6 +183,7 @@ std::unique_ptr<ASTNode> Parser::parseBlock()
     {
         while (match(TokenType::NEWLINE))
         {
+            //consuming the newline
         }
         statements.push_back(parseStatement());
         
@@ -190,6 +192,7 @@ std::unique_ptr<ASTNode> Parser::parseBlock()
     consume(TokenType::RIGHT_BRACE);
     while (match(TokenType::NEWLINE))
     {
+        //consuming the newline
     }
     
     return std::make_unique<BlockNode>(std::move(statements));

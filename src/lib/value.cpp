@@ -277,8 +277,6 @@ std::shared_ptr<Scope> Scope::copyScope() const {
 
 std::shared_ptr<Scope> Scope::deepCopy() const {
     auto copiedScope = std::make_shared<Scope>(nullptr);
-
-    // Copy variables
     for (const auto& variable : this->variables) {
         const std::string& name = variable.first;
         const Value& value = variable.second;
